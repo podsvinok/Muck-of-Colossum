@@ -1,16 +1,16 @@
 ﻿using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
+using Code.Infrastructure.States.GameStates;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 
-namespace Code.Infrastructure.States.GameStates
+namespace Assets.Code.Infrastructure.States.GameStates
 {
-    public class GameEnterState : IState
+    public class StartServerState : IState
     {
         private readonly IPlayerFactory playerFactory;
         private readonly ILevelDataProvider levelData;
 
-        public GameEnterState(IPlayerFactory playerFactory, ILevelDataProvider levelData)
+        public StartServerState(IPlayerFactory playerFactory, ILevelDataProvider levelData)
         {
             this.playerFactory = playerFactory;
             this.levelData = levelData;
@@ -18,7 +18,7 @@ namespace Code.Infrastructure.States.GameStates
 
         public async UniTask Enter()
         {
-            await UniTask.Yield();
+            await playerFactory.CreatePlayer(levelData.StartPoint);
         }
 
         public async UniTask Exit()

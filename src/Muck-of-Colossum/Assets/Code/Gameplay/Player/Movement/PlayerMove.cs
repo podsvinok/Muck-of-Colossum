@@ -1,10 +1,11 @@
 ﻿using Code.Infrastructure.Inputs;
+using Unity.Netcode;
 using UnityEngine;
 using Zenject;
 
 namespace Code.Gameplay.Player
 {
-    public class PlayerMove : MonoBehaviour
+    public class PlayerMove : NetworkBehaviour
     {
         [SerializeField] private CharacterController characterController;
         [SerializeField] private float movementSpeed = 5f;
