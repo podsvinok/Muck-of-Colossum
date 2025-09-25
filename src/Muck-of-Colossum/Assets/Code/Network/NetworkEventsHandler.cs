@@ -1,27 +1,51 @@
-﻿using Code.Gameplay.Levels;
+﻿using System;
+using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
 using Unity.Netcode;
 using UnityEngine;
-using Zenject;
 
-namespace Assets.Code.Network
+namespace Code.Network
 {
-    public class NetworkEventsHandler : NetworkBehaviour
+    public class NetworkEventsHandler : INetworkEventsHandler, IDisposable
     {
-        private IPlayerFactory playerfactory;
+        private IPlayerFactory playerFactory;
         private ILevelDataProvider levelData;
 
-        [Inject]
-        public void Construct(IPlayerFactory playerFactory, ILevelDataProvider levelData)
+        public NetworkEventsHandler(IPlayerFactory playerFactory, ILevelDataProvider levelData)
         {
-            this.playerfactory = playerFactory;
+            this.playerFactory = playerFactory;
             this.levelData = levelData;
         }
 
-        public void OnConnectedToServer()
+        private void OnClientConnected(ulong clientId)
         {
-            Debug.Log("qwe");
-            playerfactory.CreatePlayerNetwork(levelData.StartPoint, OwnerClientId);
+            if (NetworkManager.Singleton.IsServer)
+                playerFactory.CreatePlayerNetwork(new Vector3(0, 0, 0), clientId);
+            else 
+                playerFactory.CreatePlayer(new Vector3(0, 0, 0));
+        }
+
+        public void CreateHost()
+        {
+            Debug.Log("NetworkEventsHandler.CreateHost");
+            
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+            
+            NetworkManager.Singleton.StartHost();
+        }
+        
+        public void CreateClient()
+        {
+            Debug.Log("NetworkEventsHandler.CreateClient");
+            
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+            
+            NetworkManager.Singleton.StartClient();   
+        }
+
+        public void Dispose()
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
         }
     }
 }

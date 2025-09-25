@@ -1,9 +1,8 @@
 ﻿using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
-using Code.Infrastructure.States.GameStates;
 using Cysharp.Threading.Tasks;
 
-namespace Assets.Code.Infrastructure.States.GameStates
+namespace Code.Infrastructure.States.GameStates
 {
     public class StartServerState : IState
     {

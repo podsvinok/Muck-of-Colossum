@@ -18,10 +18,10 @@ namespace Code.Infrastructure.States.GameStates
             this.sceneLoader = sceneLoader;
         }
 
-        public async UniTask Enter()
+        public UniTask Enter()
         {
             gameStateMachine.Enter<GameEnterState>();
-            await UniTask.Yield();
+            return UniTask.CompletedTask;
         }
 
         public async UniTask Exit()

@@ -3,7 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using Zenject;
 
-namespace Code.Gameplay.Player
+namespace Code.Gameplay.Player.Movement
 {
     public class PlayerMove : NetworkBehaviour
     {
@@ -20,8 +20,11 @@ namespace Code.Gameplay.Player
         
         private void Update()
         {
-            Movement();
-            Turn();
+            if (IsOwner)
+            {
+                Movement();
+                Turn();
+            }
         }
 
         private void Turn()

@@ -16,14 +16,14 @@ namespace Code.Infrastructure.States.GameStates
             this.levelData = levelData;
         }
 
-        public async UniTask Enter()
+        public UniTask Enter()
         {
-            await UniTask.Yield();
+            return UniTask.CompletedTask;
         }
 
-        public async UniTask Exit()
+        public UniTask Exit()
         {
-            await UniTask.Yield();
+            return UniTask.CompletedTask;
         }
     }
 }

@@ -49,6 +49,7 @@ MonoBehaviour:
   _monoInstallers:
   - {fileID: 8462889140462297185}
   _installerPrefabs: []
+  _findSiblingMonoInstallers: 0
   _parentNewObjectsUnderContext: 1
   _editorReflectionBakingCoverageMode: 0
   _buildsReflectionBakingCoverageMode: 0
@@ -57,6 +58,7 @@ MonoBehaviour:
     _displayWarningWhenResolvingDuringInstall: 1
     _validationRootResolveMethod: 0
     _validationErrorResponse: 0
+    _constructorChoiceStrategy: 0
     _signalSettings:
       _defaultSyncMode: 0
       _missingHandlerDefaultResponse: 2
