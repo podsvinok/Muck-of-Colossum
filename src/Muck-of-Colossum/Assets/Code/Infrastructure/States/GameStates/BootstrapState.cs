@@ -20,8 +20,7 @@ namespace Code.Infrastructure.States.GameStates
 
         public async UniTask Enter()
         {
-            gameStateMachine.Enter<GameEnterState>();
-            await UniTask.Yield();
+            await gameStateMachine.Enter<GameEnterState>();
         }
 
         public async UniTask Exit()

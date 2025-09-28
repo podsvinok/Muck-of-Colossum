@@ -99,5 +99,8 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
 # Zenject (Extenject) plugin
-[Aa]ssets/[Pp]lugins/[Zz]enject/
-[Aa]ssets/[Pp]lugins/[Ee]xtenject/
+/[Aa]ssets/[Pp]lugins/[Zz]enject/
+/[Aa]ssets/[Pp]lugins/[Ee]xtenject/
+
+# All plugins
+/[Aa]ssets/[Pp]lugins/

@@ -1,10 +1,11 @@
 ﻿using Code.Infrastructure.Inputs;
+using FishNet.Object;
 using UnityEngine;
 using Zenject;
 
 namespace Code.Gameplay.Player
 {
-    public class PlayerMove : MonoBehaviour
+    public class PlayerMove : NetworkBehaviour
     {
         [SerializeField] private CharacterController characterController;
         [SerializeField] private float movementSpeed = 5f;
@@ -12,6 +13,7 @@ namespace Code.Gameplay.Player
 
         private IInputService input;
 
+        [Inject]
         public void Construct(IInputService input)
         {
             this.input = input;
@@ -19,6 +21,9 @@ namespace Code.Gameplay.Player
         
         private void Update()
         {
+            if (!IsOwner)
+                return;
+            
             Movement();
             Turn();
         }

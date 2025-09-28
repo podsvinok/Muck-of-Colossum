@@ -5,7 +5,7 @@ namespace Code.Infrastructure.States.StateMachine
 {
     public interface IGameStateMachine
     {
-        UniTaskVoid Enter<TState>() where TState : class, IState;
-        UniTaskVoid Enter<TState, TPayload>(TPayload payload) where TState : class, IPayloadState<TPayload>;
+        UniTask Enter<TState>() where TState : class, IState;
+        UniTask Enter<TState, TPayload>(TPayload payload) where TState : class, IPayloadState<TPayload>;
     }
 }

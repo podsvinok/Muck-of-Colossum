@@ -1,6 +1,7 @@
 ﻿using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
 using Cysharp.Threading.Tasks;
+using FishNet.Managing;
 using UnityEngine;
 
 namespace Code.Infrastructure.States.GameStates
@@ -16,16 +17,14 @@ namespace Code.Infrastructure.States.GameStates
             this.levelData = levelData;
         }
 
-        public async UniTask Enter()
+        public UniTask Enter()
         {
-            Debug.Log("GameEnterState");
-            playerFactory.CreatePlayer(levelData.StartPoint);
-            await UniTask.Yield();
+            return UniTask.CompletedTask;
         }
 
-        public async UniTask Exit()
+        public UniTask Exit()
         {
-            await UniTask.Yield();
+            return UniTask.CompletedTask;
         }
     }
 }

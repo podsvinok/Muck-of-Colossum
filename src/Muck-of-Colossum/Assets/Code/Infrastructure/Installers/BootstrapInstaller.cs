@@ -33,7 +33,7 @@ namespace Code.Infrastructure.Installers
             Container.Bind<ILevelDataProvider>().To<LevelDataProvider>().AsSingle();
             Container.Bind<ISceneLoader>().To<SceneLoader>().AsSingle();
             Container.Bind<IInputService>().To<StandaloneInputService>().AsSingle();
-            Container.Bind<IAssetProvider>().To<ResourcesAssetProvider>().AsSingle();
+            Container.Bind<IAssetProvider>().To<AssetProvider>().AsSingle();
         }
 
         private void BindStates()

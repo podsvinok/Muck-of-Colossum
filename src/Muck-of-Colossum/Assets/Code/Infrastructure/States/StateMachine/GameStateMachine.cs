@@ -17,12 +17,12 @@ namespace Code.Infrastructure.States.StateMachine
             this.stateFactory = stateFactory;
         }
 
-        public async UniTaskVoid Enter<TState>() where TState : class, IState
+        public async UniTask Enter<TState>() where TState : class, IState
         {
             await RequestEnter<TState>();
         }
 
-        public async UniTaskVoid Enter<TState, TPayload>(TPayload payload) where TState : class, IPayloadState<TPayload>
+        public async UniTask Enter<TState, TPayload>(TPayload payload) where TState : class, IPayloadState<TPayload>
         {
             await RequestEnter<TState, TPayload>(payload);
         }
