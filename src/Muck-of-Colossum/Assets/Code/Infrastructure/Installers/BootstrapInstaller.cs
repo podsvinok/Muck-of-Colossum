@@ -6,13 +6,16 @@ using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.Factory;
 using Code.Infrastructure.States.GameStates;
 using Code.Infrastructure.States.StateMachine;
+using Code.Network;
+using Code.Utils;
+using FishNet.Managing;
 using UnityEngine;
 using Zenject;
 
 namespace Code.Infrastructure.Installers
 {
     public class BootstrapInstaller : MonoInstaller, IInitializable
-    {
+    { //призрак фмиита убьет архитектуру манагерманагерманегр
         public override void InstallBindings()
         {
             BindGameFactories();
@@ -21,45 +24,86 @@ namespace Code.Infrastructure.Installers
             BindStateFactory();
             BindGameplayServices();
             BindInfrastructureServices();
+            BindNetworkServices();
+        }
+
+        private void BindNetworkServices()
+        {
+            Container
+                .BindInterfacesAndSelfTo<NetworkManager>()
+                .FromComponentInNewPrefabResource(AssetPath.NetworkManager)
+                .AsSingle()
+                .NonLazy();
+            Container
+                .BindInterfacesAndSelfTo<NetworkExtensions>()
+                .AsSingle();
         }
 
         private void BindInfrastructureServices()
         {
-            Container.BindInterfacesTo<BootstrapInstaller>().FromInstance(this).AsSingle();
+            Container
+                .BindInterfacesTo<BootstrapInstaller>()
+                .FromInstance(this)
+                .AsSingle();
         }
         
         private void BindGameplayServices()
         {
-            Container.Bind<ILevelDataProvider>().To<LevelDataProvider>().AsSingle();
-            Container.Bind<ISceneLoader>().To<SceneLoader>().AsSingle();
-            Container.Bind<IInputService>().To<StandaloneInputService>().AsSingle();
-            Container.Bind<IAssetProvider>().To<AssetProvider>().AsSingle();
+            Container
+                .Bind<ILevelDataProvider>()
+                .To<LevelDataProvider>()
+                .AsSingle();
+            Container
+                .Bind<ISceneLoader>()
+                .To<SceneLoader>()
+                .AsSingle();
+            Container
+                .Bind<IInputService>()
+                .To<StandaloneInputService>()
+                .AsSingle();
+            Container
+                .Bind<IAssetProvider>()
+                .To<AssetProvider>()
+                .AsSingle();
         }
 
         private void BindStates()
         {
-            Container.BindInterfacesAndSelfTo<BootstrapState>().AsSingle();
-            Container.BindInterfacesAndSelfTo<GameEnterState>().AsSingle();
+            Container
+                .BindInterfacesAndSelfTo<BootstrapState>()
+                .AsSingle();
+            Container
+                .BindInterfacesAndSelfTo<GameEnterState>()
+                .AsSingle();
         }
 
         private void BindStateFactory()
         {
-            Container.BindInterfacesAndSelfTo<StateFactory>().AsSingle();
+            Container
+                .BindInterfacesAndSelfTo<StateFactory>()
+                .AsSingle();
         }
 
         private void BindGameStateMachine()
         {
-            Container.BindInterfacesAndSelfTo<GameStateMachine>().AsSingle();
+            Container
+                .BindInterfacesAndSelfTo<GameStateMachine>()
+                .AsSingle();
         }
 
         private void BindGameFactories()
         {
-            Container.Bind<IPlayerFactory>().To<PlayerFactory>().AsSingle();
+            Container
+                .Bind<IPlayerFactory>()
+                .To<PlayerFactory>()
+                .AsSingle();
         }
 
         public void Initialize()
         {
-            Container.Resolve<IGameStateMachine>().Enter<BootstrapState>();
+            Container
+                .Resolve<IGameStateMachine>()
+                .Enter<BootstrapState>();
         }
     }
 }

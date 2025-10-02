@@ -8,7 +8,6 @@ namespace Code.Gameplay.Levels
 
         public void SetStartPoint(Vector3 startPoint)
         {
-            Debug.Log(startPoint);
             StartPoint = startPoint;
         }
     }

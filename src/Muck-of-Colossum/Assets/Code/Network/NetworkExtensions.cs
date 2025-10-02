@@ -2,6 +2,7 @@
 using Code.Gameplay.Player.Factory;
 using Code.Utils;
 using Cysharp.Threading.Tasks;
+using FishNet;
 using FishNet.Connection;
 using FishNet.Managing;
 using FishNet.Object;
@@ -10,51 +11,39 @@ using Zenject;
 
 namespace Code.Network
 {
-    public class NetworkExtensions : NetworkBehaviour
+    public class NetworkExtensions : IInitializable, IDisposable
     {
-        private IPlayerFactory playerFactory;
+        private readonly IPlayerFactory playerFactory;
+        private readonly NetworkManager networkManager;
         
         private Action<NetworkConnection, bool> spawnPlayerAction;
 
         [Inject]
-        public void Construct(IPlayerFactory playerFactory)
+        public NetworkExtensions(IPlayerFactory playerFactory, NetworkManager networkManager)
         {
             this.playerFactory = playerFactory;
+            this.networkManager = networkManager;
         }
 
-        public override void OnStartServer()
+        public void Initialize()
         {
-            Debug.Log("NetworkExtensions.OnStartServer");
-            //TODO: spawn on start
-            
-            //spawnPlayerAction = UniTaskHelper.Action<NetworkConnection, bool>(OnClientLoadedStartScenes);
-            //SceneManager.OnClientLoadedStartScenes += spawnPlayerAction;
+            networkManager.SceneManager.OnClientLoadedStartScenes += spawnPlayerAction;
+            spawnPlayerAction = UniTaskHelper.Action<NetworkConnection, bool>(OnClientLoadedStartScenes);
         }
 
-        public override void OnStopServer()
+        public void Dispose()
         {
-            Debug.Log("NetworkExtensions.OnStopServer");
-            //SceneManager.OnClientLoadedStartScenes -= spawnPlayerAction;
-            //spawnPlayerAction = null;
+            networkManager.SceneManager.OnClientLoadedStartScenes -= spawnPlayerAction;
         }
-
-        public override async void OnSpawnServer(NetworkConnection connection)
-        {
-            Debug.Log("NetworkExtensions.OnSpawnServer");
-            if (connection.LoadedStartScenes(true))
-                await SpawnPlayer(connection);
-        }
-
+        
         private async UniTask OnClientLoadedStartScenes(NetworkConnection connection, bool asServer)
         {
-            Debug.Log("NetworkExtensions.OnClientLoadedStartScenes");
-            if (asServer && Observers.Contains(connection))
+            if (asServer) 
                 await SpawnPlayer(connection);
         }
 
         private async UniTask SpawnPlayer(NetworkConnection connection)
         {
-            Debug.Log("NetworkExtensions.SpawnPlayer");
             await playerFactory.SpawnPlayer(connection);
         }
     }
