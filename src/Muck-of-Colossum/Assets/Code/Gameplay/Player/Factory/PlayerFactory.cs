@@ -40,7 +40,7 @@ namespace Code.Gameplay.Player.Factory
         
         private async UniTask<GameObject> CreatePlayer(Vector3 at)
         {
-            var playerPrefab = await assets.LoadAsset(AssetPath.PlayerPath);
+            var playerPrefab = await assets.Load(AssetPath.PlayerPath);
             
             var newPlayer = Object.Instantiate(playerPrefab, at, Quaternion.identity);
             

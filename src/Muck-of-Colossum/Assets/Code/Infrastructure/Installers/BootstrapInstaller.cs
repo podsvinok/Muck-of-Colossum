@@ -8,6 +8,7 @@ using Code.Infrastructure.States.GameStates;
 using Code.Infrastructure.States.StateMachine;
 using Code.Network;
 using Code.Utils;
+using Cysharp.Threading.Tasks;
 using FishNet.Managing;
 using UnityEngine;
 using Zenject;
@@ -15,7 +16,7 @@ using Zenject;
 namespace Code.Infrastructure.Installers
 {
     public class BootstrapInstaller : MonoInstaller, IInitializable
-    { //призрак фмиита убьет архитектуру манагерманагерманегр
+    {
         public override void InstallBindings()
         {
             BindGameFactories();
@@ -25,6 +26,20 @@ namespace Code.Infrastructure.Installers
             BindGameplayServices();
             BindInfrastructureServices();
             BindNetworkServices();
+            BindLoadingCurtain();
+            BindInputService();
+            BindAssetProvider();
+        }
+
+        private void BindLoadingCurtain()
+        {
+             Container
+                .BindFactory<string, UniTask<LoadingCurtain>, LoadingCurtain.Factory>()
+                .FromFactory<PrefabFactoryAsync<LoadingCurtain>>();
+
+            Container
+                .BindInterfacesAndSelfTo<LoadingCurtainProxy>()
+                .AsSingle();
         }
 
         private void BindNetworkServices()
@@ -34,6 +49,7 @@ namespace Code.Infrastructure.Installers
                 .FromComponentInNewPrefabResource(AssetPath.NetworkManager)
                 .AsSingle()
                 .NonLazy();
+            
             Container
                 .BindInterfacesAndSelfTo<NetworkExtensions>()
                 .AsSingle();
@@ -53,14 +69,23 @@ namespace Code.Infrastructure.Installers
                 .Bind<ILevelDataProvider>()
                 .To<LevelDataProvider>()
                 .AsSingle();
+            
             Container
                 .Bind<ISceneLoader>()
                 .To<SceneLoader>()
                 .AsSingle();
+        }
+
+        private void BindInputService()
+        {
             Container
                 .Bind<IInputService>()
                 .To<StandaloneInputService>()
                 .AsSingle();
+        }
+
+        private void BindAssetProvider()
+        {
             Container
                 .Bind<IAssetProvider>()
                 .To<AssetProvider>()
@@ -72,9 +97,12 @@ namespace Code.Infrastructure.Installers
             Container
                 .BindInterfacesAndSelfTo<BootstrapState>()
                 .AsSingle();
+            
             Container
-                .BindInterfacesAndSelfTo<GameEnterState>()
+                .BindInterfacesAndSelfTo<GameLoadingState>()
                 .AsSingle();
+
+            //Container.BindInterfacesAndSelfTo<>();
         }
 
         private void BindStateFactory()

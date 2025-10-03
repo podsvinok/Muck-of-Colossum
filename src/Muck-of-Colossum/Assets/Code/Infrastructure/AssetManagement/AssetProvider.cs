@@ -5,7 +5,7 @@ namespace Code.Infrastructure.AssetManagement
 {
     public class AssetProvider : IAssetProvider
     {
-        public async UniTask<GameObject> LoadAsset(string path)
+        public async UniTask<GameObject> Load(string path)
         {
             var request = Resources.LoadAsync<GameObject>(path);
             await request;
@@ -13,7 +13,7 @@ namespace Code.Infrastructure.AssetManagement
             return request.asset as GameObject;
         }
 
-        public async UniTask<T> LoadAsset<T>(string path) where T : Component
+        public async UniTask<T> Load<T>(string path) where T : Component
         {
             var request = Resources.LoadAsync<T>(path);
             await request;

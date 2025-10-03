@@ -1,4 +1,5 @@
-﻿using Code.Gameplay.Levels;
+﻿using System.Threading.Tasks;
+using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
 using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.StateMachine;
@@ -10,22 +11,21 @@ namespace Code.Infrastructure.States.GameStates
     public class BootstrapState : IState
     {
         private readonly IGameStateMachine gameStateMachine;
-        private readonly ISceneLoader sceneLoader;
-        
-        public BootstrapState(IGameStateMachine gameStateMachine, ISceneLoader sceneLoader)
+        private readonly LoadingCurtainProxy loadingCurtain;
+
+        public BootstrapState(IGameStateMachine gameStateMachine, LoadingCurtainProxy loadingCurtain)
         {
             this.gameStateMachine = gameStateMachine;
-            this.sceneLoader = sceneLoader;
+            this.loadingCurtain = loadingCurtain;
         }
 
         public async UniTask Enter()
         {
-            await gameStateMachine.Enter<GameEnterState>();
+            await loadingCurtain.InitializeAsync();
+            await gameStateMachine.Enter<GameLoadingState>();
         }
 
-        public async UniTask Exit()
-        {
-            await sceneLoader.LoadScene("Game");
-        }
+        public UniTask Exit() => 
+            default;
     }
 }

@@ -465,8 +465,8 @@ namespace FishNet.Managing
         /// </summary>
         private void SetDontDestroyOnLoad()
         {
-            if (_dontDestroyOnLoad)
-                DontDestroyOnLoad(this);
+            //if (_dontDestroyOnLoad)
+                //DontDestroyOnLoad(this);
         }
 
         /// <summary>
