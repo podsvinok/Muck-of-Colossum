@@ -8,7 +8,7 @@ namespace Code.Infrastructure.AssetManagement
     {
         private readonly IInstantiator instantiator;
         private readonly IAssetProvider assetProvider;
-        //TODO: cock assetprovider 
+        
         public PrefabFactoryAsync(IInstantiator instantiator, IAssetProvider assetProvider)
         {
             this.instantiator = instantiator;

@@ -1,21 +1,19 @@
-﻿using Code.Gameplay.Levels;
-using Code.Gameplay.Player.Factory;
-using Code.Infrastructure.SceneManagement;
+﻿using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.StateMachine;
 using Code.Utils;
 using Cysharp.Threading.Tasks;
-using FishNet.Managing;
-using UnityEngine;
 
 namespace Code.Infrastructure.States.GameStates
 {
-    public class GameLoadingState : IState
+    public class LobbyLoadingState : IState
     {
+        private readonly ISceneLoader sceneLoader;
         private readonly ILoadingCurtain loadingCurtain;
         private readonly IGameStateMachine stateMachine;
 
-        public GameLoadingState(IGameStateMachine stateMachine, ILoadingCurtain loadingCurtain)
+        public LobbyLoadingState(ISceneLoader sceneLoader, ILoadingCurtain loadingCurtain, IGameStateMachine stateMachine)
         {
+            this.sceneLoader = sceneLoader;
             this.loadingCurtain = loadingCurtain;
             this.stateMachine = stateMachine;
         }
@@ -23,9 +21,12 @@ namespace Code.Infrastructure.States.GameStates
         public async UniTask Enter()
         {
             loadingCurtain.Show();
-
+            
             await UniTask.WaitForSeconds(2);
-            await stateMachine.Enter<MainMenuLoadingState>();
+            await sceneLoader.LoadScene(AssetPath.LoadingScene);
+            await sceneLoader.LoadScene(AssetPath.LobbyScene);
+            
+            await stateMachine.Enter<LobbyState>();
             
             loadingCurtain.Hide();
         }

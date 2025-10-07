@@ -9,6 +9,7 @@ using Code.Infrastructure.States.StateMachine;
 using Code.Network;
 using Code.Utils;
 using Cysharp.Threading.Tasks;
+using FishNet;
 using FishNet.Managing;
 using UnityEngine;
 using Zenject;
@@ -46,9 +47,8 @@ namespace Code.Infrastructure.Installers
         {
             Container
                 .BindInterfacesAndSelfTo<NetworkManager>()
-                .FromComponentInNewPrefabResource(AssetPath.NetworkManager)
-                .AsSingle()
-                .NonLazy();
+                .FromInstance(InstanceFinder.NetworkManager)
+                .AsSingle();
             
             Container
                 .BindInterfacesAndSelfTo<NetworkExtensions>()
@@ -102,7 +102,29 @@ namespace Code.Infrastructure.Installers
                 .BindInterfacesAndSelfTo<GameLoadingState>()
                 .AsSingle();
 
-            //Container.BindInterfacesAndSelfTo<>();
+            Container
+                .BindInterfacesAndSelfTo<MainMenuLoadingState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<MainMenuState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<LobbyLoadingState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<LobbyState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<GameplayLoadingState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<GameplayLoopState>()
+                .AsSingle();
         }
 
         private void BindStateFactory()
