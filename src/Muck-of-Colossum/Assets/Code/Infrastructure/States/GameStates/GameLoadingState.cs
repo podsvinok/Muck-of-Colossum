@@ -24,7 +24,6 @@ namespace Code.Infrastructure.States.GameStates
         {
             loadingCurtain.Show();
 
-            await UniTask.WaitForSeconds(2);
             await stateMachine.Enter<MainMenuLoadingState>();
             
             loadingCurtain.Hide();

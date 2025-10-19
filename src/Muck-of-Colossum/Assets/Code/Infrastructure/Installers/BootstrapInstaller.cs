@@ -51,7 +51,7 @@ namespace Code.Infrastructure.Installers
                 .AsSingle();
             
             Container
-                .BindInterfacesAndSelfTo<NetworkExtensions>()
+                .BindInterfacesAndSelfTo<NetworkSceneLoader>()
                 .AsSingle();
         }
 

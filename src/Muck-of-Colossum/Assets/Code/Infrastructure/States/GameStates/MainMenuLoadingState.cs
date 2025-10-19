@@ -12,7 +12,10 @@ namespace Code.Infrastructure.States.GameStates
         private readonly ILoadingCurtain loadingCurtain;
         private readonly IGameStateMachine stateMachine;
 
-        public MainMenuLoadingState(ISceneLoader sceneLoader, ILoadingCurtain loadingCurtain, IGameStateMachine stateMachine)
+        public MainMenuLoadingState(
+            ISceneLoader sceneLoader,
+            ILoadingCurtain loadingCurtain,
+            IGameStateMachine stateMachine)
         {
             this.sceneLoader = sceneLoader;
             this.loadingCurtain = loadingCurtain;
@@ -23,7 +26,6 @@ namespace Code.Infrastructure.States.GameStates
         {
             loadingCurtain.Show();
             
-            await UniTask.WaitForSeconds(2);
             await sceneLoader.LoadScene(AssetPath.LoadingScene);
             await sceneLoader.LoadScene(AssetPath.MainMenuScene);
             
