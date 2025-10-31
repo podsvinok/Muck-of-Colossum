@@ -4,10 +4,10 @@ using Zenject;
 
 namespace Code.Infrastructure.Installers
 {
-    public class LevelInitializer : MonoBehaviour, IInitializable
-    {
+    public class GameplaySceneInstaller : MonoInstaller
+    { 
         [SerializeField] private Transform startPoint;
-
+        
         private ILevelDataProvider levelData;
         
         [Inject]
@@ -15,8 +15,8 @@ namespace Code.Infrastructure.Installers
         {
             this.levelData = levelData;
         }
-
-        public void Initialize()
+        
+        public override void InstallBindings()
         {
             levelData.SetStartPoint(startPoint.position);
         }

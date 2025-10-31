@@ -6,12 +6,9 @@ using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.Factory;
 using Code.Infrastructure.States.GameStates;
 using Code.Infrastructure.States.StateMachine;
-using Code.Network;
-using Code.Utils;
 using Cysharp.Threading.Tasks;
 using FishNet;
 using FishNet.Managing;
-using UnityEngine;
 using Zenject;
 
 namespace Code.Infrastructure.Installers
@@ -48,10 +45,6 @@ namespace Code.Infrastructure.Installers
             Container
                 .BindInterfacesAndSelfTo<NetworkManager>()
                 .FromInstance(InstanceFinder.NetworkManager)
-                .AsSingle();
-            
-            Container
-                .BindInterfacesAndSelfTo<NetworkSceneLoader>()
                 .AsSingle();
         }
 

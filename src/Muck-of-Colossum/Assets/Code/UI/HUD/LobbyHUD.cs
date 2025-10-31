@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Code.Gameplay.Lobby;
-using Code.Infrastructure.States.GameStates;
-using Code.Infrastructure.States.StateMachine;
-using FishNet.Connection;
+﻿using Code.Gameplay.Lobby;
 using FishNet.Managing;
-using FishNet.Object;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -21,6 +15,7 @@ namespace Code.UI.HUD
         [Header("Connection Buttons")]
         [SerializeField] private Button startHostButton;
         [SerializeField] private Button startClientButton;
+        [SerializeField] private Button startGameButton;
         
         [Header("Lobby UI")]
         [SerializeField] private GameObject connectionPanel;
@@ -30,29 +25,82 @@ namespace Code.UI.HUD
         [SerializeField] private Transform playerListContainer;
         [SerializeField] private GameObject playerListItemPrefab;
         
-        private IGameStateMachine stateMachine;
         private NetworkManager networkManager;
         private LobbyService lobbyService;
         
         private bool isReady;
 
         [Inject]
-        public void Construct(IGameStateMachine stateMachine, NetworkManager networkManager, LobbyService lobbyService)
+        public void Construct(
+            NetworkManager networkManager,
+            LobbyService lobbyService)
         {
-            this.stateMachine = stateMachine;
             this.networkManager = networkManager;
             this.lobbyService = lobbyService;
         }
 
         private void Awake()
         {
-            startHostButton.onClick.AddListener(StartAsHost);
-            startClientButton.onClick.AddListener(StartAsClient);
-            readyButton.onClick.AddListener(ToggleReady);
+            startHostButton.onClick.AddListener(OnStartAsHostButtonClick);
+            startClientButton.onClick.AddListener(OnStartAsClientButtonClick);
+            startGameButton.onClick.AddListener(OnStartGameButtonClick);
+            readyButton.onClick.AddListener(OnReadyButtonClick);
             
             lobbyService.OnLobbyPlayerChanged += OnPlayerListChanged;
             
             ShowConnectionPanel();
+        }
+
+        private void OnStartAsClientButtonClick() => 
+            StartAsClient();
+
+        private void OnStartAsHostButtonClick() => 
+            StartAsHost();
+
+        private void OnReadyButtonClick() => 
+            ToggleReady();
+
+        private void OnStartGameButtonClick() => 
+            lobbyService.CheckAllReady();
+
+        private void OnPlayerListChanged() => 
+            RefreshPlayerList();
+
+        private void ToggleReady()
+        {
+            isReady = !isReady;
+            
+            lobbyService.SetPlayerReady(networkManager.ClientManager.Connection, isReady);
+            
+            UpdateReadyButton();
+        }
+
+        private void ShowConnectionPanel()
+        {
+            lobbyPanel.SetActive(false);
+            connectionPanel.SetActive(true);
+        }
+
+        private void ShowLobbyPanel()
+        {
+            connectionPanel.SetActive(false);
+            lobbyPanel.SetActive(true);
+            
+            RefreshPlayerList();
+        }
+
+        private void UpdateReadyButton()
+        {
+            if (isReady)
+            {
+                readyButtonText.text = "Ready";
+                readyButton.GetComponent<Image>().color = Color.green;
+            }
+            else
+            {
+                readyButtonText.text = "Not Ready";
+                readyButton.GetComponent<Image>().color = Color.white;
+            }
         }
 
         private void StartAsHost()
@@ -70,69 +118,28 @@ namespace Code.UI.HUD
             ShowLobbyPanel();
         }
 
-        private void ToggleReady()
-        {
-            if (lobbyService == null || !networkManager.IsClientStarted)
-                return;
-
-            isReady = !isReady;
-            
-            // Send ready state to server
-            lobbyService.SetPlayerReady(networkManager.ClientManager.Connection, isReady);
-            
-            UpdateReadyButton();
-        }
-
-        private void UpdateReadyButton()
-        {
-            readyButtonText.text = isReady ? "Not Ready" : "Ready";
-            readyButton.GetComponent<Image>().color = isReady ? Color.white : Color.green;
-        }
-
-        private void OnPlayerListChanged()
-        {
-            RefreshPlayerList();
-        }
-
-        /// <summary>
-        /// Refresh player list UI
-        /// </summary>
         private void RefreshPlayerList()
         {
-            // Clear existing list
             foreach (Transform child in playerListContainer)
                 Destroy(child.gameObject);
 
-            // Create new list items
-            foreach (var kvp in lobbyService.GetPlayers())
+            foreach (var player in lobbyService.GetPlayers())
             {
                 var item = Instantiate(playerListItemPrefab, playerListContainer);
                 var itemText = item.GetComponentInChildren<TextMeshProUGUI>();
                 
-                string readyStatus = kvp.Value.IsReady ? "[READY]" : "[NOT READY]";
-                itemText.text = $"{kvp.Value.PlayerName} {readyStatus}";
-                itemText.color = kvp.Value.IsReady ? Color.green : Color.white;
+                string readyStatus = player.Value.IsReady ? "[READY]" : "[NOT READY]";
+                itemText.text = $"{player.Value.PlayerName} {readyStatus}";
+                itemText.color = player.Value.IsReady ? Color.green : Color.white;
             }
-        }
-
-        private void ShowConnectionPanel()
-        {
-            connectionPanel.SetActive(true);
-            lobbyPanel.SetActive(false);
-        }
-
-        private void ShowLobbyPanel()
-        {
-            connectionPanel.SetActive(false);
-            lobbyPanel.SetActive(true);
-            RefreshPlayerList();
         }
 
         private void OnDisable()
         {
-            startHostButton.onClick.RemoveListener(StartAsHost);
-            startClientButton.onClick.RemoveListener(StartAsClient);
-            readyButton.onClick.RemoveListener(ToggleReady);
+            startHostButton.onClick.RemoveListener(OnStartAsHostButtonClick);
+            startClientButton.onClick.RemoveListener(OnStartAsClientButtonClick);
+            startGameButton.onClick.RemoveListener(OnStartGameButtonClick);
+            readyButton.onClick.RemoveListener(OnReadyButtonClick);
             
             lobbyService.OnLobbyPlayerChanged -= OnPlayerListChanged;
         }

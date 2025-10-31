@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Code.Infrastructure.SceneManagement;
+﻿using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.StateMachine;
 using Code.Utils;
 using Cysharp.Threading.Tasks;

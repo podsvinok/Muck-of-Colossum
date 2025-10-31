@@ -1,27 +1,48 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using Zenject;
+using FishNet.Connection;
+using FishNet.Managing;
+using FishNet.Managing.Scened;
+using FishNet.Object;
 using UnityEngine.SceneManagement;
+using SceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace Code.Infrastructure.SceneManagement
 {
     public class SceneLoader : ISceneLoader
     {
-        public async UniTask LoadScene(string name, Action onLoaded = null)
+        private readonly NetworkManager networkManager;
+
+        public SceneLoader(NetworkManager networkManager)
         {
-            if (SceneManager.GetActiveScene().name == name)
+            this.networkManager = networkManager;
+        }
+
+        public async UniTask LoadScene(string sceneName, Action onLoaded = null)
+        {
+            if (SceneManager.GetActiveScene().name == sceneName)
             {
                 onLoaded?.Invoke();
                 return;
             }
 
-            var waitNextScene = SceneManager.LoadSceneAsync(name);
+            var waitNextScene = SceneManager.LoadSceneAsync(sceneName);
 
             while (!waitNextScene.isDone)
                 await UniTask.Yield();
 
             onLoaded?.Invoke();
+        }
+
+        public void LoadSceneNetwork(string sceneToLoad)
+        {
+            var sceneLoadData = new SceneLoadData(sceneToLoad)
+            {
+                
+                ReplaceScenes = ReplaceOption.All
+            };
+
+            networkManager.SceneManager.LoadGlobalScenes(sceneLoadData);
         }
     }
 }

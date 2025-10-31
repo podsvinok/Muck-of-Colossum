@@ -299,7 +299,6 @@ GameObject:
   m_Component:
   - component: {fileID: 336088193}
   - component: {fileID: 336088192}
-  - component: {fileID: 336088191}
   - component: {fileID: 336088194}
   m_Layer: 0
   m_Name: SceneContext
@@ -308,19 +307,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &336088191
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 336088190}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 234b57cc4ef44f0d923599c2fd2b2807, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  startPoint: {fileID: 1564104754}
 --- !u!114 &336088192
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -378,11 +364,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 336088190}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c903b4b941984034ac2c938853814acd, type: 3}
+  m_Script: {fileID: 11500000, guid: 70eb63eaddea47b783ddd9b9177cf731, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Initializers:
-  - {fileID: 336088191}
+  startPoint: {fileID: 1564104754}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0

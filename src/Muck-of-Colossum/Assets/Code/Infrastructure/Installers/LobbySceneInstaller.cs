@@ -4,10 +4,6 @@ using Zenject;
 
 namespace Code.Infrastructure.Installers
 {
-    /// <summary>
-    /// Scene-specific installer for the Lobby scene.
-    /// Binds lobby-specific components and ensures proper injection.
-    /// </summary>
     public class LobbySceneInstaller : MonoInstaller
     {
         [SerializeField] private LobbyService lobbyService;

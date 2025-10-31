@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using Code.Infrastructure.States.Factory;
+﻿using Code.Infrastructure.States.Factory;
 using Code.Infrastructure.States.GameStates;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -19,6 +18,7 @@ namespace Code.Infrastructure.States.StateMachine
 
         public async UniTask Enter<TState>() where TState : class, IState
         {
+            Debug.Log(typeof(TState));
             await RequestEnter<TState>();
         }
 

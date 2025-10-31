@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
+using UnityEngine.SceneManagement;
 
 namespace Code.Infrastructure.SceneManagement
 {
     public interface ISceneLoader
     {
-        UniTask LoadScene(string name, Action onLoaded = null);
+        UniTask LoadScene(string sceneName, Action onLoaded = null);
+        void LoadSceneNetwork(string sceneName);
     }
 }
