@@ -1,6 +1,6 @@
 ﻿using FishNet.Connection;
 
-namespace Code.Gameplay.Lobby
+namespace Code.Network
 {
     public struct LobbyPlayer
     {

@@ -13,7 +13,7 @@ namespace Code.Infrastructure.AssetManagement
             return request.asset as GameObject;
         }
 
-        public async UniTask<T> Load<T>(string path) where T : Component
+        public async UniTask<T> Load<T>(string path) where T : Object
         {
             var request = Resources.LoadAsync<T>(path);
             await request;

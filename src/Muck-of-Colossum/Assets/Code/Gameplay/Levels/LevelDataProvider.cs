@@ -1,14 +1,14 @@
-﻿using UnityEngine;
+﻿using Code.Network;
+using UnityEngine;
 
 namespace Code.Gameplay.Levels
 {
     public class LevelDataProvider : ILevelDataProvider
     {
         public Vector3 StartPoint { get; set; }
-
-        public void SetStartPoint(Vector3 startPoint)
-        {
-            StartPoint = startPoint;
-        }
+        public Transform TerrainParent { get; set; }
+        public Transform Camera { get; set; }
+        public Transform Player { get; set; }
+        public GameplayLoadingStateRPCs GameplayLoadingStateRPCs { get; set; }
     }
 }

@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.GameStates;
 using Code.Infrastructure.States.StateMachine;
-using Code.Utils;
 using FishNet.Connection;
 using FishNet.Managing;
 using FishNet.Object;
@@ -12,12 +10,11 @@ using FishNet.Object.Synchronizing;
 using UnityEngine;
 using Zenject;
 
-namespace Code.Gameplay.Lobby
+namespace Code.Network
 {
     public class LobbyService : NetworkBehaviour
     {
-        public IReadOnlyDictionary<NetworkConnection, LobbyPlayer> GetPlayers() => players;
-        
+        [SerializeField] private int seed;
         public event Action OnLobbyPlayerChanged;
         
         private readonly SyncDictionary<NetworkConnection, LobbyPlayer> players = new();
@@ -38,7 +35,7 @@ namespace Code.Gameplay.Lobby
             networkManager.SceneManager.OnClientLoadedStartScenes += OnClientLoadedStartScenes;
 
         [ServerRpc(RequireOwnership = false)]
-        public void SetPlayerReady(NetworkConnection sender, bool isReady)
+        public void SetPlayerReady(NetworkConnection sender, bool isReady) //TODO: show in clients too
         {
             if (players.ContainsKey(sender))    
             {
@@ -81,12 +78,16 @@ namespace Code.Gameplay.Lobby
             var args = new GameplayLoadingStateEnterArgs()
             {
                 AsServer = IsServerInitialized,
-                Players = new List<LobbyPlayer>(players.Values)
+                Players = new List<LobbyPlayer>(players.Values),
+                CurrentConnection = LocalConnection,
+                Seed = seed //TODO: make ability to enter it in lobby
             };
             
             stateMachine.Enter<GameplayLoadingState, GameplayLoadingStateEnterArgs>(args);
         }
 
+        public IReadOnlyDictionary<NetworkConnection, LobbyPlayer> GetPlayers() => players;
+        
         private void OnDisable() => 
             networkManager.SceneManager.OnClientLoadedStartScenes -= OnClientLoadedStartScenes;
     }

@@ -1,55 +1,68 @@
-﻿using Code.Infrastructure.Inputs;
+﻿using System;
+using Code.Gameplay.Levels;
+using FishNet.Connection;
 using FishNet.Object;
 using UnityEngine;
 using Zenject;
 
-namespace Code.Gameplay.Player
+public class PlayerMove : NetworkBehaviour
 {
-    public class PlayerMove : NetworkBehaviour
+    public float moveSpeed = 6f;
+    public float rotationSpeed = 10f;
+    public float gravity = -9.81f;
+    public float jumpHeight = 1.5f;
+
+    public CharacterController controller;
+
+    private Transform cameraTransform;
+    private Vector3 velocity;
+    private bool isGrounded;
+
+    private ILevelDataProvider levelDataProvider;
+
+    [Inject]
+    public void Construct(ILevelDataProvider levelDataProvider)
     {
-        [SerializeField] private CharacterController characterController;
-        [SerializeField] private float movementSpeed = 5f;
-        [SerializeField] private float rotationSpeed = 5f;
+        this.levelDataProvider = levelDataProvider;
+    }
 
-        private IInputService input;
+    public override void OnStartClient()
+    {
+        if (!IsOwner)
+            return;
+        cameraTransform = levelDataProvider.Camera;
+    }
 
-        [Inject]
-        public void Construct(IInputService input)
-        {
-            this.input = input;
-        }
-        
-        private void Update()
-        {
-            if (!IsOwner)
-                return;
-            
-            Movement();
-            Turn();
-        }
+    void Update()
+    {
+        if (!IsOwner)
+            return;
+        // Check ground
+        isGrounded = controller.isGrounded;
 
-        private void Turn()
-        {
-            if (Mathf.Abs(input.GetVerticalAxis()) > 0 || Mathf.Abs(input.GetHorizontalAxis()) > 0)
-            {
-                Vector3 currentLookDirection = characterController.velocity.normalized;
-                currentLookDirection.y = 0;
-                
-                currentLookDirection.Normalize();
-                
-                Quaternion targetRotation = Quaternion.LookRotation(currentLookDirection);
-                
-                transform.rotation = Quaternion.Slerp(
-                    transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-            }
-        }
+        if (isGrounded && velocity.y < 0)
+            velocity.y = -2f;
 
-        private void Movement()
+        float h = Input.GetAxis("Horizontal");
+        float v = Input.GetAxis("Vertical");
+
+        Vector3 inputDir = new Vector3(h, 0, v).normalized;
+
+        if (inputDir.sqrMagnitude > 0.01f)
         {
-            var move = new Vector3(
-                input.GetHorizontalAxis() * movementSpeed, 0, input.GetVerticalAxis() * rotationSpeed);
-            
-            characterController.Move(move * Time.deltaTime);
+            // Camera-relative direction
+            Vector3 camForward = cameraTransform.forward;
+            camForward.y = 0;
+            Vector3 camRight = cameraTransform.right;
+            camRight.y = 0;
+
+            Vector3 moveDir = camForward.normalized * v + camRight.normalized * h;
+
+            // Rotate player only toward move direction
+            Quaternion targetRotation = Quaternion.LookRotation(moveDir);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+
+            controller.Move(moveDir.normalized * moveSpeed * Time.deltaTime);
         }
     }
 }

@@ -1,20 +1,26 @@
 ﻿using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
+using Code.Gameplay.TerrainGeneration.Generators;
+using Code.Gameplay.TerrainGeneration.Structures;
 using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.Inputs;
 using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.Factory;
 using Code.Infrastructure.States.GameStates;
 using Code.Infrastructure.States.StateMachine;
+using Code.Infrastructure.StaticData;
+using Code.UI.LoadingCurtain;
 using Cysharp.Threading.Tasks;
 using FishNet;
 using FishNet.Managing;
+using UnityEngine;
 using Zenject;
 
 namespace Code.Infrastructure.Installers
 {
     public class BootstrapInstaller : MonoInstaller, IInitializable
     {
+
         public override void InstallBindings()
         {
             BindGameFactories();
@@ -27,6 +33,43 @@ namespace Code.Infrastructure.Installers
             BindLoadingCurtain();
             BindInputService();
             BindAssetProvider();
+            BindStaticDataService();
+            BindTerrainGenerators();
+        }
+
+        private void BindTerrainGenerators()
+        {
+            Container
+                .BindInterfacesAndSelfTo<FalloffGenerator>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<HeightMapGenerator>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<MeshGenerator>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<NoiseGenerator>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<TextureGenerator>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<TerrainGenerator>()
+                .AsSingle();
+        }
+
+        private void BindStaticDataService()
+        {
+            Container
+                .Bind<IStaticDataService>()
+                .To<StaticDataService>()
+                .AsSingle();
         }
 
         private void BindLoadingCurtain()
@@ -144,8 +187,7 @@ namespace Code.Infrastructure.Installers
 
         public void Initialize()
         {
-            Container
-                .Resolve<IGameStateMachine>()
+            Container.Resolve<IGameStateMachine>()
                 .Enter<BootstrapState>();
         }
     }

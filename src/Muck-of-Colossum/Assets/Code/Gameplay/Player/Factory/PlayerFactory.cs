@@ -4,6 +4,7 @@ using Code.Utils;
 using Cysharp.Threading.Tasks;
 using FishNet.Connection;
 using FishNet.Managing;
+using FishNet.Managing.Scened;
 using FishNet.Object;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -26,21 +27,27 @@ namespace Code.Gameplay.Player.Factory
             this.networkManager = networkManager;
         }
 
-        public async UniTask SpawnPlayer(NetworkConnection connection)
+        public async void ClientPresenceChangeStartHandler(ClientPresenceChangeEventArgs args)
         {
-            Vector3 spawnPosition = GetSpawnPosition();
-            await SpawnPlayer(connection, spawnPosition);
+            var player = await SpawnPlayer(args.Connection);
+            levelData.GameplayLoadingStateRPCs.UpdateClientPlayerData(args.Connection, player);
         }
 
-        private async UniTask SpawnPlayer(NetworkConnection connection, Vector3 position)
+        public async UniTask<GameObject> SpawnPlayer(NetworkConnection connection)
+        {
+            Vector3 spawnPosition = GetSpawnPosition();
+            return await SpawnPlayer(connection, spawnPosition);
+        }
+
+        private async UniTask<GameObject> SpawnPlayer(NetworkConnection connection, Vector3 position)
         {
             GameObject playerObject = await CreatePlayer(position);
 
             NetworkObject networkObject = playerObject.GetComponent<NetworkObject>();
 
             networkManager.ServerManager.Spawn(networkObject, connection);
-            
-            Debug.Log($"Spawned player for connection {connection.ClientId} at {position}");
+
+            return playerObject;
         }
 
         private async UniTask<GameObject> CreatePlayer(Vector3 at)

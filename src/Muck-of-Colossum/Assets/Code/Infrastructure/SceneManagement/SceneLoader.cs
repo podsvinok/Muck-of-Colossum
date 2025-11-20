@@ -4,6 +4,7 @@ using FishNet.Connection;
 using FishNet.Managing;
 using FishNet.Managing.Scened;
 using FishNet.Object;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using SceneManager = UnityEngine.SceneManagement.SceneManager;
 
@@ -18,7 +19,7 @@ namespace Code.Infrastructure.SceneManagement
             this.networkManager = networkManager;
         }
 
-        public async UniTask LoadScene(string sceneName, Action onLoaded = null)
+        public async UniTask LoadSceneAsync(string sceneName, Action onLoaded = null)
         {
             if (SceneManager.GetActiveScene().name == sceneName)
             {
@@ -38,7 +39,6 @@ namespace Code.Infrastructure.SceneManagement
         {
             var sceneLoadData = new SceneLoadData(sceneToLoad)
             {
-                
                 ReplaceScenes = ReplaceOption.All
             };
 

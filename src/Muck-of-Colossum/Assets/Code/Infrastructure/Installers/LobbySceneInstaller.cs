@@ -1,4 +1,4 @@
-﻿using Code.Gameplay.Lobby;
+﻿using Code.Network;
 using UnityEngine;
 using Zenject;
 

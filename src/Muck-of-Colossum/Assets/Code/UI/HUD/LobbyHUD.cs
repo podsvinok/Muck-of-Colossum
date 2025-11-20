@@ -1,4 +1,4 @@
-﻿using Code.Gameplay.Lobby;
+﻿using Code.Network;
 using FishNet.Managing;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,9 +7,6 @@ using Zenject;
 
 namespace Code.UI.HUD
 {
-    /// <summary>
-    /// Lobby UI that displays player list and handles ready states
-    /// </summary>
     public class LobbyHUD : MonoBehaviour
     {
         [Header("Connection Buttons")]
@@ -112,7 +109,7 @@ namespace Code.UI.HUD
         }
 
         private void StartAsClient()
-        {
+        { 
             networkManager.ClientManager.StartConnection();
             
             ShowLobbyPanel();

@@ -1,5 +1,6 @@
 ﻿using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.StateMachine;
+using Code.UI.LoadingCurtain;
 using Code.Utils;
 using Cysharp.Threading.Tasks;
 
@@ -23,10 +24,7 @@ namespace Code.Infrastructure.States.GameStates
 
         public async UniTask Enter()
         {
-            loadingCurtain.Show();
-            
-            await sceneLoader.LoadScene(AssetPath.LoadingScene);
-            await sceneLoader.LoadScene(AssetPath.MainMenuScene);
+            await sceneLoader.LoadSceneAsync(Scenes.MainMenuScene);
             
             await stateMachine.Enter<MainMenuState>();
             

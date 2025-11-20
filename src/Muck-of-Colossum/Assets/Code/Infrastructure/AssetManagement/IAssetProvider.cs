@@ -6,6 +6,6 @@ namespace Code.Infrastructure.AssetManagement
     public interface IAssetProvider
     {
         UniTask<GameObject> Load(string path);
-        UniTask<T> Load<T>(string path) where T : Component;
+        UniTask<T> Load<T>(string path) where T : Object;
     }
 }

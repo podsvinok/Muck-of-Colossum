@@ -1,4 +1,5 @@
 ﻿using Code.Infrastructure.States.StateMachine;
+using Code.UI.LoadingCurtain;
 using Cysharp.Threading.Tasks;
 
 namespace Code.Infrastructure.States.GameStates
@@ -8,7 +9,8 @@ namespace Code.Infrastructure.States.GameStates
         private readonly IGameStateMachine gameStateMachine;
         private readonly LoadingCurtainProxy loadingCurtain;
 
-        public BootstrapState(IGameStateMachine gameStateMachine, LoadingCurtainProxy loadingCurtain)
+        public BootstrapState(IGameStateMachine gameStateMachine,
+            LoadingCurtainProxy loadingCurtain)
         {
             this.gameStateMachine = gameStateMachine;
             this.loadingCurtain = loadingCurtain;

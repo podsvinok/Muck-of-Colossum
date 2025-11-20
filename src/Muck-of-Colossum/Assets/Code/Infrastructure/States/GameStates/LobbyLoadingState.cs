@@ -1,5 +1,6 @@
 ﻿using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.StateMachine;
+using Code.UI.LoadingCurtain;
 using Code.Utils;
 using Cysharp.Threading.Tasks;
 
@@ -25,8 +26,7 @@ namespace Code.Infrastructure.States.GameStates
         {
             loadingCurtain.Show();
             
-            await sceneLoader.LoadScene(AssetPath.LoadingScene);
-            await sceneLoader.LoadScene(AssetPath.LobbyScene);
+            await sceneLoader.LoadSceneAsync(Scenes.LobbyScene);
             
             await stateMachine.Enter<LobbyState>();
             

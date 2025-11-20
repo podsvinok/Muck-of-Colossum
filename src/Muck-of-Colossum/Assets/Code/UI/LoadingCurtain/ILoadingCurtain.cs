@@ -1,4 +1,4 @@
-﻿namespace Code.Infrastructure.States.GameStates
+﻿namespace Code.UI.LoadingCurtain
 {
     public interface ILoadingCurtain
     {

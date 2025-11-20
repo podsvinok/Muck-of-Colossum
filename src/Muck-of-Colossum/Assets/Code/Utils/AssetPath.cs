@@ -3,10 +3,10 @@
     public static class AssetPath
     {
         public const string PlayerPath = "Player";
-        public const string LoadingScene = "LoadingScene";
         public const string LoadingCurtain = "LoadingCurtain";
-        public const string MainMenuScene = "MainMenu";
-        public const string LobbyScene = "Lobby";
-        public const string GameScene = "Game";
+        public const string HeightMapSettings = "StaticData/Height Map Settings";
+        public const string MeshSettings = "StaticData/Mesh Settings";
+        public const string TextureSettings = "StaticData/Texture Settings";
+        public const string NoiseSettings = "StaticData/Noise Settings";
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Code.Utils;
 using Cysharp.Threading.Tasks;
 
-namespace Code.Infrastructure.States.GameStates
+namespace Code.UI.LoadingCurtain
 {
     public class LoadingCurtainProxy : ILoadingCurtain
     {
