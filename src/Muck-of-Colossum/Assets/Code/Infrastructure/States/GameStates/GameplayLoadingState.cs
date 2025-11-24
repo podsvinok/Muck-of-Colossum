@@ -64,7 +64,7 @@ namespace Code.Infrastructure.States.GameStates
             await loadStaticDataTask;
             staticData.NoiseSettings.seed = args.Seed;
             
-            terrainGenerator.GenerateTerrain();
+            await terrainGenerator.GenerateTerrain();
             
             await stateMachine.Enter<GameplayLoopState>();
             

@@ -6,8 +6,6 @@ namespace Code.Gameplay.TerrainGeneration.StaticData
     [CreateAssetMenu()]
     public class NoiseSettings : UpdatableData
     {
-        public NoiseGenerator.NormalizeMode normalizeMode;
-
         public float scale = 50;
 
         public int octaves = 6;

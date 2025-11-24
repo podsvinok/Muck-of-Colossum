@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using Code.Gameplay.Levels;
 using Code.Gameplay.TerrainGeneration.Structures;
 using Code.Infrastructure.StaticData;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Profiling;
 using Zenject;
 using Object = UnityEngine.Object;
 
@@ -38,7 +40,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             this.levelData = levelData;
         }
 
-        public void RegenerateTerrain()
+        public async void RegenerateTerrain()
         {
             foreach (var chunk in terrainChunks)
             {
@@ -47,16 +49,18 @@ namespace Code.Gameplay.TerrainGeneration.Generators
 
             terrainChunks = new();
             staticData.LoadTerrainGenerationSettings();
-            GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
+            await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
         }
 
-        public void GenerateTerrain()
+        public async UniTask GenerateTerrain()
         {
+            Profiler.BeginSample("TerrainGenerator.GenerateTerrain");
             viewer = levelData.Player;
-            GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
+            await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
+            Profiler.EndSample();
         }
 
-        private void GenerateChunks(int width, int height)
+        private async UniTask GenerateChunks(int width, int height)
         {
             var halfWidth = width / 2;
             var halfHeight = height / 2;
@@ -75,6 +79,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
                 float rightFalloff = (x == width - 1) ? 1 : 0;
 
                 newChunk.Initialize(currentChunkCoord, topFalloff, bottomFalloff, leftFalloff, rightFalloff);
+                await UniTask.Yield();
             }
             UpdateChunks();
         }

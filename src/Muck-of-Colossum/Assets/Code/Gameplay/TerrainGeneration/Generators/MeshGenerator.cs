@@ -1,19 +1,34 @@
-﻿using Code.Gameplay.TerrainGeneration.StaticData;
+﻿using System;
+using Code.Gameplay.TerrainGeneration.StaticData;
 using Code.Gameplay.TerrainGeneration.Structures;
+using Code.Infrastructure.StaticData;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace Code.Gameplay.TerrainGeneration.Generators
 {
     public class MeshGenerator
     {
-        public MeshData GenerateTerrainMesh(float[,] heightMap, MeshSettings meshSettings, int levelOfDetail)
+        private readonly IStaticDataService staticData;
+        private MeshData[] meshDatas;
+        private int[,] vertexIndicesMap;
+
+        public MeshGenerator(IStaticDataService staticData)
         {
+            this.staticData = staticData;
+        }
+
+        public MeshData GenerateTerrainMesh(float[,] heightMap, int levelOfDetail)
+        {
+            Profiler.BeginSample("MeshGenerator.GenerateTerrainMesh");
             var skipIncrement = levelOfDetail == 0 ? 1 : levelOfDetail * 2;
-            var numVertsPerLine = meshSettings.numVertsPerLine;
+            var numVertsPerLine = staticData.MeshSettings.numVertsPerLine;
 
-            var topLeft = new Vector2(-1, 1) * meshSettings.meshWorldSize / 2f;
+            var topLeft = new Vector2(-1, 1) * staticData.MeshSettings.meshWorldSize / 2f;
 
-            var vertexIndicesMap = new int[numVertsPerLine, numVertsPerLine];
+            if (vertexIndicesMap == null)
+                vertexIndicesMap = new int[numVertsPerLine, numVertsPerLine];
+            
             var meshVertexIndex = 0;
             var outOfMeshVertexIndex = -1;
 
@@ -35,18 +50,41 @@ namespace Code.Gameplay.TerrainGeneration.Generators
                 }
             }
 
+            if (meshDatas == null)
+            {
+                meshDatas = new MeshData[staticData.MeshSettings.detailLevels.Length];
+                for (int i = 0; i < staticData.MeshSettings.detailLevels.Length; i++)
+                {
+                    var skipInc = staticData.MeshSettings.detailLevels[i].lod == 0 
+                        ? 1 
+                        : staticData.MeshSettings.detailLevels[i].lod * 2;
+                    meshDatas[i] = new MeshData(numVertsPerLine, skipInc);
+                }
+            }
+            
             var meshData = CalculateVertices(
-                heightMap, meshSettings, numVertsPerLine, skipIncrement, vertexIndicesMap, topLeft);
+                heightMap, staticData.MeshSettings, numVertsPerLine, skipIncrement, vertexIndicesMap, topLeft);
 
             meshData.ProcessMesh();
-
+            Profiler.EndSample();
             return meshData;
         }
 
         private MeshData CalculateVertices(float[,] heightMap, MeshSettings meshSettings, int numVertsPerLine,
             int skipIncrement, int[,] vertexIndicesMap, Vector2 topLeft)
         {
-            var meshData = new MeshData(numVertsPerLine, skipIncrement, meshSettings.useFlatShading);
+            Profiler.BeginSample("MeshGenerator.CalculateVertices");
+            MeshData meshData = null;
+            foreach (var data in meshDatas)
+            {
+                if (data.skipIncrement == skipIncrement)
+                {
+                    meshData = data;
+                    meshData.Reuse();
+                    break;
+                }
+            }
+            
             for (var y = 0; y < numVertsPerLine; y++)
             for (var x = 0; x < numVertsPerLine; x++)
             {
@@ -104,7 +142,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
                     }
                 }
             }
-        
+            Profiler.EndSample();
             return meshData;
         }
     }

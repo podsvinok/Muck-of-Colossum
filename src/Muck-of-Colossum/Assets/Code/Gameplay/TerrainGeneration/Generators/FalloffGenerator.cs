@@ -1,13 +1,22 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace Code.Gameplay.TerrainGeneration.Generators
 {
     public class FalloffGenerator
     {
-        public static float[,] GenerateFalloffMap(int width, int height, 
+        private float[,] map;
+
+        public float[,] GenerateFalloffMap(int width, int height, 
             float leftFalloff, float rightFalloff, float topFalloff, float bottomFalloff)
         {
-            var map = new float[width, height];
+            Profiler.BeginSample("FalloffGenerator.GenerateFalloffMap");
+            
+            if (map == null)
+                map = new float[height, width];
+            else
+                Array.Clear(map, 0, map.Length);
 
             for (var y = 0; y < height; y++)
             for (var x = 0; x < width; x++)
@@ -22,11 +31,11 @@ namespace Code.Gameplay.TerrainGeneration.Generators
 
                 map[y, x] = Evaluate(value);
             }
-
+            Profiler.EndSample();
             return map;
         }
 
-        private static float Evaluate(float value)
+        private float Evaluate(float value)
         {
             float a = 3;
             var b = 2.2f;

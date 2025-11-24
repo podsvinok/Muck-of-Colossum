@@ -4,6 +4,7 @@ using Code.Gameplay.TerrainGeneration.StaticData;
 using Code.Infrastructure.StaticData;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace Code.Gameplay.TerrainGeneration.Structures
 {
@@ -25,9 +26,7 @@ namespace Code.Gameplay.TerrainGeneration.Structures
 
         private HeightMap heightMap;
         private int previousLODIndex = -1;
-        private bool hasSetCollider;
 
-        private HeightMapSettings heightMapSettings;
         private MeshSettings meshSettings;
         private Transform viewer;
     
@@ -51,10 +50,10 @@ namespace Code.Gameplay.TerrainGeneration.Structures
         public void Initialize(Vector2 coord,
             float topFalloff, float bottomFalloff, float leftFalloff, float rightFalloff)
         {
+            Profiler.BeginSample("TerrainChunk.Initialize");
             this.coord = coord;
             detailLevels = staticData.MeshSettings.detailLevels;
             colliderLODIndex = staticData.MeshSettings.colliderLODIndex;
-            heightMapSettings = staticData.HeightMapSettings;
             meshSettings = staticData.MeshSettings;
             viewer = levelData.Player;
 
@@ -74,7 +73,6 @@ namespace Code.Gameplay.TerrainGeneration.Structures
             heightMap = heightMapGenerator.GenerateHeightMap(
                 meshSettings.numVertsPerLine,
                 meshSettings.numVertsPerLine,
-                heightMapSettings, 
                 sampleCentre,
                 topFalloff,
                 bottomFalloff,
@@ -85,14 +83,12 @@ namespace Code.Gameplay.TerrainGeneration.Structures
             for (var i = 0; i < detailLevels.Length; i++)
             {
                 lodMeshes[i] = new LODMesh(detailLevels[i].lod, meshGenerator);
-                lodMeshes[i].CreateMesh(heightMap, meshSettings);
+                lodMeshes[i].CreateMesh(heightMap);
 
-                if (i == colliderLODIndex)
-                {
+                if (i == colliderLODIndex) 
                     meshCollider.sharedMesh = lodMeshes[colliderLODIndex].mesh;
-                    hasSetCollider = true;
-                }
             }
+            Profiler.EndSample();
         }
 
         public void UpdateTerrainChunk()

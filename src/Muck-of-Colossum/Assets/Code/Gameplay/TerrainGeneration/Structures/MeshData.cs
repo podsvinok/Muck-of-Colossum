@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿using System;
+using GameKit.Dependencies.Utilities;
+using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace Code.Gameplay.TerrainGeneration.Structures
 {
@@ -15,11 +18,11 @@ namespace Code.Gameplay.TerrainGeneration.Structures
         private int triangleIndex;
         private int outOfMeshTriangleIndex;
 
-        private bool useFlatShading;
+        public int skipIncrement;
 
-        public MeshData(int numVertsPerLine, int skipIncrement, bool useFlatShading)
+        public MeshData(int numVertsPerLine, int skipIncrement)
         {
-            this.useFlatShading = useFlatShading;
+            this.skipIncrement = skipIncrement;
 
             var numMeshEdgeVertices = (numVertsPerLine - 2) * 4 - 4;
             var numEdgeConnectionVertices = (skipIncrement - 1) * (numVertsPerLine - 5) / skipIncrement * 4;
@@ -33,10 +36,23 @@ namespace Code.Gameplay.TerrainGeneration.Structures
             var numMainTriangles = (numMainVerticesPerLine - 1) * (numMainVerticesPerLine - 1) * 2;
             triangles = new int[(numMeshEdgeTriangles + numMainTriangles) * 3];
 
+            bakedNormals = new Vector3[vertices.Length];
             outOfMeshVertices = new Vector3[numVertsPerLine * 4 - 4];
             outOfMeshTriangles = new int[24 * (numVertsPerLine - 2)];
         }
 
+        public void Reuse()
+        {
+            triangleIndex = 0;
+            outOfMeshTriangleIndex = 0;
+            Array.Clear(vertices, 0, vertices.Length);
+            Array.Clear(triangles, 0, triangles.Length);
+            Array.Clear(uvs, 0, uvs.Length);
+            Array.Clear(bakedNormals, 0, bakedNormals.Length);
+            Array.Clear(outOfMeshVertices, 0, outOfMeshVertices.Length);
+            Array.Clear(outOfMeshTriangles, 0, outOfMeshTriangles.Length);
+        }
+        
         public void AddVertex(Vector3 vertexPosition, Vector2 uv, int vertexIndex)
         {
             if (vertexIndex < 0)
@@ -68,9 +84,9 @@ namespace Code.Gameplay.TerrainGeneration.Structures
             }
         }
 
-        private Vector3[] CalculateNormals()
+        private void CalculateNormals()
         {
-            var vertexNormals = new Vector3[vertices.Length];
+            Profiler.BeginSample("MeshData.CalculateNormals");
             var triangleCount = triangles.Length / 3;
             for (var i = 0; i < triangleCount; i++)
             {
@@ -80,9 +96,9 @@ namespace Code.Gameplay.TerrainGeneration.Structures
                 var vertexIndexC = triangles[normalTriangleIndex + 2];
 
                 var triangleNormal = SurfaceNormalFromIndices(vertexIndexA, vertexIndexB, vertexIndexC);
-                vertexNormals[vertexIndexA] += triangleNormal;
-                vertexNormals[vertexIndexB] += triangleNormal;
-                vertexNormals[vertexIndexC] += triangleNormal;
+                bakedNormals[vertexIndexA] += triangleNormal;
+                bakedNormals[vertexIndexB] += triangleNormal;
+                bakedNormals[vertexIndexC] += triangleNormal;
             }
 
             var borderTriangleCount = outOfMeshTriangles.Length / 3;
@@ -94,15 +110,14 @@ namespace Code.Gameplay.TerrainGeneration.Structures
                 var vertexIndexC = outOfMeshTriangles[normalTriangleIndex + 2];
 
                 var triangleNormal = SurfaceNormalFromIndices(vertexIndexA, vertexIndexB, vertexIndexC);
-                if (vertexIndexA >= 0) vertexNormals[vertexIndexA] += triangleNormal;
-                if (vertexIndexB >= 0) vertexNormals[vertexIndexB] += triangleNormal;
-                if (vertexIndexC >= 0) vertexNormals[vertexIndexC] += triangleNormal;
+                if (vertexIndexA >= 0) bakedNormals[vertexIndexA] += triangleNormal;
+                if (vertexIndexB >= 0) bakedNormals[vertexIndexB] += triangleNormal;
+                if (vertexIndexC >= 0) bakedNormals[vertexIndexC] += triangleNormal;
             }
             
-            for (var i = 0; i < vertexNormals.Length; i++) 
-                vertexNormals[i].Normalize();
-
-            return vertexNormals;
+            for (var i = 0; i < bakedNormals.Length; i++) 
+                bakedNormals[i].Normalize();
+            Profiler.EndSample();
         }
 
         private Vector3 SurfaceNormalFromIndices(int indexA, int indexB, int indexC)
@@ -119,45 +134,20 @@ namespace Code.Gameplay.TerrainGeneration.Structures
 
         public void ProcessMesh()
         {
-            if (useFlatShading)
-                FlatShading();
-            else
-                BakeNormals();
-        }
-
-        private void BakeNormals() => 
-            bakedNormals = CalculateNormals();
-
-        private void FlatShading()
-        {
-            var flatShadedVertices = new Vector3[triangles.Length];
-            var flatShadedUvs = new Vector2[triangles.Length];
-
-            for (var i = 0; i < triangles.Length; i++)
-            {
-                flatShadedVertices[i] = vertices[triangles[i]];
-                flatShadedUvs[i] = uvs[triangles[i]];
-                triangles[i] = i;
-            }
-
-            vertices = flatShadedVertices;
-            uvs = flatShadedUvs;
+            CalculateNormals();
         }
 
         public Mesh CreateMesh()
         {
-            var mesh = new Mesh();
-            
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
-            mesh.uv = uvs;
-            
-            if (useFlatShading)
-                mesh.RecalculateNormals();
-            else
-                mesh.normals = bakedNormals;
-            
-            return mesh;
+            Profiler.BeginSample("MeshData.CreateMesh");
+            return new Mesh
+            {
+                vertices = vertices,
+                triangles = triangles,
+                uv = uvs,
+                normals = bakedNormals
+            };
+            Profiler.EndSample();
         }
     }
 }
