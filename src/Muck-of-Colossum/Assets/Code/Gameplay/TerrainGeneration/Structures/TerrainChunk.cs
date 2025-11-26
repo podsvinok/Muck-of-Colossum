@@ -1,115 +1,103 @@
-﻿using Code.Gameplay.Levels;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Code.Gameplay.TerrainGeneration.Generators;
+using UnityEngine;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using Code.Gameplay.TerrainGeneration.Jobs;
 using Code.Gameplay.TerrainGeneration.StaticData;
 using Code.Infrastructure.StaticData;
-using Cysharp.Threading.Tasks;
-using UnityEngine;
-using UnityEngine.Profiling;
+using Unity.VisualScripting;
 
 namespace Code.Gameplay.TerrainGeneration.Structures
 {
     public class TerrainChunk
     {
         public GameObject meshObject;
-        
-        private Vector2 coord;
-        private Vector2 sampleCentre;
-        private Bounds bounds;
-
         private MeshRenderer meshRenderer;
         private MeshFilter meshFilter;
         private MeshCollider meshCollider;
+        private int lodIndex = -1;
+        private Bounds bounds;
 
-        private LODInfo[] detailLevels;
-        private LODMesh[] lodMeshes;
-        private int colliderLODIndex;
-
-        private HeightMap heightMap;
-        private int previousLODIndex = -1;
-
-        private MeshSettings meshSettings;
-        private Transform viewer;
-    
-        private readonly HeightMapGenerator heightMapGenerator;
-        private readonly MeshGenerator meshGenerator;
         private readonly IStaticDataService staticData;
-        private readonly ILevelDataProvider levelData;
+        private readonly Vector2 coord;
+        private readonly Mesh[] lodMeshes;
 
-        public TerrainChunk(
-            HeightMapGenerator heightMapGenerator,
-            MeshGenerator meshGenerator,
-            IStaticDataService staticData,
-            ILevelDataProvider levelData)
+        public TerrainChunk(IStaticDataService staticData, HeightMapGenerator heightMapGenerator, MeshGenerator meshGenerator,
+            Vector2 coord, Transform parent, float bottomFalloff, float topFalloff, float leftFalloff, float rightFalloff)
         {
-            this.heightMapGenerator = heightMapGenerator;
-            this.meshGenerator = meshGenerator;
             this.staticData = staticData;
-            this.levelData = levelData;
-        }
-
-        public void Initialize(Vector2 coord,
-            float topFalloff, float bottomFalloff, float leftFalloff, float rightFalloff)
-        {
-            Profiler.BeginSample("TerrainChunk.Initialize");
             this.coord = coord;
-            detailLevels = staticData.MeshSettings.detailLevels;
-            colliderLODIndex = staticData.MeshSettings.colliderLODIndex;
-            meshSettings = staticData.MeshSettings;
-            viewer = levelData.Player;
-
-            sampleCentre = coord * meshSettings.meshWorldSize / meshSettings.meshScale;
-            var position = coord * meshSettings.meshWorldSize;
-            bounds = new Bounds(position, Vector2.one * meshSettings.meshWorldSize);
-        
+            
+            var position = coord * staticData.MeshSettings.meshWorldSize;
+            bounds = new Bounds(position, Vector2.one * staticData.MeshSettings.meshWorldSize);
+            
             meshObject = new GameObject("Terrain Chunk");
             meshRenderer = meshObject.AddComponent<MeshRenderer>();
             meshFilter = meshObject.AddComponent<MeshFilter>();
             meshCollider = meshObject.AddComponent<MeshCollider>();
             meshRenderer.material = staticData.TextureSettings.mapMaterial;
 
-            meshObject.transform.position = new Vector3(position.x, 0, position.y);
-            meshObject.transform.parent = levelData.TerrainParent;
+            meshObject.transform.position = new Vector3(coord.x * staticData.MeshSettings.meshWorldSize,
+                0, coord.y * staticData.MeshSettings.meshWorldSize);
+            meshObject.transform.parent = parent;
 
-            heightMap = heightMapGenerator.GenerateHeightMap(
-                meshSettings.numVertsPerLine,
-                meshSettings.numVertsPerLine,
-                sampleCentre,
-                topFalloff,
-                bottomFalloff,
-                leftFalloff,
-                rightFalloff);
+            var heightMap = heightMapGenerator.GenerateHeightMap(
+                coord, leftFalloff, rightFalloff, topFalloff, bottomFalloff);
             
-            lodMeshes = new LODMesh[detailLevels.Length];
-            for (var i = 0; i < detailLevels.Length; i++)
+            lodMeshes = new Mesh[this.staticData.MeshSettings.detailLevels.Length];
+            for (var i = 0; i < staticData.MeshSettings.detailLevels.Length; i++)
             {
-                lodMeshes[i] = new LODMesh(detailLevels[i].lod, meshGenerator);
-                lodMeshes[i].CreateMesh(heightMap);
-
-                if (i == colliderLODIndex) 
-                    meshCollider.sharedMesh = lodMeshes[colliderLODIndex].mesh;
+                var mesh = meshGenerator.GenerateMesh(staticData.MeshSettings.detailLevels[i].lod, heightMap);
+                lodMeshes[i] = mesh;
             }
-            Profiler.EndSample();
+
+            heightMap.Dispose();
         }
-
-        public void UpdateTerrainChunk()
+        
+        /// <summary>
+        /// return true if collider needed and false if not
+        /// </summary>
+        /// <param name="viewer"></param>
+        /// <returns></returns>
+        public bool UpdateTerrainChunk(Transform viewer)
         {
-            var viewerDstFromNearestEdge =
-                Mathf.Sqrt(bounds.SqrDistance(new Vector3(viewer.position.x, viewer.position.z)));
-
-            var lodIndex = 0;
-
-            for (var i = 0; i < detailLevels.Length - 1; i++)
-                if (viewerDstFromNearestEdge > detailLevels[i].visibleDstThreshold)
-                    lodIndex = i + 1;
+            var viewerDstFromNearestEdge = Mathf.Sqrt(bounds.SqrDistance(new Vector3(viewer.position.x, viewer.position.z)));
+            
+            int newLodIndex = 0;
+            for (var i = 0; i < staticData.MeshSettings.detailLevels.Length - 1; i++)
+            {
+                if (viewerDstFromNearestEdge > staticData.MeshSettings.detailLevels[i].visibleDstThreshold)
+                    newLodIndex = i + 1;
                 else
                     break;
-
-            if (lodIndex != previousLODIndex)
-            {
-                var lodMesh = lodMeshes[lodIndex];
-                previousLODIndex = lodIndex;
-                meshFilter.mesh = lodMesh.mesh;
             }
+
+            if (newLodIndex != lodIndex)
+            {
+                meshFilter.sharedMesh = lodMeshes[newLodIndex];
+                if (lodIndex == staticData.MeshSettings.detailLevels[0].lod)
+                    meshCollider.sharedMesh = null;
+                lodIndex = newLodIndex;
+                if (lodIndex == staticData.MeshSettings.detailLevels[0].lod)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public Mesh GetMeshForBaking()
+        {
+            return lodMeshes[lodIndex];
+        }
+
+        public void SetBakedCollider()
+        {
+            meshCollider.cookingOptions = MeshColliderCookingOptions.None;
+            meshCollider.sharedMesh = lodMeshes[lodIndex];
         }
     }
 }

@@ -40,11 +40,7 @@ namespace Code.Infrastructure.Installers
         private void BindTerrainGenerators()
         {
             Container
-                .BindInterfacesAndSelfTo<FalloffGenerator>()
-                .AsSingle();
-            
-            Container
-                .BindInterfacesAndSelfTo<HeightMapGenerator>()
+                .BindInterfacesAndSelfTo<ColliderGenerator>()
                 .AsSingle();
             
             Container
@@ -52,11 +48,7 @@ namespace Code.Infrastructure.Installers
                 .AsSingle();
             
             Container
-                .BindInterfacesAndSelfTo<NoiseGenerator>()
-                .AsSingle();
-            
-            Container
-                .BindInterfacesAndSelfTo<TextureGenerator>()
+                .BindInterfacesAndSelfTo<HeightMapGenerator>()
                 .AsSingle();
             
             Container

@@ -1,65 +1,58 @@
-﻿using Code.Gameplay.TerrainGeneration.StaticData;
-using Code.Gameplay.TerrainGeneration.Structures;
+﻿using Code.Gameplay.TerrainGeneration.Jobs;
 using Code.Infrastructure.StaticData;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace Code.Gameplay.TerrainGeneration.Generators
 {
     public class HeightMapGenerator
     {
-        private readonly NoiseGenerator noiseGenerator;
-        private readonly FalloffGenerator falloffGenerator;
-        private readonly IStaticDataService staticData;
+        private IStaticDataService staticData;
 
-        public HeightMapGenerator(
-            NoiseGenerator noiseGenerator,
-            FalloffGenerator falloffGenerator, 
-            IStaticDataService staticData)
+        public HeightMapGenerator(IStaticDataService staticData)
         {
-            this.noiseGenerator = noiseGenerator;
-            this.falloffGenerator = falloffGenerator;
             this.staticData = staticData;
         }
 
-        public HeightMap GenerateHeightMap(int width, int height, Vector2 sampleCentre,
-            float leftFalloff = 0f, float rightFalloff = 0f, float topFalloff = 0f, float bottomFalloff = 0f)
+        public NativeArray<float> GenerateHeightMap(Vector2 coord,
+            float leftFalloff, float rightFalloff, float topFalloff, float bottomFalloff)
         {
-            Profiler.BeginSample("HeightMapGenerator.GenerateHeightMap");
+            int numVertsPerLine = staticData.MeshSettings.numVertsPerLine;
             
-            var values = noiseGenerator
-                .GenerateNoiseMap(
-                    width,
-                    height, 
-                    sampleCentre);
-
-            var falloffMap = falloffGenerator
-                .GenerateFalloffMap(
-                    width,
-                    height,
-                    leftFalloff, 
-                    rightFalloff, 
-                    topFalloff,
-                    bottomFalloff);
-
-            var minValue = float.MaxValue;
-            var maxValue = float.MinValue;
-
-            for (var i = 0; i < width; i++)
-            for (var j = 0; j < height; j++)
+            var heightMap = new NativeArray<float>(numVertsPerLine * numVertsPerLine, Allocator.TempJob);
+            var curveData = new NativeArray<Keyframe>(staticData.HeightMapSettings.heightCurve.keys.Length, Allocator.TempJob);
+            for (int i = 0; i < curveData.Length; i++) 
+                curveData[i] = staticData.HeightMapSettings.heightCurve.keys[i];
+            
+            var heightJob = new GenerateHeightMapJob
             {
-                values[i, j] = Mathf.Clamp01(values[i, j] - falloffMap[i, j]);
-
-                values[i, j] *= staticData.HeightMapSettings.heightCurve.Evaluate(values[i, j]) 
-                                * staticData.HeightMapSettings.heightMultiplier;
-
-                if (values[i, j] > maxValue) maxValue = values[i, j];
-                if (values[i, j] < minValue) minValue = values[i, j];
-            }
-
-            Profiler.EndSample();
+                HeightMap = heightMap,
+                
+                Width = numVertsPerLine,
+                Height = numVertsPerLine,
+                SampleCentre = new float2(coord.x * staticData.MeshSettings.meshWorldSize / staticData.MeshSettings.meshScale,
+                    coord.y * staticData.MeshSettings.meshWorldSize / staticData.MeshSettings.meshScale),
+                Seed = staticData.NoiseSettings.seed,
+                Scale = staticData.NoiseSettings.scale,
+                Octaves = staticData.NoiseSettings.octaves,
+                Persistence = staticData.NoiseSettings.persistance,
+                Lacunarity = staticData.NoiseSettings.lacunarity,
+                Offset = new float2(staticData.NoiseSettings.offset.x, staticData.NoiseSettings.offset.y),
+                FalloffA = 3f,
+                FalloffB = 2.2f,
+                FalloffEdges = new float4(leftFalloff, rightFalloff, topFalloff, bottomFalloff),
+                CurveData = curveData,
+                HeightMultiplier = staticData.HeightMapSettings.heightMultiplier
+            };
             
-            return new HeightMap(values, minValue, maxValue);
+            JobHandle heightHandle = heightJob.Schedule(numVertsPerLine * numVertsPerLine, 64);
+            heightHandle.Complete();
+            
+            curveData.Dispose();
+
+            return heightMap;
         }
     }
 }

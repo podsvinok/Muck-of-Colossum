@@ -31,7 +31,7 @@ public class TerrainGeneratorDebug : MonoBehaviour
 
     private void Start()
     {
-        lastDrawTime = Time.timeSinceLevelLoad + 1;
+        lastDrawTime = Time.timeSinceLevelLoad + timeToDraw;
         
         meshSettings = staticData.MeshSettings;
         noiseSetting = staticData.NoiseSettings;
@@ -56,7 +56,7 @@ public class TerrainGeneratorDebug : MonoBehaviour
     public void Generate() => 
         MarkChanged();
 
-    private void Update()
+    private async void Update()
     {
         if (!Application.isPlaying)
             return;
@@ -71,7 +71,7 @@ public class TerrainGeneratorDebug : MonoBehaviour
         {
             lastDrawTime = Time.timeSinceLevelLoad;
             hasPendingChanges = false;
-            terrainGenerator.RegenerateTerrain();
+            await terrainGenerator.RegenerateTerrain();
         }
     }
 }

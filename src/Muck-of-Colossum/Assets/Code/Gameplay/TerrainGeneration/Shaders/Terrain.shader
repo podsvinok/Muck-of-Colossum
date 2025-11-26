@@ -91,10 +91,10 @@
 
                 for (int layer = 0; layer < layerCount; layer++)
                 {
-                    float start   = baseStartHeights[layer];
-                    float blend   = baseBlends[layer];
+                    float start    = baseStartHeights[layer];
+                    float blend    = baseBlends[layer];
                     float strength = baseColourStrength[layer];
-                    float scale   = baseTextureScales[layer];
+                    float scale    = baseTextureScales[layer];
 
                     float drawStrength = inverseLerp(start - blend * 0.5, start + blend * 0.5, heightPercent);
 
@@ -104,12 +104,12 @@
                     albedo = lerp(albedo, tint + tex, drawStrength);
                 }
 
-                // --- охлаждаем общую текстуру ---
+                //охлаждаем общую текстуру
                 albedo *= float3(0.6, 0.7, 0.9);
 
                 float3 col = 0;
 
-                // ---------- Мягкий основной свет ----------
+                //Мягкий основной свет
                 Light mainLight = GetMainLight();
                 float shadow = MainLightRealtimeShadow(i.positionHCS);
                 float NdotL = saturate(dot(normal, mainLight.direction));
@@ -119,7 +119,7 @@
 
                 col += albedo * mainLight.color * softLight + ambient;
 
-                // ---------- Мягкие дополнительные источники ----------
+                //Мягкие дополнительные источники
                 uint count = GetAdditionalLightsCount();
                 for (uint l = 0; l < count; l++)
                 {
@@ -133,8 +133,6 @@
 
                 return float4(col, 1);
             }
-
-
             ENDHLSL
         }
     }
