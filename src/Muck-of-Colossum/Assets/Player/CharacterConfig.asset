@@ -16,7 +16,7 @@ MonoBehaviour:
     speed: 10
     rotationSpeed: 10
   airborneStateConfig:
-    speed: 20.2
+    speed: 7
     jumpingStateConfig:
       maxJumpHeight: 5
       timeToReachMaxHeight: 0.8

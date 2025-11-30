@@ -1,13 +1,22 @@
-using System;
+
+using FishNet.Object;
+using Unity.Cinemachine;
 using UnityEngine;
 
-public class CameraController : MonoBehaviour
+public class CameraController : NetworkBehaviour
 {
-    [SerializeField] private Camera currentCamera;
-    public Camera CurrentCamera => currentCamera;
+    [SerializeField] private CinemachineCamera currentCamera;
+    [SerializeField] private Transform followTarget;
+    public CinemachineCamera CurrentCamera => currentCamera;
 
+    public override void OnStartClient()
+    {
+        Init();
+        currentCamera.enabled = IsOwner;
+    }
+    
     public void Init()
     {
-        currentCamera = GetComponent<Camera>();
+        currentCamera = GetComponentInChildren<CinemachineCamera>();
     }
 }

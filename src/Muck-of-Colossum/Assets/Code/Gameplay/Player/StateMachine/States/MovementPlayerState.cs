@@ -27,7 +27,7 @@ public abstract class MovementPlayerState : IPlayerState
         climbChecker = player.ClimbChecker;
 
         movementDirectionContext.Player = player;
-        movementDirectionContext.Camera = playerCamera.CurrentCamera;
+        movementDirectionContext.CameraTransform = playerCamera.CurrentCamera.transform;
     }
 
     protected PlayerInput Input => _player.Input;

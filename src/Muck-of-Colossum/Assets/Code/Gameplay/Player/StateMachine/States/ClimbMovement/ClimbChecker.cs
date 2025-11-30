@@ -1,6 +1,7 @@
+using FishNet.Object;
 using UnityEngine;
 
-public class ClimbChecker : MonoBehaviour
+public class ClimbChecker : NetworkBehaviour
 {
     [SerializeField, Range(0f, 2f)] private float checkDistance;
     [SerializeField] private LayerMask climbLayer;

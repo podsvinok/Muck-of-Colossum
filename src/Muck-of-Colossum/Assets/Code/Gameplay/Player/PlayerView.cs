@@ -1,8 +1,9 @@
 using System;
+using FishNet.Object;
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
-public class PlayerView : MonoBehaviour
+public class PlayerView : NetworkBehaviour
 {
     private const string IsMovement = "IsMovement";
 
@@ -23,6 +24,12 @@ public class PlayerView : MonoBehaviour
     public void Init()
     {
         animator = GetComponent<Animator>();
+    }
+
+    private void Update()
+    {
+        if (IsOwner == false)
+            return;
     }
 
     public void StartMovement() => animator.SetBool(IsMovement, true);

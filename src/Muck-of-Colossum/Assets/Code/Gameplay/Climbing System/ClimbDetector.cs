@@ -26,12 +26,13 @@ public class ClimbDetector : MonoBehaviour
 
     private void Start()
     {
-        rotationStrategy = new AlignToNormalRotation();
+        rotationStrategy = new ClimbRotation();
         TryAttach();
     }
     
     void Update()
     {
+        
         if (!attached)
         {
             if (Input.GetKeyDown(KeyCode.X))

@@ -1,7 +1,9 @@
+using FishNet.Object;
+using LiteNetLib;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
-public class Player : MonoBehaviour
+public class Player : NetworkBehaviour
 {
     [SerializeField] private PlayerConfig config;
     [SerializeField] private PlayerView view;
@@ -22,6 +24,7 @@ public class Player : MonoBehaviour
     
     public GroundChecker GroundChecker => groundChecker;
     public ClimbChecker ClimbChecker => climbChecker;
+    
 
     private void Awake()
     {
@@ -34,8 +37,10 @@ public class Player : MonoBehaviour
 
     private void Update()
     {
-        stateMachine.HandleInput();
+        if (IsOwner == false)
+            return;
         
+        stateMachine.HandleInput();
         stateMachine.Update();
     }
     

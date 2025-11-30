@@ -5,7 +5,7 @@ using System.Text;
 
 public class CodeCollectorEditor : EditorWindow
 {
-    private string folderPath = "RitualGrounds/Scripts";
+    private string folderPath = "Code";
     private string filePattern = "*.cs";
     private string outputFileName = "CollectedCode.txt";
     private bool includeSubfolders = true;

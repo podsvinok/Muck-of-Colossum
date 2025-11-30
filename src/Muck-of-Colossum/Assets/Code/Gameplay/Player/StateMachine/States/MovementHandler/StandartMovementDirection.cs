@@ -5,10 +5,10 @@ public class StandartMovementDirection : IMovementDirectionHandler
     public Vector3 GetConvertedVelocity(MovementDirectionContext context)
     {
         Vector2 input = context.Input;
-        Camera camera = context.Camera;
+        Transform cameraTransform = context.CameraTransform;
         
-        Vector3 moveDirection = camera.transform.forward * input.y;
-        moveDirection += camera.transform.right * input.x;
+        Vector3 moveDirection = cameraTransform.forward * input.y;
+        moveDirection += cameraTransform.right * input.x;
         moveDirection.Normalize();
         moveDirection.y = 0f;
         

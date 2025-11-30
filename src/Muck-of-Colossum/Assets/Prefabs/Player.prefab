@@ -893,6 +893,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99cab02243d0c9f4d9a2fc3b9123274c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _componentIndexCache: 1
+  _addedNetworkObject: {fileID: 0}
+  _networkObjectCache: {fileID: 0}
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -1615,6 +1618,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3e225ed289770d4faf79c38763f8907, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _componentIndexCache: 2
+  _addedNetworkObject: {fileID: 0}
+  _networkObjectCache: {fileID: 0}
   checkDistance: 2
   climbLayer:
     serializedVersion: 2
@@ -2654,6 +2660,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8afd3e6dfb85ed4caf8dc11957b277d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _componentIndexCache: 4
+  _addedNetworkObject: {fileID: 0}
+  _networkObjectCache: {fileID: 0}
 --- !u!1 &4736616587958593108
 GameObject:
   m_ObjectHideFlags: 0
@@ -4487,6 +4496,55 @@ Transform:
   - {fileID: 7742493414516753092}
   m_Father: {fileID: 1484622268980827558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8120565993667039412
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1161481228788489007}
+  - component: {fileID: 6653811627689430392}
+  m_Layer: 0
+  m_Name: CameraController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1161481228788489007
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8120565993667039412}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3314324334890712508}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6653811627689430392
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8120565993667039412}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d28360d30bfeae64da6cf01506e13333, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _componentIndexCache: 3
+  _addedNetworkObject: {fileID: 0}
+  _networkObjectCache: {fileID: 0}
+  currentCamera: {fileID: 0}
+  followTarget: {fileID: 0}
 --- !u!1 &8277417902386397046
 GameObject:
   m_ObjectHideFlags: 0
@@ -4552,6 +4610,7 @@ Transform:
   - {fileID: 5018942593501891432}
   - {fileID: 4989374358784798463}
   - {fileID: 8394732913164255600}
+  - {fileID: 1161481228788489007}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &8989957538235025177
@@ -4591,7 +4650,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c70f85a9cd18f141b7905b303f0a391, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  config: {fileID: 11400000, guid: da1460f64ac89984095f413c9b866473, type: 2}
+  _componentIndexCache: 0
+  _addedNetworkObject: {fileID: 0}
+  _networkObjectCache: {fileID: 0}
+  config: {fileID: 0}
   view: {fileID: 5240118686535596785}
   playerCamera: {fileID: 0}
   groundChecker: {fileID: 7590301404860936211}
