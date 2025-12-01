@@ -17,7 +17,7 @@ namespace Code.Infrastructure.AssetManagement
 
         public async UniTask<TComponent> Create(string path)
         {
-            GameObject prefab = await assetProvider.Load(path);
+            GameObject prefab = await assetProvider.LoadAsync(path);
             GameObject newObject = instantiator.InstantiatePrefab(prefab);
             
             return newObject.GetComponent<TComponent>();

@@ -1,9 +1,8 @@
-﻿using Code.Gameplay.TerrainGeneration.Generators;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Code.Gameplay.TerrainGeneration.StaticData
 {
-    [CreateAssetMenu()]
+    [CreateAssetMenu(fileName = "NoiseSettings", menuName = "TerrainGenerationSettings/NoiseSettings")]
     public class NoiseSettings : UpdatableData
     {
         public float scale = 50;

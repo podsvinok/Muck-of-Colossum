@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Code.Gameplay.TerrainGeneration.StaticData
 {
-    [CreateAssetMenu()]
+    [CreateAssetMenu(fileName = "MeshSettings", menuName = "TerrainGenerationSettings/MeshSettings")]
     public class MeshSettings : UpdatableData
     {
         public const int NumSupportedLoDs = 5;

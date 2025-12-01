@@ -1,15 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Code.Gameplay.TerrainGeneration.Generators;
+﻿using Code.Gameplay.TerrainGeneration.Generators;
 using UnityEngine;
-using Unity.Collections;
-using Unity.Jobs;
-using Unity.Mathematics;
-using Code.Gameplay.TerrainGeneration.Jobs;
-using Code.Gameplay.TerrainGeneration.StaticData;
 using Code.Infrastructure.StaticData;
-using Unity.VisualScripting;
 
 namespace Code.Gameplay.TerrainGeneration.Structures
 {

@@ -1,7 +1,6 @@
 ﻿using Code.Infrastructure.States.Factory;
 using Code.Infrastructure.States.GameStates;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 
 namespace Code.Infrastructure.States.StateMachine
 {

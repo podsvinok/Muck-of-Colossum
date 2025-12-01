@@ -2,7 +2,7 @@
 
 namespace Code.Gameplay.TerrainGeneration.StaticData
 {
-    [CreateAssetMenu()]
+    [CreateAssetMenu(fileName = "HeightMapSettings", menuName = "TerrainGenerationSettings/HeightMapSettings")]
     public class HeightMapSettings : UpdatableData
     {
         public NoiseSettings noiseSettings;

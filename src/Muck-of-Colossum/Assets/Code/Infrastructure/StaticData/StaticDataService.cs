@@ -1,9 +1,12 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Code.Gameplay.TerrainGeneration.StaticData;
 using Code.Infrastructure.AssetManagement;
+using Code.UI.Services.Windows;
+using Code.UI.Windows;
+using Code.UI.Windows.StaticData;
 using Code.Utils;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 
 namespace Code.Infrastructure.StaticData
 {
@@ -15,6 +18,7 @@ namespace Code.Infrastructure.StaticData
         public NoiseSettings NoiseSettings { get; set; }
 
         private readonly IAssetProvider assetProvider;
+        private Dictionary<WindowId, WindowConfig> windowConfigs;
 
         public StaticDataService(IAssetProvider assetProvider)
         {
@@ -24,9 +28,13 @@ namespace Code.Infrastructure.StaticData
         public async UniTask LoadAllAsync()
         {
             await LoadTerrainGenerationSettings();
+            await LoadWindowConfigs();
         }
 
-        public async UniTask LoadTerrainGenerationSettings()
+        public WindowConfig ForWindow(WindowId windowId)
+            => windowConfigs.GetValueOrDefault(windowId);
+
+        private async UniTask LoadTerrainGenerationSettings()
         {
             await UniTask.WhenAll(
                 LoadHeightMapSettings(),
@@ -35,16 +43,26 @@ namespace Code.Infrastructure.StaticData
                 LoadNoiseSettings());
         }
 
+        private async UniTask LoadWindowConfigs()
+        {
+            var windowsStaticData = await assetProvider
+                .LoadAsync<WindowStaticData>(AssetPath.WindowStaticData);
+            
+            windowConfigs = windowsStaticData
+                .Configs
+                .ToDictionary(x => x.WindowId, x => x);
+        }
+
         private async UniTask LoadHeightMapSettings() => 
-            HeightMapSettings = await assetProvider.Load<HeightMapSettings>(AssetPath.HeightMapSettings);
+            HeightMapSettings = await assetProvider.LoadAsync<HeightMapSettings>(AssetPath.HeightMapSettings);
 
         private async UniTask LoadMeshSettings() => 
-            MeshSettings = await assetProvider.Load<MeshSettings>(AssetPath.MeshSettings);
+            MeshSettings = await assetProvider.LoadAsync<MeshSettings>(AssetPath.MeshSettings);
 
         private async UniTask LoadTextureSettings() => 
-            TextureSettings = await assetProvider.Load<TextureSettings>(AssetPath.TextureSettings);
+            TextureSettings = await assetProvider.LoadAsync<TextureSettings>(AssetPath.TextureSettings);
         
         private async UniTask LoadNoiseSettings() => 
-            NoiseSettings = await assetProvider.Load<NoiseSettings>(AssetPath.NoiseSettings);
+            NoiseSettings = await assetProvider.LoadAsync<NoiseSettings>(AssetPath.NoiseSettings);
     }
 }

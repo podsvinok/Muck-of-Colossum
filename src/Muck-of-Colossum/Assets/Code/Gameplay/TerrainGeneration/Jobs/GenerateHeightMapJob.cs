@@ -1,6 +1,4 @@
-﻿using Code.Gameplay.TerrainGeneration.Structures;
-using GameKit.Dependencies.Utilities.Types;
-using Unity.Burst;
+﻿using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;

@@ -2,7 +2,6 @@
 using Code.Infrastructure.StaticData;
 using Code.UI.LoadingCurtain;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 
 namespace Code.Infrastructure.States.GameStates
 {
@@ -10,19 +9,22 @@ namespace Code.Infrastructure.States.GameStates
     {
         private readonly ILoadingCurtain loadingCurtain;
         private readonly IGameStateMachine stateMachine;
+        private readonly IStaticDataService staticData;
 
         public GameLoadingState(
             ILoadingCurtain loadingCurtain,
-            IGameStateMachine stateMachine)
+            IGameStateMachine stateMachine, 
+            IStaticDataService staticData)
         {
             this.loadingCurtain = loadingCurtain;
             this.stateMachine = stateMachine;
+            this.staticData = staticData;
         }
 
         public async UniTask Enter()
         {
             loadingCurtain.Show();
-            
+            await staticData.LoadAllAsync();
             await stateMachine.Enter<MainMenuLoadingState>();
         }
 

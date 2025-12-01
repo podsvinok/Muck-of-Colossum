@@ -8,6 +8,5 @@ namespace Code.Gameplay.Player.Factory
     public interface IPlayerFactory
     {
         public UniTask<GameObject> SpawnPlayer(NetworkConnection connection);
-        public void ClientPresenceChangeStartHandler(ClientPresenceChangeEventArgs args);
     }
 }

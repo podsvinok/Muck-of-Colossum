@@ -1,6 +1,5 @@
 ﻿using System;
 using Cysharp.Threading.Tasks;
-using UnityEngine.SceneManagement;
 
 namespace Code.Infrastructure.SceneManagement
 {

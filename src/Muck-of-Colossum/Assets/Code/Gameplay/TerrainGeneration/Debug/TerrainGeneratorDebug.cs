@@ -1,77 +1,72 @@
 using Code.Gameplay.TerrainGeneration.Generators;
 using Code.Gameplay.TerrainGeneration.StaticData;
-using Code.Infrastructure.StaticData;
 using Code.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Zenject;
 
-public class TerrainGeneratorDebug : MonoBehaviour
+namespace Code.Gameplay.TerrainGeneration.Debug
 {
-    public bool autoUpdate;
-    public float timeToDraw = 1f;
-
-    public MeshSettings meshSettings;
-    public NoiseSettings noiseSetting;
-    public TextureSettings textureSettings;
-    public HeightMapSettings heightMapSettings;
-
-    private float lastDrawTime;
-    private bool hasPendingChanges;
-
-    private TerrainGenerator terrainGenerator;
-    private IStaticDataService staticData;
-
-    [Inject]
-    public void Construct(TerrainGenerator terrainGenerator, IStaticDataService staticData)
+    public class TerrainGeneratorDebug : MonoBehaviour
     {
-        this.terrainGenerator = terrainGenerator;
-        this.staticData = staticData;
-    }
+        public bool autoUpdate;
+        public float timeToDraw = 1f;
 
-    private void Start()
-    {
-        lastDrawTime = Time.timeSinceLevelLoad + timeToDraw;
-        
-        meshSettings = staticData.MeshSettings;
-        noiseSetting = staticData.NoiseSettings;
-        textureSettings = staticData.TextureSettings;
-        heightMapSettings = staticData.HeightMapSettings;
+        public MeshSettings meshSettings;
+        public NoiseSettings noiseSetting;
+        public TextureSettings textureSettings;
+        public HeightMapSettings heightMapSettings;
 
-        meshSettings.OnValuesUpdated += MarkAutoChanged;
-        noiseSetting.OnValuesUpdated += MarkAutoChanged;
-        textureSettings.OnValuesUpdated += MarkAutoChanged;
-        heightMapSettings.OnValuesUpdated += MarkAutoChanged;
-    }
+        private float lastDrawTime;
+        private bool hasPendingChanges;
 
-    private void MarkAutoChanged()
-    {
-        if (autoUpdate)
-            MarkChanged();
-    }
-    
-    private void MarkChanged() => 
-        hasPendingChanges = true;
+        private TerrainGenerator terrainGenerator;
 
-    public void Generate() => 
-        MarkChanged();
-
-    private async void Update()
-    {
-        if (!Application.isPlaying)
-            return;
-
-        if (SceneManager.GetActiveScene().name != Scenes.GameScene)
-            return;
-
-        if (!hasPendingChanges)
-            return;
-
-        if (Time.timeSinceLevelLoad > lastDrawTime + timeToDraw)
+        [Inject]
+        public void Construct(TerrainGenerator terrainGenerator)
         {
-            lastDrawTime = Time.timeSinceLevelLoad;
-            hasPendingChanges = false;
-            await terrainGenerator.RegenerateTerrain();
+            this.terrainGenerator = terrainGenerator;
+        }
+
+        private void Start()
+        {
+            lastDrawTime = Time.timeSinceLevelLoad + timeToDraw;
+        
+            meshSettings.OnValuesUpdated += MarkAutoChanged;
+            noiseSetting.OnValuesUpdated += MarkAutoChanged;
+            textureSettings.OnValuesUpdated += MarkAutoChanged;
+            heightMapSettings.OnValuesUpdated += MarkAutoChanged;
+        }
+
+        private void MarkAutoChanged()
+        {
+            if (autoUpdate)
+                MarkChanged();
+        }
+    
+        private void MarkChanged() => 
+            hasPendingChanges = true;
+
+        public void Generate() => 
+            MarkChanged();
+
+        private async void Update()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (SceneManager.GetActiveScene().name != Scenes.GameScene)
+                return;
+
+            if (!hasPendingChanges)
+                return;
+
+            if (Time.timeSinceLevelLoad > lastDrawTime + timeToDraw)
+            {
+                lastDrawTime = Time.timeSinceLevelLoad;
+                hasPendingChanges = false;
+                await terrainGenerator.RegenerateTerrain();
+            }
         }
     }
 }

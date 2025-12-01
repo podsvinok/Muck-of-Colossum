@@ -12,5 +12,7 @@ namespace Code.Infrastructure.Inputs
         Vector2 GetScreenMousePosition();
         Vector2 GetWorldMousePosition();
         bool GetLeftMouseButtonUp();
+        bool GetJumpButtonUp();
+        bool GetInventoryButton();
     }
 }

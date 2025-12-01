@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Code.Gameplay.TerrainGeneration.StaticData
 {
-    [CreateAssetMenu()]
+    [CreateAssetMenu(fileName = "TextureSettings", menuName = "TerrainGenerationSettings/TextureSettings")]
     public class TextureSettings : UpdatableData
     {
         public Material mapMaterial;

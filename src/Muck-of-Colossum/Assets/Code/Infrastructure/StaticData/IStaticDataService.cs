@@ -1,6 +1,7 @@
 ﻿using Code.Gameplay.TerrainGeneration.StaticData;
+using Code.UI.Services.Windows;
+using Code.UI.Windows;
 using Cysharp.Threading.Tasks;
-using NoiseSettings = Unity.Cinemachine.NoiseSettings;
 
 namespace Code.Infrastructure.StaticData
 {
@@ -9,9 +10,9 @@ namespace Code.Infrastructure.StaticData
         public HeightMapSettings HeightMapSettings { get; set; }
         public MeshSettings MeshSettings { get; set; }
         public TextureSettings TextureSettings { get; set; }
-        public Gameplay.TerrainGeneration.StaticData.NoiseSettings NoiseSettings { get; set; }
+        public NoiseSettings NoiseSettings { get; set; }
         
         public UniTask LoadAllAsync();
-        public UniTask LoadTerrainGenerationSettings();
+        public WindowConfig ForWindow(WindowId windowId);
     }
 }

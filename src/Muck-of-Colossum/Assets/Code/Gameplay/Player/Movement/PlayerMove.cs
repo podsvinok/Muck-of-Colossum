@@ -1,68 +1,90 @@
-﻿using System;
-using Code.Gameplay.Levels;
-using FishNet.Connection;
+﻿using Code.Infrastructure.Inputs;
 using FishNet.Object;
 using UnityEngine;
 using Zenject;
 
-public class PlayerMove : NetworkBehaviour
+namespace Code.Gameplay.Player.Movement
 {
-    public float moveSpeed = 6f;
-    public float rotationSpeed = 10f;
-    public float gravity = -9.81f;
-    public float jumpHeight = 1.5f;
-
-    public CharacterController controller;
-
-    private Transform cameraTransform;
-    private Vector3 velocity;
-    private bool isGrounded;
-
-    private ILevelDataProvider levelDataProvider;
-
-    [Inject]
-    public void Construct(ILevelDataProvider levelDataProvider)
+    public class PlayerMove : NetworkBehaviour
     {
-        this.levelDataProvider = levelDataProvider;
-    }
+        [SerializeField] private CharacterController characterController;
+        [SerializeField] private Camera playerCamera;
+        
+        [SerializeField] private float moveSpeed = 5f;
+        [SerializeField] private float sprintSpeed = 8f;
+        [SerializeField] private float jumpForce = 1f;
+        [SerializeField] private float gravity = -9.81f;
+        [SerializeField] private float groundCheckDistance = 0.2f;
+        [SerializeField] private float lookSensitivity = 2f;
+        [SerializeField] private float maxLookAngle = 80f;
+    
+        private Vector3 velocity;
+        private float verticalRotation;
+        private IInputService input;
 
-    public override void OnStartClient()
-    {
-        if (!IsOwner)
-            return;
-        cameraTransform = levelDataProvider.Camera;
-    }
-
-    void Update()
-    {
-        if (!IsOwner)
-            return;
-        // Check ground
-        isGrounded = controller.isGrounded;
-
-        if (isGrounded && velocity.y < 0)
-            velocity.y = -2f;
-
-        float h = Input.GetAxis("Horizontal");
-        float v = Input.GetAxis("Vertical");
-
-        Vector3 inputDir = new Vector3(h, 0, v).normalized;
-
-        if (inputDir.sqrMagnitude > 0.01f)
+        [Inject]
+        public void Construct(IInputService input)
         {
-            // Camera-relative direction
-            Vector3 camForward = cameraTransform.forward;
-            camForward.y = 0;
-            Vector3 camRight = cameraTransform.right;
-            camRight.y = 0;
-
-            Vector3 moveDir = camForward.normalized * v + camRight.normalized * h;
-
-            // Rotate player only toward move direction
-            Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-
-            controller.Move(moveDir.normalized * moveSpeed * Time.deltaTime);
+            this.input = input;
         }
+        
+        public override void OnStartClient()
+        {
+            if (!IsOwner)
+            {
+                Destroy(playerCamera.gameObject);
+                enabled = false;
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+        }
+
+        private void Update()
+        {
+            if (!characterController.enabled)
+                return;
+            HandleMovement();
+            HandleRotation();
+        }
+
+        private void HandleMovement()
+        {
+            bool isGrounded = true;//IsGrounded();
+            if (isGrounded && velocity.y < 0) 
+                velocity.y = -2f;
+
+            float horizontal = Input.GetAxisRaw("Horizontal");
+            float vertical = Input.GetAxisRaw("Vertical");
+
+            Vector3 moveDirection = transform.right * horizontal + transform.forward * vertical;
+            moveDirection = Vector3.ClampMagnitude(moveDirection, 1f);
+
+            float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
+            characterController.Move(moveDirection * (currentSpeed * Time.deltaTime));
+
+            if (input.GetJumpButtonUp() && isGrounded) 
+                velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
+
+            velocity.y += gravity * Time.deltaTime;
+            characterController.Move(velocity * Time.deltaTime);
+        }
+
+        private void HandleRotation()
+        {
+            float mouseX = Input.GetAxis("Mouse X") * lookSensitivity;
+            float mouseY = Input.GetAxis("Mouse Y") * lookSensitivity;
+
+            verticalRotation -= mouseY;
+            verticalRotation = Mathf.Clamp(verticalRotation, -maxLookAngle, maxLookAngle);
+            playerCamera.transform.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
+
+            transform.Rotate(Vector3.up * mouseX);
+        }
+
+        private bool IsGrounded() => 
+            Physics.Raycast(transform.position + Vector3.up * 0.03f, Vector3.down, groundCheckDistance);
     }
 }

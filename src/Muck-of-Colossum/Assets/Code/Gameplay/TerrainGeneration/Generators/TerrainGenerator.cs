@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Code.Gameplay.Levels;
-using Code.Gameplay.TerrainGeneration.Jobs;
 using Code.Gameplay.TerrainGeneration.Structures;
 using Code.Infrastructure.StaticData;
 using Cysharp.Threading.Tasks;
-using Unity.Collections;
-using Unity.Jobs;
 using UnityEngine;
-using UnityEngine.Profiling;
 using Zenject;
 using Object = UnityEngine.Object;
 
@@ -50,13 +45,11 @@ namespace Code.Gameplay.TerrainGeneration.Generators
                 Object.Destroy(chunk.meshObject);
 
             terrainChunks = new TerrainChunk[staticData.MeshSettings.terrainSizeX * staticData.MeshSettings.terrainSizeY];
-            staticData.LoadTerrainGenerationSettings();
             await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
         }
 
         public async UniTask GenerateTerrain()
         {
-            viewer = levelData.Player;
             await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
         }
 
@@ -90,7 +83,6 @@ namespace Code.Gameplay.TerrainGeneration.Generators
                 
                 await UniTask.Yield();
             }
-            UpdateChunks();
         }
 
         private void UpdateChunks()
@@ -105,6 +97,14 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             colliderGenerator.GenerateCollider(chunkToBakeMesh);
         }
 
+        public void InitializeChunks(Transform player)
+        {
+            viewer = player;
+            var position = viewer.position;
+            var viewerPosition = new Vector2(position.x, position.z);
+            UpdateChunks();
+        }
+        
         public void FixedTick()
         {
             if (viewer == null)

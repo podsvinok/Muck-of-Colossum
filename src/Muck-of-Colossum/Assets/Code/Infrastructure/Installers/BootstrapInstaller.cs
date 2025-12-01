@@ -1,8 +1,10 @@
-﻿using Code.Gameplay.Levels;
+﻿using Code.Gameplay.Item;
+using Code.Gameplay.Item.Factory;
+using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
 using Code.Gameplay.TerrainGeneration.Generators;
-using Code.Gameplay.TerrainGeneration.Structures;
 using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.Extensions;
 using Code.Infrastructure.Inputs;
 using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.Factory;
@@ -10,10 +12,11 @@ using Code.Infrastructure.States.GameStates;
 using Code.Infrastructure.States.StateMachine;
 using Code.Infrastructure.StaticData;
 using Code.UI.LoadingCurtain;
+using Code.UI.Services.Factory;
+using Code.UI.Services.Windows;
 using Cysharp.Threading.Tasks;
 using FishNet;
 using FishNet.Managing;
-using UnityEngine;
 using Zenject;
 
 namespace Code.Infrastructure.Installers
@@ -35,6 +38,50 @@ namespace Code.Infrastructure.Installers
             BindAssetProvider();
             BindStaticDataService();
             BindTerrainGenerators();
+            BindExtensionsServiceProvider();
+            BindItemDatabase();
+            BindItemFactory();
+            BindUIFactory();
+            BindWindowService();
+        }
+
+        private void BindWindowService()
+        {
+            Container
+                .Bind<IWindowService>()
+                .To<WindowService>()
+                .AsSingle();
+        }
+
+        private void BindUIFactory()
+        {
+            Container
+                .Bind<IUIFactory>()
+                .To<UIFactory>()
+                .AsSingle();
+        }
+
+        private void BindItemFactory()
+        {
+            Container
+                .Bind<IItemFactory>()
+                .To<ItemFactory>()
+                .AsSingle();
+        }
+
+        private void BindItemDatabase()
+        {
+            Container
+                .BindInterfacesAndSelfTo<ItemDatabase>()
+                .AsSingle();
+        }
+
+        private void BindExtensionsServiceProvider()
+        {
+            Container
+                .Bind(typeof(IExtensionsServiceProvider), typeof(IInitializable))
+                .To<ExtensionsServiceProvider>()
+                .AsSingle();
         }
 
         private void BindTerrainGenerators()
