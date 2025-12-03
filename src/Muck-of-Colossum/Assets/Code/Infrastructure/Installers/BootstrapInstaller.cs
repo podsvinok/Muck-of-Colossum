@@ -43,6 +43,15 @@ namespace Code.Infrastructure.Installers
             BindItemFactory();
             BindUIFactory();
             BindWindowService();
+            BindRandomService();
+        }
+
+        private void BindRandomService()
+        {
+            Container
+                .Bind<IRandomService>()
+                .To<RandomService>()
+                .AsSingle();
         }
 
         private void BindWindowService()

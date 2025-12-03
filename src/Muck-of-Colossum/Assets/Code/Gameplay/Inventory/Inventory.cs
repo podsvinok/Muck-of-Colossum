@@ -74,13 +74,12 @@ namespace Code.Gameplay.Inventory
         public virtual void DropItem(int index, int amount)
         {
             var item = inventoryItems[index];
-            
             if (item.preset == null)
                 return;
 
             amount = Mathf.Min(item.quantity, amount);
             for (int i = 0; i < amount; i++)
-                SpawnItem(item);
+                SpawnItem(item.preset);
             
             RemoveItem(index, amount);
         }
@@ -88,9 +87,9 @@ namespace Code.Gameplay.Inventory
         public virtual void Interact(int index)
         {
         }
-        
+
         [ServerRpc(RequireOwnership = false)]
-        private void SpawnItem(InventoryItem item) => 
-            itemFactory.SpawnItem(item.preset, gameObject.transform.position + Vector3.forward * 2);
+        private void SpawnItem(ItemPreset item) => 
+            itemFactory.SpawnItem(item, gameObject.transform.position + Vector3.forward * 2);
     }
 }

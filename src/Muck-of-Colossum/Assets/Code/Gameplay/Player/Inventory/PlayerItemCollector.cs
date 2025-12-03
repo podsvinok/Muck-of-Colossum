@@ -36,6 +36,6 @@ namespace Code.Gameplay.Player.Inventory
 
         [ServerRpc(RequireOwnership = false)]
         private void Despawn(Item.Item item) => 
-            Despawn(item.gameObject);
+            Despawn(item.gameObject, DespawnType.Destroy);
     }
 }

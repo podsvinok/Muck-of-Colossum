@@ -7,6 +7,7 @@ using FishNet.Connection;
 using FishNet.Managing;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using Unity.Cinemachine;
 using UnityEngine;
 using Zenject;
 
@@ -21,14 +22,17 @@ namespace Code.Network
         
         private NetworkManager networkManager;
         private IGameStateMachine stateMachine;
-        
+        private IRandomService random;
+
         [Inject]
         public void Construct(
             NetworkManager networkManager,
-            IGameStateMachine stateMachine)
+            IGameStateMachine stateMachine,
+            IRandomService random)
         {
             this.networkManager = networkManager;
             this.stateMachine = stateMachine;
+            this.random = random;
         }
 
         public override void OnStartServer() => 
@@ -80,7 +84,7 @@ namespace Code.Network
                 AsServer = IsServerInitialized,
                 Players = new List<LobbyPlayer>(players.Values),
                 CurrentConnection = LocalConnection,
-                Seed = seed //TODO: make ability to enter it in lobby
+                Seed = random.GetRandomSeed()
             };
             
             stateMachine.Enter<GameplayLoadingState, GameplayLoadingStateEnterArgs>(args);

@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Code.Gameplay.Item;
 using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
 using Code.Gameplay.TerrainGeneration.Generators;
@@ -30,6 +32,7 @@ namespace Code.Infrastructure.States.GameStates
         private readonly IUIFactory uiFactory;
         private readonly IPlayerFactory playerFactory;
         private readonly NetworkManager networkManager;
+        private readonly ItemDatabase itemDatabase;
 
         public GameplayLoadingState(
             ISceneLoader sceneLoader,
@@ -40,7 +43,8 @@ namespace Code.Infrastructure.States.GameStates
             ILevelDataProvider levelData, 
             IUIFactory uiFactory,
             NetworkManager networkManager,
-            IPlayerFactory playerFactory)
+            IPlayerFactory playerFactory,
+            ItemDatabase itemDatabase)
         {
             this.sceneLoader = sceneLoader;
             this.loadingCurtain = loadingCurtain;
@@ -51,6 +55,7 @@ namespace Code.Infrastructure.States.GameStates
             this.uiFactory = uiFactory;
             this.networkManager = networkManager;
             this.playerFactory = playerFactory;
+            this.itemDatabase = itemDatabase;
         }
         
         public async UniTask Enter(GameplayLoadingStateEnterArgs args)
@@ -60,11 +65,17 @@ namespace Code.Infrastructure.States.GameStates
             await LoadScene(args);
             await CreateUIRoot();
             await GenerateTerrain(args.Seed);
+            LoadItemDataBase();
             await SpawnPlayers(args);
             InitializeChunks();
             
             await stateMachine.Enter<GameplayLoopState>();
             loadingCurtain.Hide();
+        }
+
+        private void LoadItemDataBase()
+        {
+            itemDatabase.LoadItems();
         }
 
         private async UniTask LoadScene(GameplayLoadingStateEnterArgs args)

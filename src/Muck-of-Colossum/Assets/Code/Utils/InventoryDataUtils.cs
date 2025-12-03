@@ -32,7 +32,6 @@ namespace Code.Utils
             var uid = reader.ReadStringAllocated();
             database.TryGetItemPreset(uid, out var preset);
             
-            
             return preset;
         }
     }

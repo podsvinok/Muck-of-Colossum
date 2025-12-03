@@ -20,12 +20,12 @@ namespace Code.Gameplay.Item
             this.assets = assets;
         }
 
-        private void LoadItems()
+        public void LoadItems()
         {
             var presets = assets.LoadAll<ItemPreset>(AssetPath.ItemPresets);
             foreach (var preset in presets)
             {
-                if (itemPresets.TryAdd(preset.uid, preset))
+                if (!itemPresets.TryAdd(preset.uid, preset))
                     Debug.LogError($"Duplicate {preset.uid}");
             }
         }
