@@ -894,7 +894,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _componentIndexCache: 1
-  _addedNetworkObject: {fileID: 0}
+  _addedNetworkObject: {fileID: 2095437073064168544}
   _networkObjectCache: {fileID: 0}
   groundLayer:
     serializedVersion: 2
@@ -1619,12 +1619,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _componentIndexCache: 2
-  _addedNetworkObject: {fileID: 0}
+  _addedNetworkObject: {fileID: 2095437073064168544}
   _networkObjectCache: {fileID: 0}
   checkDistance: 2
   climbLayer:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 512
 --- !u!1 &3914916220213823807
 GameObject:
   m_ObjectHideFlags: 0
@@ -2661,7 +2661,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _componentIndexCache: 4
-  _addedNetworkObject: {fileID: 0}
+  _addedNetworkObject: {fileID: 2095437073064168544}
   _networkObjectCache: {fileID: 0}
 --- !u!1 &4736616587958593108
 GameObject:
@@ -4541,7 +4541,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _componentIndexCache: 3
-  _addedNetworkObject: {fileID: 0}
+  _addedNetworkObject: {fileID: 2095437073064168544}
   _networkObjectCache: {fileID: 0}
   currentCamera: {fileID: 0}
   followTarget: {fileID: 0}
@@ -4587,7 +4587,8 @@ GameObject:
   - component: {fileID: 3314324334890712508}
   - component: {fileID: 8989957538235025177}
   - component: {fileID: 6322635264675085840}
-  m_Layer: 8
+  - component: {fileID: 2095437073064168544}
+  m_Layer: 7
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4651,13 +4652,65 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _componentIndexCache: 0
-  _addedNetworkObject: {fileID: 0}
+  _addedNetworkObject: {fileID: 2095437073064168544}
   _networkObjectCache: {fileID: 0}
   config: {fileID: 0}
   view: {fileID: 5240118686535596785}
   playerCamera: {fileID: 0}
   groundChecker: {fileID: 7590301404860936211}
   climbChecker: {fileID: 1062316950762872900}
+--- !u!114 &2095437073064168544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8296920011064124557}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26b716c41e9b56b4baafaf13a523ba2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <IsNested>k__BackingField: 0
+  WasActiveDuringEdit: 0
+  WasActiveDuringEdit_Set1: 1
+  <ComponentIndex>k__BackingField: 0
+  <PredictedSpawn>k__BackingField: {fileID: 0}
+  <PredictedOwner>k__BackingField: {fileID: 0}
+  NetworkBehaviours: []
+  InitializedParentNetworkBehaviour: {fileID: 0}
+  InitializedNestedNetworkObjects: []
+  RuntimeParentNetworkBehaviour: {fileID: 0}
+  RuntimeChildNetworkBehaviours: []
+  _isNetworked: 1
+  _isSpawnable: 1
+  _isGlobal: 0
+  _initializeOrder: 0
+  _preventDespawnOnDisconnect: 0
+  _defaultDespawnType: 0
+  NetworkObserver: {fileID: 0}
+  _enablePrediction: 0
+  _predictionType: 0
+  _graphicalObject: {fileID: 0}
+  _detachGraphicalObject: 0
+  _enableStateForwarding: 1
+  _networkTransform: {fileID: 0}
+  _ownerInterpolation: 1
+  _ownerSmoothedProperties: 255
+  _adaptiveInterpolation: 3
+  _spectatorSmoothedProperties: 255
+  _spectatorInterpolation: 2
+  _enableTeleport: 0
+  _teleportThreshold: 1
+  <PrefabId>k__BackingField: 65535
+  <SpawnableCollectionId>k__BackingField: 0
+  <AssetPathHash>k__BackingField: 2092870565765373345
+  <SceneId>k__BackingField: 0
+  SerializedTransformProperties:
+    Position: {x: 0, y: 0, z: 0}
+    Rotation: {x: 0, y: 0, z: 0, w: 0}
+    Scale: {x: 0, y: 0, z: 0}
+    IsValid: 0
 --- !u!1 &8530764939278488170
 GameObject:
   m_ObjectHideFlags: 0

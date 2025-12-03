@@ -1,11 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Обновляет анимированный меш.
-/// Два режима:
-///   FastUpdate – только вертексы для навигации (без коллайдера).
-///   FullUpdate – ещё и MeshCollider (дорого).
-/// </summary>
 [RequireComponent(typeof(SkinnedMeshRenderer), typeof(MeshCollider))]
 public class BakeMesh : MonoBehaviour
 {
@@ -15,7 +9,7 @@ public class BakeMesh : MonoBehaviour
 
     [Header("Настройки")]
     [Tooltip("Обновлять ли коллайдер каждый кадр. Если выключено – он обновляется только вручную.")]
-    [SerializeField] private bool updateColliderEachFrame = false;
+    [SerializeField] public bool updateColliderEachFrame = false;
 
     [Tooltip("Пропускать обновление, если объект не виден камерой.")]
     [SerializeField] private bool skipIfNotVisible = true;
@@ -28,20 +22,20 @@ public class BakeMesh : MonoBehaviour
         meshCollider = GetComponent<MeshCollider>();
         bakedMesh = new Mesh();
         
-        ForceUpdateCollider();
+        //ForceUpdateCollider();
     }
 
     void LateUpdate()
     {
         if (skipIfNotVisible && !skinnedMeshRenderer.isVisible)
             return;
+        
+        
 
-        // Быстрое обновление вершин
         skinnedMeshRenderer.BakeMesh(bakedMesh);
-
+        
         if (updateColliderEachFrame)
         {
-            // Дорого, но точно
             meshCollider.sharedMesh = null;
             meshCollider.sharedMesh = bakedMesh;
         }
@@ -56,6 +50,11 @@ public class BakeMesh : MonoBehaviour
         meshCollider.sharedMesh = null;
         meshCollider.sharedMesh = bakedMesh;
     }
+
+    public void ClearBakedMesh()
+    {
+        meshCollider.sharedMesh = null;
+    } 
 
     public void ForceUpdateMesh()
     {

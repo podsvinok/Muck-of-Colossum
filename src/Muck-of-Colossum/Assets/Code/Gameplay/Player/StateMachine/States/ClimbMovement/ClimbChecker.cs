@@ -4,6 +4,7 @@ using UnityEngine;
 public class ClimbChecker : NetworkBehaviour
 {
     [SerializeField, Range(0f, 2f)] private float checkDistance;
+    [SerializeField] private LayerMask checkLayer;
     [SerializeField] private LayerMask climbLayer;
         
     public bool IsClimbable { get; private set; }
@@ -12,10 +13,16 @@ public class ClimbChecker : NetworkBehaviour
 
     public void CheckClimb()
     {
-        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, checkDistance, climbLayer))
+        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hitCheck, checkDistance, checkLayer))
         {
-            IsClimbable = ValidateHit(hit);
-            hitInfo = hit;
+            BakeMesh bakeMesh = hitCheck.collider.GetComponentInParent<MeshView>().BakeMesh;
+            bakeMesh.ForceUpdateCollider();
+            
+            if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, checkDistance, climbLayer))
+            {
+                IsClimbable = ValidateHit(hit);
+                hitInfo = hit;
+            }
         }
         else IsClimbable = false;
     }

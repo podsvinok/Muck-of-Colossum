@@ -14,8 +14,8 @@ TagManager:
   - Ground
   - Player
   - Climbable Enemy
-  - 
-  - 
+  - Climbable Surface
+  - Climbable Enemy Surface
   - 
   - 
   - 
