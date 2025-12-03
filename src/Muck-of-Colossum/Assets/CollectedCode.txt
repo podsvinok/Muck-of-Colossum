@@ -1,0 +1,4701 @@
+﻿// Собрано файлов: 83
+// Дата: 02.12.2025 21:05:12
+================================================================================
+
+// ========== Assets\Code\Network\LobbyPlayer.cs ==========
+
+using FishNet.Connection;
+
+namespace Code.Gameplay.Lobby
+{
+    public struct LobbyPlayer
+    {
+        public NetworkConnection Connection;
+        public bool IsReady;
+        public bool IsServer;
+        public string PlayerName;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Network\LobbyService.cs ==========
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Code.Infrastructure.SceneManagement;
+using Code.Infrastructure.States.GameStates;
+using Code.Infrastructure.States.StateMachine;
+using Code.Utils;
+using FishNet.Connection;
+using FishNet.Managing;
+using FishNet.Object;
+using FishNet.Object.Synchronizing;
+using UnityEngine;
+using Zenject;
+
+namespace Code.Gameplay.Lobby
+{
+    public class LobbyService : NetworkBehaviour
+    {
+        public IReadOnlyDictionary<NetworkConnection, LobbyPlayer> GetPlayers() => players;
+        
+        public event Action OnLobbyPlayerChanged;
+        
+        private readonly SyncDictionary<NetworkConnection, LobbyPlayer> players = new();
+        
+        private NetworkManager networkManager;
+        private IGameStateMachine stateMachine;
+        
+        [Inject]
+        public void Construct(
+            NetworkManager networkManager,
+            IGameStateMachine stateMachine)
+        {
+            this.networkManager = networkManager;
+            this.stateMachine = stateMachine;
+        }
+
+        public override void OnStartServer() => 
+            networkManager.SceneManager.OnClientLoadedStartScenes += OnClientLoadedStartScenes;
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SetPlayerReady(NetworkConnection sender, bool isReady)
+        {
+            if (players.ContainsKey(sender))    
+            {
+                var player = players[sender];
+                player.IsReady = isReady;
+                players[sender] = player;
+
+                OnLobbyPlayerChanged?.Invoke();
+            }
+        }
+
+        [Server]
+        public void CheckAllReady()
+        {
+            bool allReady = players.Values.All(p => p.IsReady);
+
+            if (allReady) 
+                StartGameTransition();
+        }
+
+        private void OnClientLoadedStartScenes(NetworkConnection connection, bool asServer)
+        {
+            if (!asServer)
+                return;
+            
+            players.Add(connection, new LobbyPlayer
+            {
+                Connection = connection,
+                IsReady = false,
+                PlayerName = $"Player {connection.ClientId}",
+                IsServer = IsServerInitialized
+            });
+                
+            OnLobbyPlayerChanged?.Invoke();
+        }
+
+        [ObserversRpc]
+        private void StartGameTransition()
+        {
+            var args = new GameplayLoadingStateEnterArgs()
+            {
+                AsServer = IsServerInitialized,
+                Players = new List<LobbyPlayer>(players.Values)
+            };
+            
+            stateMachine.Enter<GameplayLoadingState, GameplayLoadingStateEnterArgs>(args);
+        }
+
+        private void OnDisable() => 
+            networkManager.SceneManager.OnClientLoadedStartScenes -= OnClientLoadedStartScenes;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Utils\AssetPath.cs ==========
+
+namespace Code.Utils
+{
+    public static class AssetPath
+    {
+        public const string PlayerPath = "Player";
+        public const string LoadingScene = "LoadingScene";
+        public const string LoadingCurtain = "LoadingCurtain";
+        public const string MainMenuScene = "MainMenu";
+        public const string LobbyScene = "Lobby";
+        public const string GameScene = "Game";
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Utils\DontDestroyOnLoad.cs ==========
+
+using UnityEngine;
+
+namespace Code.Utils
+{
+    public class DontDestroyOnLoad : MonoBehaviour
+    {
+        private void Awake()
+        {
+            DontDestroyOnLoad(this);
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Utils\SwitchToEntrySceneInEditor.cs ==========
+
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Zenject;
+
+namespace Code.Infrastructure.Loading
+{
+    // Has execution order to start before every other script
+    public class SwitchToEntrySceneInEditor : MonoBehaviour
+    {
+#if UNITY_EDITOR
+        private const int EntrySceneIndex = 0;
+
+        private void Awake()
+        {
+            if (ProjectContext.HasInstance) 
+                return;
+      
+            foreach (GameObject root in gameObject.scene.GetRootGameObjects()) 
+                root.SetActive(false);
+      
+            SceneManager.LoadScene(EntrySceneIndex);
+        }
+#endif
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Utils\UniTaskHelper.cs ==========
+
+using System;
+using Cysharp.Threading.Tasks;
+
+namespace Code.Utils
+{
+    public static class UniTaskHelper {
+        public static Action<T> Action<T>(Func<T, UniTask> asyncAction) => 
+            (t1) => asyncAction(t1).Forget();
+        public static Action<T1, T2> Action<T1, T2>(Func<T1, T2, UniTask> asyncAction) => 
+            (t1, t2) => asyncAction(t1, t2).Forget();
+        public static Action<T1, T2, T3> Action<T1, T2, T3>(Func<T1, T2, T3, UniTask> asyncAction) => 
+            (t1, t2, t3) => asyncAction(t1, t2, t3).Forget();
+        
+        public static Action<T> Action<T>(Func<T, UniTaskVoid> asyncAction) => 
+            (t1) => asyncAction(t1).Forget();
+        public static Action<T1, T2> Action<T1, T2>(Func<T1, T2, UniTaskVoid> asyncAction) => 
+            (t1, t2) => asyncAction(t1, t2).Forget();
+        public static Action<T1, T2, T3> Action<T1, T2, T3>(Func<T1, T2, T3, UniTaskVoid> asyncAction) => 
+            (t1, t2, t3) => asyncAction(t1, t2, t3).Forget();
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Cameras\CameraController.cs ==========
+
+
+using FishNet.Object;
+using Unity.Cinemachine;
+using UnityEngine;
+
+public class CameraController : NetworkBehaviour
+{
+    [SerializeField] private CinemachineCamera currentCamera;
+    [SerializeField] private Transform followTarget;
+    public CinemachineCamera CurrentCamera => currentCamera;
+
+    public override void OnStartClient()
+    {
+        Init();
+        currentCamera.enabled = IsOwner;
+    }
+    
+    public void Init()
+    {
+        currentCamera = GetComponentInChildren<CinemachineCamera>();
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Climbing System\BakeMesh.cs ==========
+
+using UnityEngine;
+
+/// <summary>
+/// Обновляет анимированный меш.
+/// Два режима:
+///   FastUpdate – только вертексы для навигации (без коллайдера).
+///   FullUpdate – ещё и MeshCollider (дорого).
+/// </summary>
+[RequireComponent(typeof(SkinnedMeshRenderer), typeof(MeshCollider))]
+public class BakeMesh : MonoBehaviour
+{
+    private SkinnedMeshRenderer skinnedMeshRenderer;
+    private MeshCollider meshCollider;
+    private Mesh bakedMesh;
+
+    [Header("Настройки")]
+    [Tooltip("Обновлять ли коллайдер каждый кадр. Если выключено – он обновляется только вручную.")]
+    [SerializeField] private bool updateColliderEachFrame = false;
+
+    [Tooltip("Пропускать обновление, если объект не виден камерой.")]
+    [SerializeField] private bool skipIfNotVisible = true;
+
+    public Mesh BakedMesh => bakedMesh;
+
+    void Awake()
+    {
+        skinnedMeshRenderer = GetComponent<SkinnedMeshRenderer>();
+        meshCollider = GetComponent<MeshCollider>();
+        bakedMesh = new Mesh();
+        
+        ForceUpdateCollider();
+    }
+
+    void LateUpdate()
+    {
+        if (skipIfNotVisible && !skinnedMeshRenderer.isVisible)
+            return;
+
+        // Быстрое обновление вершин
+        skinnedMeshRenderer.BakeMesh(bakedMesh);
+
+        if (updateColliderEachFrame)
+        {
+            // Дорого, но точно
+            meshCollider.sharedMesh = null;
+            meshCollider.sharedMesh = bakedMesh;
+        }
+    }
+
+    /// <summary>
+    /// Принудительно обновить MeshCollider (например, в момент зацепа).
+    /// </summary>
+    public void ForceUpdateCollider()
+    {
+        skinnedMeshRenderer.BakeMesh(bakedMesh);
+        meshCollider.sharedMesh = null;
+        meshCollider.sharedMesh = bakedMesh;
+    }
+
+    public void ForceUpdateMesh()
+    {
+        skinnedMeshRenderer.BakeMesh(bakedMesh);
+
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Climbing System\ClimbDetector.cs ==========
+
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Serialization;
+
+[RequireComponent(typeof(CharacterController))]
+public class ClimbDetector : MonoBehaviour
+{
+    [SerializeField] private Camera ClimbCamera;
+    
+    [Header("Detection")]
+    [SerializeField] private float rayDistance = 2f;
+    [SerializeField] private LayerMask climbableMask;
+    [SerializeField] private float moveSpeed = 0.5f;
+    [SerializeField] private float rotationSpeed = 10f;
+
+    private MeshCollider targetCollider;
+    private Mesh targetMesh;
+    private int triangleIndex = -1;
+    private Vector3 baryCoords;
+    private bool attached = false;
+    private IRotationStrategy rotationStrategy;
+
+    private Vector3 rotationDirection;
+
+    private SurfaceNavigator navigator;
+
+    private void Start()
+    {
+        rotationStrategy = new ClimbRotation();
+        TryAttach();
+    }
+    
+    void Update()
+    {
+        
+        if (!attached)
+        {
+            if (Input.GetKeyDown(KeyCode.X))
+            {
+                TryAttach();
+            }
+        }
+        else
+        {
+            HandleMovement();
+        }
+    }
+
+    // ---- Публичный API ----
+    public void Detach()
+    {
+        attached = false;
+        targetCollider = null;
+        targetMesh = null;
+        triangleIndex = -1;
+        navigator = null;
+    }
+
+    // ---- Вспомогательные методы ----
+
+    private void TryAttach()
+    {
+        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, rayDistance, climbableMask))
+        {
+            if (ValidateHit(hit))
+            {
+                AttachToHit(hit);
+            }
+        }
+        
+    }
+
+    private bool ValidateHit(RaycastHit hit)
+    {
+        return hit.collider is MeshCollider mc && mc.sharedMesh != null;
+    }
+
+    private void AttachToHit(RaycastHit hit)
+    {
+        targetCollider = hit.collider as MeshCollider;
+        targetMesh = targetCollider.sharedMesh;
+        triangleIndex = hit.triangleIndex;
+        baryCoords = hit.barycentricCoordinate;
+        attached = true;
+        
+        targetCollider.GetComponent<BakeMesh>()?.ForceUpdateCollider();
+        
+        // Берём TriangleAdjacency с поверхности
+        TriangleAdjacency adjacency = targetCollider.GetComponentInChildren<TriangleAdjacency>();
+        if (adjacency != null)
+        {
+            adjacency.RebuildFromMesh(targetCollider.sharedMesh, 1e-6f);
+            
+            navigator = new SurfaceNavigator( targetCollider, 
+                targetCollider.transform, 
+                adjacency.Neighbors, 
+                adjacency.VertexToTriangles,
+                adjacency.Remap, moveSpeed);
+            
+            if (navigator != null)
+            {
+                if (adjacency.Remap == null || adjacency.Remap.Length == 0)
+                    Debug.LogError("Remap пустой");
+
+                if (adjacency.Remap.Length < targetMesh.vertexCount)
+                    Debug.LogWarning($"Remap.Length ({adjacency.Remap.Length}) < baked vertex count ({targetMesh.vertexCount})");
+            }
+        }
+        else
+        {
+            Debug.LogError("На целевом меше нет TriangleAdjacency!");
+            Debug.Log(hit.collider.name);
+        }
+    }
+
+    private void HandleMovement()
+    {
+        if (navigator == null || triangleIndex < 0) return;
+
+        Vector3 moveDir = Vector3.zero;
+        
+        if (Input.GetKey(KeyCode.W)) moveDir += transform.forward;
+        if (Input.GetKey(KeyCode.S)) moveDir -= transform.forward;
+
+        moveDir.Normalize();
+
+        int _nextTri = triangleIndex;
+        int _oldTri = triangleIndex;
+        
+        // Делаем шаг по поверхности
+        if (moveDir != Vector3.zero)
+        {
+            if (navigator.StepForward(triangleIndex, GetWorldPointOnTriangle(), moveDir,
+                    out int nextTri, out Vector3 nextPos))
+            {
+                _nextTri = nextTri;
+                triangleIndex = nextTri;
+                baryCoords = WorldToBarycentric(nextTri, nextPos);
+            }
+        }
+        Vector3 surfaceNormal = GetTriangleNormal(triangleIndex);
+        Vector3 surfaceRight = GetSurfaceRight(surfaceNormal);
+
+        if (Input.GetKey(KeyCode.D)) rotationDirection += transform.right;
+        if (Input.GetKey(KeyCode.A)) rotationDirection -= transform.right;
+        
+        
+        HandleUpdateAttachRotation(_oldTri, _nextTri, rotationDirection);
+
+        // Обновляем мировую позицию через барицентрики
+        Vector3 worldPoint = GetWorldPointOnTriangle();
+        transform.position = worldPoint;
+    }
+
+    private void HandleUpdateAttachRotation(int _oldTri, int _nextTri, Vector3 rotaionDirection)
+    {
+        Vector3 oldNormal = GetTriangleNormal(_oldTri);
+        Vector3 newNormal = GetTriangleNormal(_nextTri);
+
+        // 1. Определяем forward: если игрок нажимает AD (накопилось), берем его
+        Vector3 desiredForward = rotationDirection.normalized != Vector3.zero 
+            ? rotationDirection.normalized 
+            : transform.forward;
+
+        // 2. Проецируем forward на поверхность, чтобы forward не улетал в воздух
+        Vector3 forwardOnSurface = Vector3.ProjectOnPlane(desiredForward, newNormal).normalized;
+
+        // Если forward совпал с нормалью (редкий случай), берем крест к up
+        if (forwardOnSurface == Vector3.zero)
+            forwardOnSurface = Vector3.ProjectOnPlane(transform.up, newNormal).normalized;
+
+        // 3. Создаем ориентацию: направление туда, куда хочет игрок, и вверх по нормали поверхности
+        Quaternion targetRot = Quaternion.LookRotation(forwardOnSurface, newNormal);
+
+        // 4. Плавно применяем
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * rotationSpeed);
+
+        // 5. Сбрасываем направление вращения каждый кадр, чтобы оно накапливалось только по кнопкам
+        this.rotationDirection = Vector3.zero;
+    }
+
+    // ---- Работа с треугольниками ----
+
+    private Vector3 GetWorldPointOnTriangle()
+    {
+        GetTriangleVertices(triangleIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
+
+        // barycentric интерполяция
+        Vector3 localPoint = v0 * baryCoords.x + v1 * baryCoords.y + v2 * baryCoords.z;
+        return targetCollider.transform.TransformPoint(localPoint);
+    }
+
+    private Vector3 WorldToBarycentric(int triIndex, Vector3 worldPos)
+    {
+        GetTriangleVertices(triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
+
+        // Переводим в мировые
+        v0 = targetCollider.transform.TransformPoint(v0);
+        v1 = targetCollider.transform.TransformPoint(v1);
+        v2 = targetCollider.transform.TransformPoint(v2);
+
+        // Плоскость и векторы
+        Vector3 v0v1 = v1 - v0;
+        Vector3 v0v2 = v2 - v0;
+        Vector3 v0p = worldPos - v0;
+
+        float d00 = Vector3.Dot(v0v1, v0v1);
+        float d01 = Vector3.Dot(v0v1, v0v2);
+        float d11 = Vector3.Dot(v0v2, v0v2);
+        float d20 = Vector3.Dot(v0p, v0v1);
+        float d21 = Vector3.Dot(v0p, v0v2);
+
+        float denom = d00 * d11 - d01 * d01;
+        float v = (d11 * d20 - d01 * d21) / denom;
+        float w = (d00 * d21 - d01 * d20) / denom;
+        float u = 1.0f - v - w;
+
+        return new Vector3(u, v, w);
+    }
+
+    private void GetTriangleVertices(int triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2)
+    {
+        int i0 = targetMesh.triangles[triIndex * 3 + 0];
+        int i1 = targetMesh.triangles[triIndex * 3 + 1];
+        int i2 = targetMesh.triangles[triIndex * 3 + 2];
+
+        v0 = targetMesh.vertices[i0];
+        v1 = targetMesh.vertices[i1];
+        v2 = targetMesh.vertices[i2];
+    }
+    
+    private Vector3 GetTriangleNormal(int triIndex)
+    {
+        GetTriangleVertices(triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
+
+        v0 = targetCollider.transform.TransformPoint(v0);
+        v1 = targetCollider.transform.TransformPoint(v1);
+        v2 = targetCollider.transform.TransformPoint(v2);
+
+        return Vector3.Cross(v1 - v0, v2 - v0).normalized;
+    }
+    
+    private Vector3 GetSurfaceRight(Vector3 surfaceNormal)
+    {
+        // Берём текущий forward персонажа и делаем его ортогональным к поверхности
+        Vector3 forwardOnSurface = Vector3.ProjectOnPlane(transform.forward, surfaceNormal).normalized;
+
+        // Перпендикуляр к forward и normal даст вправо вдоль поверхности
+        return Vector3.Cross(surfaceNormal, forwardOnSurface).normalized;
+    }
+    
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Climbing System\MeshClimber.cs ==========
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace MeshClimbSystem
+{
+    [RequireComponent(typeof(CharacterController))]
+    public class MeshClimber : MonoBehaviour
+    {
+        [Header("Detection")]
+        [SerializeField] private float attachDistance = 2f;
+        [SerializeField] private LayerMask climbableMask = ~0;
+        [SerializeField] private KeyCode attachKey = KeyCode.X;
+
+        [Header("Movement")]
+        [SerializeField] private float moveSpeed = 2f;
+        [SerializeField, Tooltip("Время плавного перехода между треугольниками")] private float crossFadeTime = 0.08f;
+
+        [Header("Debug")]
+        [SerializeField] private bool drawCurrentTriangle = true;
+        [SerializeField] private Color debugTriangleColor = Color.yellow;
+
+        private MeshCollider targetCollider;
+        private Mesh targetMesh;
+        private TriangleGraph graph;
+
+        private TriangleNode currentTriangle;
+        private Vector3 baryCoords; // (u, v, w)
+
+        private bool attached = false;
+        private bool isCrossFading = false;
+
+        void Update()
+        {
+            if (!attached)
+            {
+                if (Input.GetKeyDown(attachKey))
+                    TryAttach();
+            }
+            else
+            {
+                if (!isCrossFading)
+                    UpdateMovement();
+
+                if (Input.GetKeyDown(attachKey))
+                    Detach();
+            }
+        }
+
+        private void TryAttach()
+        {
+            if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, attachDistance, climbableMask))
+            {
+                if (hit.collider is MeshCollider mc && mc.sharedMesh != null)
+                {
+                    Debug.Log(mc);
+                    targetCollider = mc;
+                    targetMesh = mc.sharedMesh;
+
+                    if (graph == null || graph.Mesh != targetMesh)
+                        graph = new TriangleGraph(targetMesh);
+
+                    currentTriangle = graph.GetTriangle(hit.triangleIndex);
+                    baryCoords = hit.barycentricCoordinate;
+                    attached = true;
+                }
+            }
+        }
+
+        public void Detach()
+        {
+            attached = false;
+            targetCollider = null;
+            targetMesh = null;
+            currentTriangle = null;
+        }
+
+        private void UpdateMovement()
+        {
+            if (currentTriangle == null || targetCollider == null) return;
+
+            Vector2 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+            if (input == Vector2.zero) return;
+
+            // Мировые вершины и нормаль треугольника
+            currentTriangle.GetWorldVertices(targetCollider.transform, out Vector3 w0, out Vector3 w1, out Vector3 w2);
+            Vector3 edge1 = w1 - w0;
+            Vector3 edge2 = w2 - w0;
+            Vector3 normal = Vector3.Cross(edge1, edge2).normalized;
+
+            // --- ГЛОБАЛЬНЫЙ БАЗИС УПРАВЛЕНИЯ ---
+            Vector3 worldForward = Vector3.forward;
+            Vector3 worldRight = Vector3.right;
+
+            // Вектор движения из ввода игрока
+            Vector3 desired = worldForward * input.y + worldRight * input.x;
+
+            // Проекция на плоскость треугольника
+            Vector3 moveWorld = Vector3.ProjectOnPlane(desired, normal).normalized * moveSpeed * Time.deltaTime;
+
+            // Считаем новые барицентрические координаты
+            Vector3 newBary = MoveBarycentric(baryCoords, moveWorld, currentTriangle, targetCollider.transform, out TriangleNode neighborTri);
+
+            if (neighborTri != null)
+            {
+                StartCoroutine(CrossFadeToNeighbor(newBary, neighborTri));
+            }
+            else
+            {
+                baryCoords = newBary;
+                Vector3 worldPos = currentTriangle.BaryToWorld(baryCoords, targetCollider.transform);
+                transform.position = worldPos;
+
+                // Поворот игрока в сторону движения (но только в плоскости треугольника)
+                if (desired.sqrMagnitude > 1e-6f)
+                {
+                    Vector3 flatDir = Vector3.ProjectOnPlane(desired, normal).normalized;
+                    transform.rotation = Quaternion.LookRotation(flatDir, normal);
+                }
+            }
+        }
+
+
+        // Плавный переход между треугольниками — явный System.Collections.IEnumerator
+        private IEnumerator CrossFadeToNeighbor(Vector3 targetBary, TriangleNode newTri)
+        {
+            isCrossFading = true;
+            float t = 0f;
+
+            // стартовая и целевая мировые позиции
+            Vector3 startWorld = currentTriangle.BaryToWorld(baryCoords, targetCollider.transform);
+            Vector3 endWorld = newTri.BaryToWorld(targetBary, targetCollider.transform);
+
+            // стартовая и целевая ротации (ориентация по нормали соседнего треугольника)
+            currentTriangle.GetWorldVertices(targetCollider.transform, out Vector3 sw0, out Vector3 sw1, out Vector3 sw2);
+            Vector3 sNormal = Vector3.Cross(sw1 - sw0, sw2 - sw0).normalized;
+            Vector3 sRight = Vector3.ProjectOnPlane(sw1 - sw0, sNormal).normalized;
+            Vector3 sForward = Vector3.Cross(sNormal, sRight).normalized;
+            Quaternion startRot = Quaternion.LookRotation(Vector3.ProjectOnPlane(transform.forward, sNormal).sqrMagnitude > 1e-6f ? Vector3.ProjectOnPlane(transform.forward, sNormal) : sForward, sNormal);
+
+            newTri.GetWorldVertices(targetCollider.transform, out Vector3 nw0, out Vector3 nw1, out Vector3 nw2);
+            Vector3 nNormal = Vector3.Cross(nw1 - nw0, nw2 - nw0).normalized;
+            Vector3 nRight = Vector3.ProjectOnPlane(nw1 - nw0, nNormal).normalized;
+            Vector3 nForward = Vector3.Cross(nNormal, nRight).normalized;
+            Quaternion endRot = Quaternion.LookRotation(Vector3.ProjectOnPlane(transform.forward, nNormal).sqrMagnitude > 1e-6f ? Vector3.ProjectOnPlane(transform.forward, nNormal) : nForward, nNormal);
+
+            while (t < crossFadeTime)
+            {
+                t += Time.deltaTime;
+                float f = Mathf.Clamp01(t / crossFadeTime);
+                transform.position = Vector3.Lerp(startWorld, endWorld, f);
+                transform.rotation = Quaternion.Slerp(startRot, endRot, f);
+                yield return null;
+            }
+
+            // завершили переход
+            currentTriangle = newTri;
+            baryCoords = targetBary;
+            isCrossFading = false;
+        }
+
+        /// <summary>
+        /// Перемещает точку, возвращает новые барицентрики. Если переход через ребро - возвращает соседний треугольник в out.
+        /// </summary>
+        private Vector3 MoveBarycentric(Vector3 bary, Vector3 moveWorld, TriangleNode tri, Transform meshTr, out TriangleNode newTri)
+        {
+            newTri = null;
+
+            Vector3 worldPos = tri.BaryToWorld(bary, meshTr);
+            Vector3 newWorldPos = worldPos + moveWorld;
+
+            Vector3 newBary = tri.WorldToBary(newWorldPos, meshTr);
+
+            // Найдём минимальную компоненту (вышли ли за треугольник)
+            int minIndex = 0;
+            float minVal = newBary.x;
+            if (newBary.y < minVal) { minVal = newBary.y; minIndex = 1; }
+            if (newBary.z < minVal) { minVal = newBary.z; minIndex = 2; }
+
+            if (minVal >= 0f)
+            {
+                // осталось внутри текущего треугольника
+                return newBary;
+            }
+
+            // если вышли наружу — ребро, с которым пересечение: edgeIndex = (minIndex + 1) % 3
+            int edgeIndex = (minIndex + 1) % 3;
+            TriangleNode neighbor = tri.neighbors[edgeIndex];
+
+            if (neighbor != null)
+            {
+                // пересчитываем барицентрики в соседнем треугольнике
+                Vector3 neighborBary = neighbor.WorldToBary(newWorldPos, meshTr);
+                newTri = neighbor;
+                return neighborBary;
+            }
+            else
+            {
+                // соседа нет — зажимаем точку на границе (fallback)
+                float ux = Mathf.Max(newBary.x, 0f);
+                float uy = Mathf.Max(newBary.y, 0f);
+                float uz = Mathf.Max(newBary.z, 0f);
+                float sum = ux + uy + uz;
+                if (sum <= 1e-6f) return new Vector3(1f / 3f, 1f / 3f, 1f / 3f);
+                return new Vector3(ux / sum, uy / sum, uz / sum);
+            }
+        }
+
+        void OnDrawGizmos()
+        {
+            if (!drawCurrentTriangle) return;
+
+            if (attached && currentTriangle != null && targetCollider != null)
+            {
+                currentTriangle.GetWorldVertices(targetCollider.transform, out Vector3 w0, out Vector3 w1, out Vector3 w2);
+                Gizmos.color = debugTriangleColor;
+                Gizmos.DrawLine(w0, w1);
+                Gizmos.DrawLine(w1, w2);
+                Gizmos.DrawLine(w2, w0);
+
+                Vector3 worldPos = currentTriangle.BaryToWorld(baryCoords, targetCollider.transform);
+                Gizmos.DrawSphere(worldPos, 0.03f);
+            }
+        }
+    }
+
+    #region Вспомогательные классы
+
+    internal struct EdgeKey
+    {
+        public readonly int a;
+        public readonly int b;
+        public EdgeKey(int v0, int v1)
+        {
+            if (v0 < v1) { a = v0; b = v1; } else { a = v1; b = v0; }
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is EdgeKey other && a == other.a && b == other.b;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked { return a * 397 ^ b; }
+        }
+    }
+
+    internal struct EdgeInfo
+    {
+        public TriangleNode tri;
+        public int edgeIndex;
+    }
+
+    internal class TriangleNode
+    {
+        public int index;
+        public int[] vertices; // индексы вершин
+        public TriangleNode[] neighbors = new TriangleNode[3];
+
+        private Mesh mesh;
+
+        public TriangleNode(int triIndex, Mesh mesh)
+        {
+            this.index = triIndex;
+            this.mesh = mesh;
+            vertices = new int[3]
+            {
+                mesh.triangles[triIndex * 3 + 0],
+                mesh.triangles[triIndex * 3 + 1],
+                mesh.triangles[triIndex * 3 + 2]
+            };
+        }
+
+        public void GetWorldVertices(Transform tr, out Vector3 w0, out Vector3 w1, out Vector3 w2)
+        {
+            Vector3[] verts = mesh.vertices;
+            w0 = tr.TransformPoint(verts[vertices[0]]);
+            w1 = tr.TransformPoint(verts[vertices[1]]);
+            w2 = tr.TransformPoint(verts[vertices[2]]);
+        }
+
+        public Vector3 BaryToWorld(Vector3 bary, Transform tr)
+        {
+            Vector3[] verts = mesh.vertices;
+            Vector3 v0 = verts[vertices[0]];
+            Vector3 v1 = verts[vertices[1]];
+            Vector3 v2 = verts[vertices[2]];
+            Vector3 local = v0 * bary.x + v1 * bary.y + v2 * bary.z;
+            return tr.TransformPoint(local);
+        }
+
+        public Vector3 WorldToBary(Vector3 worldPos, Transform tr)
+        {
+            GetWorldVertices(tr, out Vector3 w0, out Vector3 w1, out Vector3 w2);
+            return Barycentric(worldPos, w0, w1, w2);
+        }
+
+        private Vector3 Barycentric(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
+        {
+            Vector3 v0 = b - a;
+            Vector3 v1 = c - a;
+            Vector3 v2 = p - a;
+            float d00 = Vector3.Dot(v0, v0);
+            float d01 = Vector3.Dot(v0, v1);
+            float d11 = Vector3.Dot(v1, v1);
+            float d20 = Vector3.Dot(v2, v0);
+            float d21 = Vector3.Dot(v2, v1);
+            float denom = d00 * d11 - d01 * d01;
+            if (Mathf.Abs(denom) < 1e-8f)
+            {
+                return new Vector3(1f / 3f, 1f / 3f, 1f / 3f);
+            }
+            float v = (d11 * d20 - d01 * d21) / denom;
+            float w = (d00 * d21 - d01 * d20) / denom;
+            float u = 1.0f - v - w;
+            return new Vector3(u, v, w);
+        }
+    }
+
+    internal class TriangleGraph
+    {
+        public Mesh Mesh { get; private set; }
+        private TriangleNode[] triangles;
+
+        public TriangleGraph(Mesh mesh)
+        {
+            Mesh = mesh;
+            BuildGraph();
+        }
+
+        private void BuildGraph()
+        {
+            int triCount = Mesh.triangles.Length / 3;
+            triangles = new TriangleNode[triCount];
+
+            for (int i = 0; i < triCount; i++)
+                triangles[i] = new TriangleNode(i, Mesh);
+
+            var edgeMap = new Dictionary<EdgeKey, EdgeInfo>();
+
+            foreach (var tri in triangles)
+            {
+                for (int e = 0; e < 3; e++)
+                {
+                    int v0 = tri.vertices[e];
+                    int v1 = tri.vertices[(e + 1) % 3];
+                    var key = new EdgeKey(v0, v1);
+
+                    if (edgeMap.TryGetValue(key, out EdgeInfo other))
+                    {
+                        tri.neighbors[e] = other.tri;
+                        other.tri.neighbors[other.edgeIndex] = tri;
+                    }
+                    else
+                    {
+                        edgeMap[key] = new EdgeInfo { tri = tri, edgeIndex = e };
+                    }
+                }
+            }
+        }
+
+        public TriangleNode GetTriangle(int index)
+        {
+            if (index < 0 || index >= triangles.Length) return null;
+            return triangles[index];
+        }
+    }
+
+    #endregion
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Climbing System\SurfaceNavigator.cs ==========
+
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// ✅ ФИНАЛЬНОЕ РЕШЕНИЕ - Баланс между "не застревать" и "не телепортироваться"
+/// 
+/// Ключевая идея:
+/// - Сначала ищем соседей через adjacency (точно)
+/// - Потом через вершины (расширенно, но локально)
+/// - НИКОГДА не ищем по всей сцене (исключена общая телепортация)
+/// </summary>
+public class SurfaceNavigator
+{
+    private MeshCollider meshCollider;
+    private Transform meshTransform;
+    private Dictionary<int, List<int>> adjacency;
+
+    private float moveSpeed;
+    private float step = 0;
+    private float subStep = 0.3f;
+    private float maxSaveStepSize = 0.1f;
+    private Dictionary<int, List<int>> vertexToTriangles;
+    private int[] remap;
+    
+    // ✅ ОПТИМИЗИРОВАННЫЕ параметры
+    private float sharpAngleTolerance = 0.1f;   // Достаточен для острых углов
+    private float baryCentricTolerance = 0.01f; // Баланс между гибкостью и точностью
+    private int maxNavigationRetries = 4;
+    
+    private Mesh CurrentMesh => meshCollider.sharedMesh;
+
+    public SurfaceNavigator(MeshCollider meshCollider, Transform meshTransform,
+        Dictionary<int, List<int>> adjacency,
+        Dictionary<int, List<int>> vertexToTriangles,
+        int[] remap, float moveSpeed)
+    {
+        this.meshCollider = meshCollider;
+        this.meshTransform = meshTransform;
+        this.adjacency = adjacency;
+        this.vertexToTriangles = vertexToTriangles;
+        this.remap = remap;
+        this.moveSpeed = moveSpeed;
+    }
+
+    public bool StepForward(
+        int currentTriangle,
+        Vector3 worldPos,
+        Vector3 worldMove,
+        out int nextTriangle,
+        out Vector3 nextWorldPos)
+    {
+        nextTriangle = currentTriangle;
+        nextWorldPos = worldPos;
+
+        if (worldMove == Vector3.zero)
+            return false;
+
+        step = moveSpeed * Time.deltaTime;
+        int stepCount = StepDivision(out float remainder);
+
+        for (int i = 0; i < stepCount; i++)
+        {
+            subStep = maxSaveStepSize;
+
+            if (!AttemptStep(ref currentTriangle, ref worldPos, worldMove, subStep,
+                    out nextTriangle, out nextWorldPos))
+            {
+                return false;
+            }
+
+            currentTriangle = nextTriangle;
+            worldPos = nextWorldPos;
+        }
+
+        if (remainder > 0)
+        {
+            subStep = remainder;
+            if (!AttemptStep(ref currentTriangle, ref worldPos, worldMove, subStep,
+                    out nextTriangle, out nextWorldPos))
+            {
+                return false;
+            }
+            currentTriangle = nextTriangle;
+            worldPos = nextWorldPos;
+        }
+
+        return true;
+    }
+
+    private bool AttemptStep(ref int currentTriangle, ref Vector3 worldPos, Vector3 moveDir,
+        float stepLength, out int nextTriangle, out Vector3 nextWorldPos)
+    {
+        nextTriangle = currentTriangle;
+        nextWorldPos = worldPos;
+
+        float currentStepLength = stepLength;
+
+        for (int retry = 0; retry < maxNavigationRetries; retry++)
+        {
+            if (DoSubStep(ref currentTriangle, ref worldPos, moveDir, currentStepLength,
+                    out nextTriangle, out nextWorldPos))
+            {
+                return true;
+            }
+
+            currentStepLength *= 0.5f;
+
+            if (currentStepLength < 0.001f)
+            {
+                nextWorldPos = worldPos;
+                nextTriangle = currentTriangle;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool DoSubStep(ref int currentTriangle, ref Vector3 worldPos, Vector3 moveDir,
+        float stepLength, out int nextTriangle, out Vector3 nextWorldPos)
+    {
+        nextTriangle = currentTriangle;
+        nextWorldPos = worldPos;
+
+        GetTriangleVertices(currentTriangle, out Vector3 v0, out Vector3 v1, out Vector3 v2);
+        v0 = meshTransform.TransformPoint(v0);
+        v1 = meshTransform.TransformPoint(v1);
+        v2 = meshTransform.TransformPoint(v2);
+
+        Vector3 normal = Vector3.Cross(v1 - v0, v2 - v0).normalized;
+        Vector3 moveProjected = Vector3.ProjectOnPlane(moveDir, normal).normalized;
+
+        Vector3 candidate = worldPos + moveProjected * stepLength;
+        Vector3 bc = ToBarycentric(candidate, v0, v1, v2);
+
+        // ✅ Достаточная толерантность для острых углов
+        if (bc.x >= -baryCentricTolerance && bc.y >= -baryCentricTolerance &&
+            bc.z >= -baryCentricTolerance)
+        {
+            nextWorldPos = candidate;
+            return true;
+        }
+
+        // ✅ ЛОКАЛЬНЫЙ поиск - только через adjacency и вершины
+        int neighbor = FindNeighborLocal(currentTriangle, v0, v1, v2, candidate);
+        if (neighbor >= 0)
+        {
+            nextTriangle = neighbor;
+            nextWorldPos = candidate;
+            return true;
+        }
+
+        return false;
+    }
+
+    private int StepDivision(out float remainder)
+    {
+        int stepDivision = (int)(step / maxSaveStepSize);
+        remainder = step % maxSaveStepSize;
+        return stepDivision;
+    }
+
+    /// <summary>
+    /// ✅ ЛОКАЛЬНЫЙ поиск соседей - НЕ ищет по всей сцене!
+    /// Только: adjacency → вершины → всё
+    /// </summary>
+    private int FindNeighborLocal(int currentTriangle, Vector3 v0, Vector3 v1, Vector3 v2,
+        Vector3 candidate)
+    {
+        // ✅ ШАГ 1: Поиск через ADJACENCY (прямые соседи)
+        if (adjacency.ContainsKey(currentTriangle))
+        {
+            foreach (int neighbor in adjacency[currentTriangle])
+            {
+                GetTriangleVertices(neighbor, out Vector3 n0, out Vector3 n1, out Vector3 n2);
+                n0 = meshTransform.TransformPoint(n0);
+                n1 = meshTransform.TransformPoint(n1);
+                n2 = meshTransform.TransformPoint(n2);
+
+                Vector3 bc = ToBarycentric(candidate, n0, n1, n2);
+
+                if (bc.x >= -sharpAngleTolerance && bc.y >= -sharpAngleTolerance &&
+                    bc.z >= -sharpAngleTolerance)
+                {
+                    return neighbor;
+                }
+            }
+        }
+
+        // ✅ ШАГ 2: Поиск через ВЕРШИНЫ (локальное расширение)
+        return FindNeighborByVertices(currentTriangle, candidate);
+    }
+
+    /// <summary>
+    /// ✅ Поиск через все вершины текущего треугольника
+    /// Это гарантирует локальность - ищем только треугольники, 
+    /// которые делят вершину с текущим
+    /// </summary>
+    private int FindNeighborByVertices(int currentTriangle, Vector3 candidate)
+    {
+        var indices = GetTriangleVertexIndices(currentTriangle);
+        var vertexIndices = new[] { indices.i0, indices.i1, indices.i2 };
+
+        int bestNeighbor = -1;
+        float bestDistance = float.MaxValue;
+
+        foreach (int vertexIndex in vertexIndices)
+        {
+            int canonicalIndex = remap[vertexIndex];
+
+            if (vertexToTriangles.TryGetValue(canonicalIndex, out var triangles))
+            {
+                foreach (int tri in triangles)
+                {
+                    if (tri == currentTriangle) continue;
+
+                    GetTriangleVertices(tri, out Vector3 n0, out Vector3 n1, out Vector3 n2);
+                    n0 = meshTransform.TransformPoint(n0);
+                    n1 = meshTransform.TransformPoint(n1);
+                    n2 = meshTransform.TransformPoint(n2);
+
+                    Vector3 bc = ToBarycentric(candidate, n0, n1, n2);
+
+                    // ✅ Используем ШирокуюВЫ tolerantance для острых углов
+                    if (bc.x >= -sharpAngleTolerance && bc.y >= -sharpAngleTolerance &&
+                        bc.z >= -sharpAngleTolerance)
+                    {
+                        Vector3 triCenter = (n0 + n1 + n2) / 3f;
+                        float distToCenter = Vector3.Distance(candidate, triCenter);
+
+                        // ✅ Выбираем БЛИЖАЙШИЙ - это предотвращает случайные прыжки
+                        if (distToCenter < bestDistance)
+                        {
+                            bestDistance = distToCenter;
+                            bestNeighbor = tri;
+                        }
+                    }
+                }
+            }
+        }
+
+        return bestNeighbor;
+    }
+
+    private (int i0, int i1, int i2) GetTriangleVertexIndices(int triangleIndex)
+    {
+        int baseIndex = triangleIndex * 3;
+        return (
+            CurrentMesh.triangles[baseIndex],
+            CurrentMesh.triangles[baseIndex + 1],
+            CurrentMesh.triangles[baseIndex + 2]
+        );
+    }
+
+    private void GetTriangleVertices(int triangleIndex, out Vector3 v0, out Vector3 v1,
+        out Vector3 v2)
+    {
+        var (i0, i1, i2) = GetTriangleVertexIndices(triangleIndex);
+        v0 = CurrentMesh.vertices[i0];
+        v1 = CurrentMesh.vertices[i1];
+        v2 = CurrentMesh.vertices[i2];
+    }
+
+    private Vector3 ToBarycentric(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
+    {
+        Vector3 v0 = b - a;
+        Vector3 v1 = c - a;
+        Vector3 v2 = p - a;
+
+        float d00 = Vector3.Dot(v0, v0);
+        float d01 = Vector3.Dot(v0, v1);
+        float d11 = Vector3.Dot(v1, v1);
+        float d20 = Vector3.Dot(v2, v0);
+        float d21 = Vector3.Dot(v2, v1);
+
+        float denom = d00 * d11 - d01 * d01;
+
+        if (Mathf.Abs(denom) < 1e-8f)
+            return new Vector3(1f / 3f, 1f / 3f, 1f / 3f);
+
+        float v = (d11 * d20 - d01 * d21) / denom;
+        float w = (d00 * d21 - d01 * d20) / denom;
+        float u = 1.0f - v - w;
+
+        return new Vector3(u, v, w);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Climbing System\TriangleAdjacency.cs ==========
+
+using UnityEngine;
+using System.Collections.Generic;
+
+/// <summary>
+/// Строит карту соседей треугольников и карту ребро → сосед,
+/// учитывая дублированные вершины (позиции схлопываются).
+/// </summary>
+[RequireComponent(typeof(MeshFilter))]
+public class TriangleAdjacency : MonoBehaviour
+{
+    private Mesh mesh;
+
+    public Dictionary<int, List<int>> Neighbors = new Dictionary<int, List<int>>();
+    public Dictionary<(int, int), int> EdgeToNeighbor = new Dictionary<(int, int), int>();
+    public Dictionary<int, List<int>> VertexToTriangles = new Dictionary<int, List<int>>();
+    public int[] Remap; // Добавляем поле для хранения переназначенных индексов
+
+    void Awake()
+    {
+        mesh = GetComponent<MeshFilter>().sharedMesh;
+        BuildAdjacency(mesh, 1e-6f);
+    }
+    
+    public void RebuildFromMesh(Mesh sourceMesh, float epsilon = 1e-6f)
+    {
+        mesh = sourceMesh;
+        BuildAdjacency(mesh, epsilon);
+    }
+
+    private void BuildAdjacency(Mesh mesh, float epsilon)
+    {
+        Neighbors.Clear();
+        EdgeToNeighbor.Clear();
+        VertexToTriangles.Clear();
+
+        Vector3[] verts = mesh.vertices;
+        int[] tris = mesh.triangles;
+        int triCount = tris.Length / 3;
+
+        // === Шаг 1: схлопываем вершины по позициям ===
+        Dictionary<Vector3, int> canonical = new Dictionary<Vector3, int>(new Vec3Comparer(epsilon));
+        Remap = new int[verts.Length]; // Инициализируем массив Remap
+
+        for (int i = 0; i < verts.Length; i++)
+        {
+            if (!canonical.TryGetValue(verts[i], out int idx))
+            {
+                idx = canonical.Count;
+                canonical[verts[i]] = idx;
+            }
+            Remap[i] = idx; // Сохраняем переназначенный индекс
+        }
+
+        // === Шаг 2: строим edge->triangles и vertex->triangles ===
+        Dictionary<(int, int), List<int>> edgeToTriangles = new();
+
+        // Инициализируем словарь для вершин
+        for (int i = 0; i < canonical.Count; i++)
+        {
+            VertexToTriangles[i] = new List<int>();
+        }
+
+        for (int t = 0; t < triCount; t++)
+        {
+            int i0 = Remap[tris[t * 3 + 0]];
+            int i1 = Remap[tris[t * 3 + 1]];
+            int i2 = Remap[tris[t * 3 + 2]];
+
+            AddEdge(edgeToTriangles, i0, i1, t);
+            AddEdge(edgeToTriangles, i1, i2, t);
+            AddEdge(edgeToTriangles, i2, i0, t);
+
+            // Добавляем треугольник в списки вершин
+            VertexToTriangles[i0].Add(t);
+            VertexToTriangles[i1].Add(t);
+            VertexToTriangles[i2].Add(t);
+        }
+
+        // === Шаг 3: финальные словари ===
+        for (int t = 0; t < triCount; t++)
+            Neighbors[t] = new List<int>();
+
+        foreach (var kvp in edgeToTriangles)
+        {
+            List<int> trisWithEdge = kvp.Value;
+            if (trisWithEdge.Count == 2)
+            {
+                int tA = trisWithEdge[0];
+                int tB = trisWithEdge[1];
+
+                Neighbors[tA].Add(tB);
+                Neighbors[tB].Add(tA);
+
+                EdgeToNeighbor[kvp.Key] = tB;
+                EdgeToNeighbor[(kvp.Key.Item2, kvp.Key.Item1)] = tA;
+            }
+            else
+            {
+                // Висячие рёбра можно залогировать для отладки
+                 Debug.LogWarning($"Ребро {kvp.Key} принадлежит {trisWithEdge.Count} треугольников");
+            }
+        }
+
+        Debug.Log($"[TriangleAdjacency] Построено {triCount} треугольников, соседей: {EdgeToNeighbor.Count}");
+    }
+
+    private void AddEdge(Dictionary<(int, int), List<int>> dict, int a, int b, int triIndex)
+    {
+        var edge = a < b ? (a, b) : (b, a);
+        if (!dict.TryGetValue(edge, out var list))
+        {
+            list = new List<int>();
+            dict[edge] = list;
+        }
+        list.Add(triIndex);
+    }
+
+    /// <summary>
+    /// Компаратор для Vector3 с допуском.
+    /// </summary>
+    private class Vec3Comparer : IEqualityComparer<Vector3>
+    {
+        private readonly float epsilon;
+        public Vec3Comparer(float eps) { epsilon = eps; }
+
+        public bool Equals(Vector3 a, Vector3 b) =>
+            (a - b).sqrMagnitude < epsilon * epsilon;
+
+        public int GetHashCode(Vector3 v) =>
+            Mathf.RoundToInt(v.x / epsilon) * 73856093 ^
+            Mathf.RoundToInt(v.y / epsilon) * 19349663 ^
+            Mathf.RoundToInt(v.z / epsilon) * 83492791;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Climbing System\TriangleMeshHelper.cs ==========
+
+using UnityEngine;
+
+public class TriangleMeshHelper
+{
+    private readonly MeshCollider meshCollider;
+    private Mesh CurrentMesh => meshCollider.sharedMesh;
+
+    public TriangleMeshHelper(MeshCollider meshCollider)
+    {
+        this.meshCollider = meshCollider;
+    }
+
+    /// <summary>
+    /// Получает мировую позицию точки на треугольнике по барицентрическим координатам.
+    /// </summary>
+    public Vector3 GetWorldPointOnTriangle(int triangleIndex, Vector3 baryCoords)
+    {
+        GetTriangleVertices(triangleIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
+
+        // Барицентрическая интерполяция
+        Vector3 localPoint = v0 * baryCoords.x + v1 * baryCoords.y + v2 * baryCoords.z;
+        return meshCollider.transform.TransformPoint(localPoint);
+    }
+
+    /// <summary>
+    /// Конвертирует мировую позицию в барицентрические координаты для заданного треугольника.
+    /// </summary>
+    public Vector3 WorldToBarycentric(int triIndex, Vector3 worldPos)
+    {
+        GetTriangleVertices(triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
+
+        // Переводим в мировые координаты
+        v0 = meshCollider.transform.TransformPoint(v0);
+        v1 = meshCollider.transform.TransformPoint(v1);
+        v2 = meshCollider.transform.TransformPoint(v2);
+
+        // Вычисление барицентрических координат
+        Vector3 v0v1 = v1 - v0;
+        Vector3 v0v2 = v2 - v0;
+        Vector3 v0p = worldPos - v0;
+
+        float d00 = Vector3.Dot(v0v1, v0v1);
+        float d01 = Vector3.Dot(v0v1, v0v2);
+        float d11 = Vector3.Dot(v0v2, v0v2);
+        float d20 = Vector3.Dot(v0p, v0v1);
+        float d21 = Vector3.Dot(v0p, v0v2);
+
+        float denom = d00 * d11 - d01 * d01;
+        float v = (d11 * d20 - d01 * d21) / denom;
+        float w = (d00 * d21 - d01 * d20) / denom;
+        float u = 1.0f - v - w;
+
+        return new Vector3(u, v, w);
+    }
+
+    /// <summary>
+    /// Получает локальные вершины треугольника.
+    /// </summary>
+    public void GetTriangleVertices(int triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2)
+    {
+        int i0 = CurrentMesh.triangles[triIndex * 3 + 0];
+        int i1 = CurrentMesh.triangles[triIndex * 3 + 1];
+        int i2 = CurrentMesh.triangles[triIndex * 3 + 2];
+        v0 = CurrentMesh.vertices[i0];
+        v1 = CurrentMesh.vertices[i1];
+        v2 = CurrentMesh.vertices[i2];
+    }
+
+    /// <summary>
+    /// Получает мировую нормаль треугольника.
+    /// </summary>
+    public Vector3 GetTriangleNormal(int triIndex)
+    {
+        GetTriangleVertices(triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
+
+        v0 = meshCollider.transform.TransformPoint(v0);
+        v1 = meshCollider.transform.TransformPoint(v1);
+        v2 = meshCollider.transform.TransformPoint(v2);
+
+        return Vector3.Cross(v1 - v0, v2 - v0).normalized;
+    }
+
+    /// <summary>
+    /// Получает направление вправо относительно поверхности.
+    /// </summary>
+    public Vector3 GetSurfaceRight(Vector3 surfaceNormal, Transform characterTransform)
+    {
+        // Берём текущий forward персонажа и делаем его ортогональным к поверхности
+        Vector3 forwardOnSurface = Vector3.ProjectOnPlane(characterTransform.forward, surfaceNormal).normalized;
+
+        if (forwardOnSurface.sqrMagnitude < 0.0001f)
+        {
+            forwardOnSurface = Vector3.ProjectOnPlane(characterTransform.up, surfaceNormal).normalized;
+        }
+
+        // Перпендикуляр к forward и normal даст вправо вдоль поверхности
+        return Vector3.Cross(surfaceNormal, forwardOnSurface).normalized;
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Input\PlayerInput.cs ==========
+
+//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was auto-generated by com.unity.inputsystem:InputActionCodeGenerator
+//     version 1.14.2
+//     from Assets/Code/Gameplay/Input/PlayerInput.inputactions
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Utilities;
+
+/// <summary>
+/// Provides programmatic access to <see cref="InputActionAsset" />, <see cref="InputActionMap" />, <see cref="InputAction" /> and <see cref="InputControlScheme" /> instances defined in asset "Assets/Code/Gameplay/Input/PlayerInput.inputactions".
+/// </summary>
+/// <remarks>
+/// This class is source generated and any manual edits will be discarded if the associated asset is reimported or modified.
+/// </remarks>
+/// <example>
+/// <code>
+/// using namespace UnityEngine;
+/// using UnityEngine.InputSystem;
+///
+/// // Example of using an InputActionMap named "Player" from a UnityEngine.MonoBehaviour implementing callback interface.
+/// public class Example : MonoBehaviour, MyActions.IPlayerActions
+/// {
+///     private MyActions_Actions m_Actions;                  // Source code representation of asset.
+///     private MyActions_Actions.PlayerActions m_Player;     // Source code representation of action map.
+///
+///     void Awake()
+///     {
+///         m_Actions = new MyActions_Actions();              // Create asset object.
+///         m_Player = m_Actions.Player;                      // Extract action map object.
+///         m_Player.AddCallbacks(this);                      // Register callback interface IPlayerActions.
+///     }
+///
+///     void OnDestroy()
+///     {
+///         m_Actions.Dispose();                              // Destroy asset object.
+///     }
+///
+///     void OnEnable()
+///     {
+///         m_Player.Enable();                                // Enable all actions within map.
+///     }
+///
+///     void OnDisable()
+///     {
+///         m_Player.Disable();                               // Disable all actions within map.
+///     }
+///
+///     #region Interface implementation of MyActions.IPlayerActions
+///
+///     // Invoked when "Move" action is either started, performed or canceled.
+///     public void OnMove(InputAction.CallbackContext context)
+///     {
+///         Debug.Log($"OnMove: {context.ReadValue&lt;Vector2&gt;()}");
+///     }
+///
+///     // Invoked when "Attack" action is either started, performed or canceled.
+///     public void OnAttack(InputAction.CallbackContext context)
+///     {
+///         Debug.Log($"OnAttack: {context.ReadValue&lt;float&gt;()}");
+///     }
+///
+///     #endregion
+/// }
+/// </code>
+/// </example>
+public partial class @PlayerInput: IInputActionCollection2, IDisposable
+{
+    /// <summary>
+    /// Provides access to the underlying asset instance.
+    /// </summary>
+    public InputActionAsset asset { get; }
+
+    /// <summary>
+    /// Constructs a new instance.
+    /// </summary>
+    public @PlayerInput()
+    {
+        asset = InputActionAsset.FromJson(@"{
+    ""version"": 1,
+    ""name"": ""PlayerInput"",
+    ""maps"": [
+        {
+            ""name"": ""Movement"",
+            ""id"": ""ec8ca06c-f03b-4568-a7c2-448d1fa2605f"",
+            ""actions"": [
+                {
+                    ""name"": ""Move"",
+                    ""type"": ""PassThrough"",
+                    ""id"": ""58232d1e-f36a-483e-bb12-bdef0235c0dd"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Jump"",
+                    ""type"": ""Button"",
+                    ""id"": ""15cc8f1d-de34-4255-8c24-2d175a055669"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Climb"",
+                    ""type"": ""Button"",
+                    ""id"": ""52e3c7b4-b05a-4d5a-988e-454d71442972"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": ""2D Vector"",
+                    ""id"": ""537cee42-43fc-46c5-8605-26088b7cf7eb"",
+                    ""path"": ""2DVector"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""up"",
+                    ""id"": ""df99622b-9674-4b90-aa04-3821a73e5ec4"",
+                    ""path"": ""<Keyboard>/w"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""down"",
+                    ""id"": ""bb45cf4e-af32-4fd1-b54d-3161f4985d6a"",
+                    ""path"": ""<Keyboard>/s"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""left"",
+                    ""id"": ""99c0d636-9d5f-4b89-bbed-a20aeeb227e7"",
+                    ""path"": ""<Keyboard>/a"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""right"",
+                    ""id"": ""5c9fdcdb-2ed1-4c9b-a656-d382ac6782bb"",
+                    ""path"": ""<Keyboard>/d"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""334f0b8f-ddb0-4f66-ae26-53865273fd16"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Jump"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ac063000-bfe8-4eb0-83fc-f461a5732384"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Climb"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
+        }
+    ],
+    ""controlSchemes"": []
+}");
+        // Movement
+        m_Movement = asset.FindActionMap("Movement", throwIfNotFound: true);
+        m_Movement_Move = m_Movement.FindAction("Move", throwIfNotFound: true);
+        m_Movement_Jump = m_Movement.FindAction("Jump", throwIfNotFound: true);
+        m_Movement_Climb = m_Movement.FindAction("Climb", throwIfNotFound: true);
+    }
+
+    ~@PlayerInput()
+    {
+        UnityEngine.Debug.Assert(!m_Movement.enabled, "This will cause a leak and performance issues, PlayerInput.Movement.Disable() has not been called.");
+    }
+
+    /// <summary>
+    /// Destroys this asset and all associated <see cref="InputAction"/> instances.
+    /// </summary>
+    public void Dispose()
+    {
+        UnityEngine.Object.Destroy(asset);
+    }
+
+    /// <inheritdoc cref="UnityEngine.InputSystem.InputActionAsset.bindingMask" />
+    public InputBinding? bindingMask
+    {
+        get => asset.bindingMask;
+        set => asset.bindingMask = value;
+    }
+
+    /// <inheritdoc cref="UnityEngine.InputSystem.InputActionAsset.devices" />
+    public ReadOnlyArray<InputDevice>? devices
+    {
+        get => asset.devices;
+        set => asset.devices = value;
+    }
+
+    /// <inheritdoc cref="UnityEngine.InputSystem.InputActionAsset.controlSchemes" />
+    public ReadOnlyArray<InputControlScheme> controlSchemes => asset.controlSchemes;
+
+    /// <inheritdoc cref="UnityEngine.InputSystem.InputActionAsset.Contains(InputAction)" />
+    public bool Contains(InputAction action)
+    {
+        return asset.Contains(action);
+    }
+
+    /// <inheritdoc cref="UnityEngine.InputSystem.InputActionAsset.GetEnumerator()" />
+    public IEnumerator<InputAction> GetEnumerator()
+    {
+        return asset.GetEnumerator();
+    }
+
+    /// <inheritdoc cref="IEnumerable.GetEnumerator()" />
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+
+    /// <inheritdoc cref="UnityEngine.InputSystem.InputActionAsset.Enable()" />
+    public void Enable()
+    {
+        asset.Enable();
+    }
+
+    /// <inheritdoc cref="UnityEngine.InputSystem.InputActionAsset.Disable()" />
+    public void Disable()
+    {
+        asset.Disable();
+    }
+
+    /// <inheritdoc cref="UnityEngine.InputSystem.InputActionAsset.bindings" />
+    public IEnumerable<InputBinding> bindings => asset.bindings;
+
+    /// <inheritdoc cref="UnityEngine.InputSystem.InputActionAsset.FindAction(string, bool)" />
+    public InputAction FindAction(string actionNameOrId, bool throwIfNotFound = false)
+    {
+        return asset.FindAction(actionNameOrId, throwIfNotFound);
+    }
+
+    /// <inheritdoc cref="UnityEngine.InputSystem.InputActionAsset.FindBinding(InputBinding, out InputAction)" />
+    public int FindBinding(InputBinding bindingMask, out InputAction action)
+    {
+        return asset.FindBinding(bindingMask, out action);
+    }
+
+    // Movement
+    private readonly InputActionMap m_Movement;
+    private List<IMovementActions> m_MovementActionsCallbackInterfaces = new List<IMovementActions>();
+    private readonly InputAction m_Movement_Move;
+    private readonly InputAction m_Movement_Jump;
+    private readonly InputAction m_Movement_Climb;
+    /// <summary>
+    /// Provides access to input actions defined in input action map "Movement".
+    /// </summary>
+    public struct MovementActions
+    {
+        private @PlayerInput m_Wrapper;
+
+        /// <summary>
+        /// Construct a new instance of the input action map wrapper class.
+        /// </summary>
+        public MovementActions(@PlayerInput wrapper) { m_Wrapper = wrapper; }
+        /// <summary>
+        /// Provides access to the underlying input action "Movement/Move".
+        /// </summary>
+        public InputAction @Move => m_Wrapper.m_Movement_Move;
+        /// <summary>
+        /// Provides access to the underlying input action "Movement/Jump".
+        /// </summary>
+        public InputAction @Jump => m_Wrapper.m_Movement_Jump;
+        /// <summary>
+        /// Provides access to the underlying input action "Movement/Climb".
+        /// </summary>
+        public InputAction @Climb => m_Wrapper.m_Movement_Climb;
+        /// <summary>
+        /// Provides access to the underlying input action map instance.
+        /// </summary>
+        public InputActionMap Get() { return m_Wrapper.m_Movement; }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+        public void Enable() { Get().Enable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+        public void Disable() { Get().Disable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+        public bool enabled => Get().enabled;
+        /// <summary>
+        /// Implicitly converts an <see ref="MovementActions" /> to an <see ref="InputActionMap" /> instance.
+        /// </summary>
+        public static implicit operator InputActionMap(MovementActions set) { return set.Get(); }
+        /// <summary>
+        /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <param name="instance">Callback instance.</param>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+        /// </remarks>
+        /// <seealso cref="MovementActions" />
+        public void AddCallbacks(IMovementActions instance)
+        {
+            if (instance == null || m_Wrapper.m_MovementActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_MovementActionsCallbackInterfaces.Add(instance);
+            @Move.started += instance.OnMove;
+            @Move.performed += instance.OnMove;
+            @Move.canceled += instance.OnMove;
+            @Jump.started += instance.OnJump;
+            @Jump.performed += instance.OnJump;
+            @Jump.canceled += instance.OnJump;
+            @Climb.started += instance.OnClimb;
+            @Climb.performed += instance.OnClimb;
+            @Climb.canceled += instance.OnClimb;
+        }
+
+        /// <summary>
+        /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <remarks>
+        /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+        /// </remarks>
+        /// <seealso cref="MovementActions" />
+        private void UnregisterCallbacks(IMovementActions instance)
+        {
+            @Move.started -= instance.OnMove;
+            @Move.performed -= instance.OnMove;
+            @Move.canceled -= instance.OnMove;
+            @Jump.started -= instance.OnJump;
+            @Jump.performed -= instance.OnJump;
+            @Jump.canceled -= instance.OnJump;
+            @Climb.started -= instance.OnClimb;
+            @Climb.performed -= instance.OnClimb;
+            @Climb.canceled -= instance.OnClimb;
+        }
+
+        /// <summary>
+        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="MovementActions.UnregisterCallbacks(IMovementActions)" />.
+        /// </summary>
+        /// <seealso cref="MovementActions.UnregisterCallbacks(IMovementActions)" />
+        public void RemoveCallbacks(IMovementActions instance)
+        {
+            if (m_Wrapper.m_MovementActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        /// <summary>
+        /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+        /// </summary>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+        /// </remarks>
+        /// <seealso cref="MovementActions.AddCallbacks(IMovementActions)" />
+        /// <seealso cref="MovementActions.RemoveCallbacks(IMovementActions)" />
+        /// <seealso cref="MovementActions.UnregisterCallbacks(IMovementActions)" />
+        public void SetCallbacks(IMovementActions instance)
+        {
+            foreach (var item in m_Wrapper.m_MovementActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_MovementActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    /// <summary>
+    /// Provides a new <see cref="MovementActions" /> instance referencing this action map.
+    /// </summary>
+    public MovementActions @Movement => new MovementActions(this);
+    /// <summary>
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Movement" which allows adding and removing callbacks.
+    /// </summary>
+    /// <seealso cref="MovementActions.AddCallbacks(IMovementActions)" />
+    /// <seealso cref="MovementActions.RemoveCallbacks(IMovementActions)" />
+    public interface IMovementActions
+    {
+        /// <summary>
+        /// Method invoked when associated input action "Move" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnMove(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Jump" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnJump(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Climb" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnClimb(InputAction.CallbackContext context);
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Levels\ILevelDataProvider.cs ==========
+
+using UnityEngine;
+
+namespace Code.Gameplay.Levels
+{
+    public interface ILevelDataProvider
+    {
+        public Vector3 StartPoint { get; set; }
+        public void SetStartPoint(Vector3 startPoint);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Levels\LevelDataProvider.cs ==========
+
+using UnityEngine;
+
+namespace Code.Gameplay.Levels
+{
+    public class LevelDataProvider : ILevelDataProvider
+    {
+        public Vector3 StartPoint { get; set; }
+
+        public void SetStartPoint(Vector3 startPoint)
+        {
+            StartPoint = startPoint;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\GroundChecker.cs ==========
+
+
+using FishNet.Object;
+using UnityEngine;
+
+public class GroundChecker : NetworkBehaviour
+{
+    [SerializeField] private LayerMask groundLayer;
+    [SerializeField, Range(0.01f, 1f)] private float groundCheckRadius;
+
+    public bool IsTouches { get; private set; }
+    
+    private void Update()
+    {
+        if (IsOwner == false)
+            return;
+        
+        IsTouches = Physics.CheckSphere(transform.position, groundCheckRadius, groundLayer);
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\Player.cs ==========
+
+using FishNet.Object;
+using LiteNetLib;
+using UnityEngine;
+
+[RequireComponent(typeof(CharacterController))]
+public class Player : NetworkBehaviour
+{
+    [SerializeField] private PlayerConfig config;
+    [SerializeField] private PlayerView view;
+    [SerializeField] private CameraController playerCamera;
+    [SerializeField] private GroundChecker groundChecker;
+    [SerializeField] private ClimbChecker climbChecker;
+    
+    private PlayerInput input;
+    private PlayerStateMachine stateMachine;
+    private CharacterController characterController;
+    
+    public PlayerInput Input => input;
+    public CharacterController Controller => characterController;
+    public CameraController PlayerCamera => playerCamera;
+    public PlayerConfig Config => config;
+    
+    public PlayerView View => view;
+    
+    public GroundChecker GroundChecker => groundChecker;
+    public ClimbChecker ClimbChecker => climbChecker;
+    
+
+    private void Awake()
+    {
+        view.Init();
+        playerCamera.Init();
+        characterController = GetComponent<CharacterController>();
+        input = new PlayerInput();
+        stateMachine = new PlayerStateMachine(this);
+    }
+
+    private void Update()
+    {
+        if (IsOwner == false)
+            return;
+        
+        stateMachine.HandleInput();
+        stateMachine.Update();
+    }
+    
+    private void OnEnable() => input.Enable();
+    private void OnDisable() => input.Disable();
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\PlayerConfig.cs ==========
+
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "CharacterConfig", menuName = "Ritual Grounds/Configs/CharacterConfig")]
+public class PlayerConfig : ScriptableObject
+{
+    [SerializeField] private RunningStateConfig runningStateConfig;
+    [SerializeField] private AirborneStateConfig airborneStateConfig;
+    [SerializeField] private ClimbStateConfig climbStateConfig;
+    public RunningStateConfig RunningStateConfig => runningStateConfig;
+    public AirborneStateConfig AirborneStateConfig => airborneStateConfig;
+    public ClimbStateConfig ClimbStateConfig => climbStateConfig;
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\PlayerView.cs ==========
+
+using System;
+using FishNet.Object;
+using UnityEngine;
+
+[RequireComponent(typeof(Animator))]
+public class PlayerView : NetworkBehaviour
+{
+    private const string IsMovement = "IsMovement";
+
+    private const string IsGrounded = "IsGrounded";
+    private const string IsIdle = "IsIdle";
+    private const string IsRunning = "IsRunning";
+
+    private const string IsAirborne = "IsAirborne";
+    private const string IsFalling = "IsFalling";
+    private const string IsJumping = "IsJumping";
+
+    private const string IsClimbing = "IsClimbing";
+    private const string IsClimbIdle = "IsClimbIdle";
+    private const string IsClimbMoving = "IsClimbMoving";
+
+    private Animator animator;
+
+    public void Init()
+    {
+        animator = GetComponent<Animator>();
+    }
+
+    private void Update()
+    {
+        if (IsOwner == false)
+            return;
+    }
+
+    public void StartMovement() => animator.SetBool(IsMovement, true);
+    public void StopMovement() => animator.SetBool(IsMovement, false);
+
+    public void StartGrounded() => animator.SetBool(IsGrounded, true);
+    public void StopGrounded() => animator.SetBool(IsGrounded, false);
+
+    public void StartIdle() => animator.SetBool(IsIdle, true);
+    public void StopIdle() => animator.SetBool(IsIdle, false);
+
+    public void StartRunning() => animator.SetBool(IsRunning, true);
+    public void StopRunning() => animator.SetBool(IsRunning, false);
+
+    public void StartAirborne() => animator.SetBool(IsAirborne, true);
+    public void StopAirborne() => animator.SetBool(IsAirborne, false);
+
+    public void StartFalling() => animator.SetBool(IsFalling, true);
+    public void StopFalling() => animator.SetBool(IsFalling, false);
+
+    public void StartJumping() => animator.SetBool(IsJumping, true);
+    public void StopJumping() => animator.SetBool(IsJumping, false);
+    
+    public void StartClimbing() => animator.SetBool(IsClimbing, true);
+    public void StopClimbing() => animator.SetBool(IsClimbing, false);
+    public void StartClimbIdle() => animator.SetBool(IsClimbIdle, true);
+    public void StopClimbIdle() => animator.SetBool(IsClimbIdle, false);
+    public void StartClimbMoving() => animator.SetBool(IsClimbMoving, true);
+    public void StopClimbMoving() => animator.SetBool(IsClimbMoving, false);
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\AssetManagement\AssetProvider.cs ==========
+
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+
+namespace Code.Infrastructure.AssetManagement
+{
+    public class AssetProvider : IAssetProvider
+    {
+        public async UniTask<GameObject> Load(string path)
+        {
+            var request = Resources.LoadAsync<GameObject>(path);
+            await request;
+            
+            return request.asset as GameObject;
+        }
+
+        public async UniTask<T> Load<T>(string path) where T : Component
+        {
+            var request = Resources.LoadAsync<T>(path);
+            await request;
+            
+            return request.asset as T;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\AssetManagement\IAssetProvider.cs ==========
+
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+
+namespace Code.Infrastructure.AssetManagement
+{
+    public interface IAssetProvider
+    {
+        UniTask<GameObject> Load(string path);
+        UniTask<T> Load<T>(string path) where T : Component;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\AssetManagement\PrefabFactoryAsync.cs ==========
+
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+using Zenject;
+
+namespace Code.Infrastructure.AssetManagement
+{
+    public class PrefabFactoryAsync<TComponent> : IFactory<string, UniTask<TComponent>>
+    {
+        private readonly IInstantiator instantiator;
+        private readonly IAssetProvider assetProvider;
+        
+        public PrefabFactoryAsync(IInstantiator instantiator, IAssetProvider assetProvider)
+        {
+            this.instantiator = instantiator;
+            this.assetProvider = assetProvider;
+        }
+
+        public async UniTask<TComponent> Create(string path)
+        {
+            GameObject prefab = await assetProvider.Load(path);
+            GameObject newObject = instantiator.InstantiatePrefab(prefab);
+            
+            return newObject.GetComponent<TComponent>();
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\Factories\GameFactory.cs ==========
+
+using UnityEngine;
+
+namespace Code.Infrastructure.Factories
+{
+    public class GameFactory : IGameFactory
+    {
+        public void CreatePlayer(Vector3 position)
+        {
+            
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\Factories\IGameFactory.cs ==========
+
+using UnityEngine;
+
+namespace Code.Infrastructure.Factories
+{
+    public interface IGameFactory
+    {
+        void CreatePlayer(Vector3 position);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\Inputs\IInputService.cs ==========
+
+using UnityEngine;
+
+namespace Code.Infrastructure.Inputs
+{
+    public interface IInputService
+    {
+        float GetVerticalAxis();
+        float GetHorizontalAxis();
+        bool HasAxisInput();
+    
+        bool GetLeftMouseButtonDown();
+        Vector2 GetScreenMousePosition();
+        Vector2 GetWorldMousePosition();
+        bool GetLeftMouseButtonUp();
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\Inputs\StandaloneInputService.cs ==========
+
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+namespace Code.Infrastructure.Inputs
+{
+    public class StandaloneInputService : IInputService
+    {
+        private Camera mainCamera;
+        private Vector3 screenPosition;
+
+        private Camera CameraMain
+        {
+            get
+            {
+                if(mainCamera == null && Camera.main != null)
+                  mainCamera = Camera.main;
+                
+                return mainCamera;
+            }
+        }
+
+        public Vector2 GetScreenMousePosition() => 
+            CameraMain ? (Vector2) Input.mousePosition : new Vector2();
+
+        public Vector2 GetWorldMousePosition()
+        {
+            if(CameraMain == null)
+              return Vector2.zero;
+            
+            screenPosition.x = Input.mousePosition.x;
+            screenPosition.y = Input.mousePosition.y;
+            return CameraMain.ScreenToWorldPoint(screenPosition);
+        }
+
+        public bool HasAxisInput() => GetHorizontalAxis() != 0 || GetVerticalAxis() != 0;
+        
+        public float GetVerticalAxis() => Input.GetAxis("Vertical");
+        public float GetHorizontalAxis() => Input.GetAxis("Horizontal");
+        
+
+        public bool GetLeftMouseButton() => 
+          Input.GetMouseButton(0) && !EventSystem.current.IsPointerOverGameObject();
+
+        public bool GetLeftMouseButtonDown() =>
+          Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject();
+        
+        public bool GetLeftMouseButtonUp() => 
+          Input.GetMouseButtonUp(0) && !EventSystem.current.IsPointerOverGameObject();
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\Installers\BootstrapInstaller.cs ==========
+
+using Code.Gameplay.Levels;
+using Code.Gameplay.Player.Factory;
+using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.Inputs;
+using Code.Infrastructure.SceneManagement;
+using Code.Infrastructure.States.Factory;
+using Code.Infrastructure.States.GameStates;
+using Code.Infrastructure.States.StateMachine;
+using Cysharp.Threading.Tasks;
+using FishNet;
+using FishNet.Managing;
+using Zenject;
+
+namespace Code.Infrastructure.Installers
+{
+    public class BootstrapInstaller : MonoInstaller, IInitializable
+    {
+        public override void InstallBindings()
+        {
+            BindGameFactories();
+            BindGameStateMachine();
+            BindStates();
+            BindStateFactory();
+            BindGameplayServices();
+            BindInfrastructureServices();
+            BindNetworkServices();
+            BindLoadingCurtain();
+            BindInputService();
+            BindAssetProvider();
+        }
+
+        private void BindLoadingCurtain()
+        {
+             Container
+                .BindFactory<string, UniTask<LoadingCurtain>, LoadingCurtain.Factory>()
+                .FromFactory<PrefabFactoryAsync<LoadingCurtain>>();
+
+            Container
+                .BindInterfacesAndSelfTo<LoadingCurtainProxy>()
+                .AsSingle();
+        }
+
+        private void BindNetworkServices()
+        {
+            Container
+                .BindInterfacesAndSelfTo<NetworkManager>()
+                .FromInstance(InstanceFinder.NetworkManager)
+                .AsSingle();
+        }
+
+        private void BindInfrastructureServices()
+        {
+            Container
+                .BindInterfacesTo<BootstrapInstaller>()
+                .FromInstance(this)
+                .AsSingle();
+        }
+        
+        private void BindGameplayServices()
+        {
+            Container
+                .Bind<ILevelDataProvider>()
+                .To<LevelDataProvider>()
+                .AsSingle();
+            
+            Container
+                .Bind<ISceneLoader>()
+                .To<SceneLoader>()
+                .AsSingle();
+        }
+
+        private void BindInputService()
+        {
+            Container
+                .Bind<IInputService>()
+                .To<StandaloneInputService>()
+                .AsSingle();
+        }
+
+        private void BindAssetProvider()
+        {
+            Container
+                .Bind<IAssetProvider>()
+                .To<AssetProvider>()
+                .AsSingle();
+        }
+
+        private void BindStates()
+        {
+            Container
+                .BindInterfacesAndSelfTo<BootstrapState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<GameLoadingState>()
+                .AsSingle();
+
+            Container
+                .BindInterfacesAndSelfTo<MainMenuLoadingState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<MainMenuState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<LobbyLoadingState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<LobbyState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<GameplayLoadingState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<GameplayLoopState>()
+                .AsSingle();
+        }
+
+        private void BindStateFactory()
+        {
+            Container
+                .BindInterfacesAndSelfTo<StateFactory>()
+                .AsSingle();
+        }
+
+        private void BindGameStateMachine()
+        {
+            Container
+                .BindInterfacesAndSelfTo<GameStateMachine>()
+                .AsSingle();
+        }
+
+        private void BindGameFactories()
+        {
+            Container
+                .Bind<IPlayerFactory>()
+                .To<PlayerFactory>()
+                .AsSingle();
+        }
+
+        public void Initialize()
+        {
+            Container
+                .Resolve<IGameStateMachine>()
+                .Enter<BootstrapState>();
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\Installers\GameplaySceneInstaller.cs ==========
+
+using Code.Gameplay.Levels;
+using UnityEngine;
+using Zenject;
+
+namespace Code.Infrastructure.Installers
+{
+    public class GameplaySceneInstaller : MonoInstaller
+    { 
+        [SerializeField] private Transform startPoint;
+        
+        private ILevelDataProvider levelData;
+        
+        [Inject]
+        public void Construct(ILevelDataProvider levelData)
+        {
+            this.levelData = levelData;
+        }
+        
+        public override void InstallBindings()
+        {
+            levelData.SetStartPoint(startPoint.position);
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\Installers\LobbySceneInstaller.cs ==========
+
+using Code.Gameplay.Lobby;
+using UnityEngine;
+using Zenject;
+
+namespace Code.Infrastructure.Installers
+{
+    public class LobbySceneInstaller : MonoInstaller
+    {
+        [SerializeField] private LobbyService lobbyService;
+
+        public override void InstallBindings()
+        {
+            BindLobbyService();
+        }
+
+        private void BindLobbyService()
+        {
+            Container
+                .BindInterfacesAndSelfTo<LobbyService>()
+                .FromInstance(lobbyService)
+                .AsSingle();
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\SceneManagement\ISceneLoader.cs ==========
+
+using System;
+using Cysharp.Threading.Tasks;
+using UnityEngine.SceneManagement;
+
+namespace Code.Infrastructure.SceneManagement
+{
+    public interface ISceneLoader
+    {
+        UniTask LoadScene(string sceneName, Action onLoaded = null);
+        void LoadSceneNetwork(string sceneName);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\SceneManagement\SceneLoader.cs ==========
+
+using System;
+using Cysharp.Threading.Tasks;
+using FishNet.Connection;
+using FishNet.Managing;
+using FishNet.Managing.Scened;
+using FishNet.Object;
+using UnityEngine.SceneManagement;
+using SceneManager = UnityEngine.SceneManagement.SceneManager;
+
+namespace Code.Infrastructure.SceneManagement
+{
+    public class SceneLoader : ISceneLoader
+    {
+        private readonly NetworkManager networkManager;
+
+        public SceneLoader(NetworkManager networkManager)
+        {
+            this.networkManager = networkManager;
+        }
+
+        public async UniTask LoadScene(string sceneName, Action onLoaded = null)
+        {
+            if (SceneManager.GetActiveScene().name == sceneName)
+            {
+                onLoaded?.Invoke();
+                return;
+            }
+
+            var waitNextScene = SceneManager.LoadSceneAsync(sceneName);
+
+            while (!waitNextScene.isDone)
+                await UniTask.Yield();
+
+            onLoaded?.Invoke();
+        }
+
+        public void LoadSceneNetwork(string sceneToLoad)
+        {
+            var sceneLoadData = new SceneLoadData(sceneToLoad)
+            {
+                
+                ReplaceScenes = ReplaceOption.All
+            };
+
+            networkManager.SceneManager.LoadGlobalScenes(sceneLoadData);
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\HUD\LobbyHUD.cs ==========
+
+using Code.Gameplay.Lobby;
+using FishNet.Managing;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using Zenject;
+
+namespace Code.UI.HUD
+{
+    /// <summary>
+    /// Lobby UI that displays player list and handles ready states
+    /// </summary>
+    public class LobbyHUD : MonoBehaviour
+    {
+        [Header("Connection Buttons")]
+        [SerializeField] private Button startHostButton;
+        [SerializeField] private Button startClientButton;
+        [SerializeField] private Button startGameButton;
+        
+        [Header("Lobby UI")]
+        [SerializeField] private GameObject connectionPanel;
+        [SerializeField] private GameObject lobbyPanel;
+        [SerializeField] private Button readyButton;
+        [SerializeField] private TextMeshProUGUI readyButtonText;
+        [SerializeField] private Transform playerListContainer;
+        [SerializeField] private GameObject playerListItemPrefab;
+        
+        private NetworkManager networkManager;
+        private LobbyService lobbyService;
+        
+        private bool isReady;
+
+        [Inject]
+        public void Construct(
+            NetworkManager networkManager,
+            LobbyService lobbyService)
+        {
+            this.networkManager = networkManager;
+            this.lobbyService = lobbyService;
+        }
+
+        private void Awake()
+        {
+            startHostButton.onClick.AddListener(OnStartAsHostButtonClick);
+            startClientButton.onClick.AddListener(OnStartAsClientButtonClick);
+            startGameButton.onClick.AddListener(OnStartGameButtonClick);
+            readyButton.onClick.AddListener(OnReadyButtonClick);
+            
+            lobbyService.OnLobbyPlayerChanged += OnPlayerListChanged;
+            
+            ShowConnectionPanel();
+        }
+
+        private void OnStartAsClientButtonClick() => 
+            StartAsClient();
+
+        private void OnStartAsHostButtonClick() => 
+            StartAsHost();
+
+        private void OnReadyButtonClick() => 
+            ToggleReady();
+
+        private void OnStartGameButtonClick() => 
+            lobbyService.CheckAllReady();
+
+        private void OnPlayerListChanged() => 
+            RefreshPlayerList();
+
+        private void ToggleReady()
+        {
+            isReady = !isReady;
+            
+            lobbyService.SetPlayerReady(networkManager.ClientManager.Connection, isReady);
+            
+            UpdateReadyButton();
+        }
+
+        private void ShowConnectionPanel()
+        {
+            lobbyPanel.SetActive(false);
+            connectionPanel.SetActive(true);
+        }
+
+        private void ShowLobbyPanel()
+        {
+            connectionPanel.SetActive(false);
+            lobbyPanel.SetActive(true);
+            
+            RefreshPlayerList();
+        }
+
+        private void UpdateReadyButton()
+        {
+            if (isReady)
+            {
+                readyButtonText.text = "Ready";
+                readyButton.GetComponent<Image>().color = Color.green;
+            }
+            else
+            {
+                readyButtonText.text = "Not Ready";
+                readyButton.GetComponent<Image>().color = Color.white;
+            }
+        }
+
+        private void StartAsHost()
+        {
+            networkManager.ServerManager.StartConnection();
+            networkManager.ClientManager.StartConnection();
+            
+            ShowLobbyPanel();
+        }
+
+        private void StartAsClient()
+        {
+            networkManager.ClientManager.StartConnection();
+            
+            ShowLobbyPanel();
+        }
+
+        private void RefreshPlayerList()
+        {
+            foreach (Transform child in playerListContainer)
+                Destroy(child.gameObject);
+
+            foreach (var player in lobbyService.GetPlayers())
+            {
+                var item = Instantiate(playerListItemPrefab, playerListContainer);
+                var itemText = item.GetComponentInChildren<TextMeshProUGUI>();
+                
+                string readyStatus = player.Value.IsReady ? "[READY]" : "[NOT READY]";
+                itemText.text = $"{player.Value.PlayerName} {readyStatus}";
+                itemText.color = player.Value.IsReady ? Color.green : Color.white;
+            }
+        }
+
+        private void OnDisable()
+        {
+            startHostButton.onClick.RemoveListener(OnStartAsHostButtonClick);
+            startClientButton.onClick.RemoveListener(OnStartAsClientButtonClick);
+            startGameButton.onClick.RemoveListener(OnStartGameButtonClick);
+            readyButton.onClick.RemoveListener(OnReadyButtonClick);
+            
+            lobbyService.OnLobbyPlayerChanged -= OnPlayerListChanged;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\HUD\MainMenuHUD.cs ==========
+
+using Code.Infrastructure.States.GameStates;
+using Code.Infrastructure.States.StateMachine;
+using UnityEngine;
+using UnityEngine.UI;
+using Zenject;
+
+namespace Code.UI.HUD
+{
+    public class MainMenuHUD : MonoBehaviour
+    {
+        [SerializeField] private Button EnterLobbyButton;
+        
+        private IGameStateMachine stateMachine;
+
+        [Inject]
+        public void Construct(IGameStateMachine stateMachine)
+        {
+            this.stateMachine = stateMachine;
+        }
+
+        private void Awake() => 
+            EnterLobbyButton.onClick.AddListener(EnterLobbyLoadingState);
+
+        private void OnDestroy() => 
+            EnterLobbyButton.onClick.RemoveListener(EnterLobbyLoadingState);
+
+        private void EnterLobbyLoadingState() => 
+            stateMachine.Enter<LobbyLoadingState>();
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\LoadingCurtain\ILoadingCurtain.cs ==========
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public interface ILoadingCurtain
+    {
+        public void Show();
+        public void Hide();
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\LoadingCurtain\LoadingCurtain.cs ==========
+
+using System.Collections;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+using Zenject;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public class LoadingCurtain : MonoBehaviour, ILoadingCurtain
+    {
+        [SerializeField] private CanvasGroup curtain;
+        
+        private const float FadeInWaitingSeconds = 0.03f;
+
+        private WaitForSeconds fadeInWaitForSeconds;
+        
+        public void Show()
+        {
+            gameObject.SetActive(this);
+            curtain.alpha = 1;
+        }
+
+        public void Hide()
+        {
+            fadeInWaitForSeconds = new WaitForSeconds(FadeInWaitingSeconds);
+            StartCoroutine(DoFadeIn());
+        }
+
+        private IEnumerator DoFadeIn()
+        {
+            while (curtain.alpha > 0)
+                curtain.alpha -= FadeInWaitingSeconds;
+            yield return fadeInWaitForSeconds;
+            
+            gameObject.SetActive(false);
+        }
+        
+        public class Factory : PlaceholderFactory<string, UniTask<LoadingCurtain>>
+        {
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\LoadingCurtain\LoadingCurtainProxy.cs ==========
+
+using Code.Utils;
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public class LoadingCurtainProxy : ILoadingCurtain
+    {
+        private LoadingCurtain.Factory factory;
+        private ILoadingCurtain impl;
+
+        public LoadingCurtainProxy(LoadingCurtain.Factory factory) => 
+            this.factory = factory;
+
+        public async UniTask InitializeAsync() => 
+            impl = await factory.Create(AssetPath.LoadingCurtain);
+
+        public void Show() => 
+            impl.Show();
+
+        public void Hide() => 
+            impl.Hide();
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\Windows\WindowsBase.cs ==========
+
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace Code.UI.Windows
+{
+    public class WindowsBase: MonoBehaviour
+    {
+        //TODO
+        [SerializeField] protected Button CloseButton;
+        
+        private void Awake() => 
+            OnAwake();
+
+        private void Start()
+        {
+            Initialize();
+            SubscribeUpdates();
+        }
+
+        private void OnDestroy() => 
+            Cleanup();
+
+        protected virtual void OnAwake() => 
+            CloseButton?.onClick.AddListener(()=> Destroy(gameObject));
+
+        protected virtual void Initialize(){}
+        protected virtual void SubscribeUpdates(){}
+        protected virtual void Cleanup(){}
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\Factory\IPlayerFactory.cs ==========
+
+using Cysharp.Threading.Tasks;
+using FishNet.Connection;
+
+namespace Code.Gameplay.Player.Factory
+{
+    public interface IPlayerFactory
+    {
+        public UniTask SpawnPlayer(NetworkConnection connection);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\Factory\PlayerFactory.cs ==========
+
+using Code.Gameplay.Levels;
+using Code.Infrastructure.AssetManagement;
+using Code.Utils;
+using Cysharp.Threading.Tasks;
+using FishNet.Connection;
+using FishNet.Managing;
+using FishNet.Object;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
+namespace Code.Gameplay.Player.Factory
+{
+    public class PlayerFactory : IPlayerFactory
+    {
+        private readonly IAssetProvider assets;
+        private readonly ILevelDataProvider levelData;
+        private readonly NetworkManager networkManager;
+
+        public PlayerFactory(
+            IAssetProvider assets,
+            ILevelDataProvider levelData,
+            NetworkManager networkManager)
+        {
+            this.assets = assets;
+            this.levelData = levelData;
+            this.networkManager = networkManager;
+        }
+
+        public async UniTask SpawnPlayer(NetworkConnection connection)
+        {
+            Vector3 spawnPosition = GetSpawnPosition();
+            await SpawnPlayer(connection, spawnPosition);
+        }
+
+        private async UniTask SpawnPlayer(NetworkConnection connection, Vector3 position)
+        {
+            GameObject playerObject = await CreatePlayer(position);
+
+            NetworkObject networkObject = playerObject.GetComponent<NetworkObject>();
+
+            networkManager.ServerManager.Spawn(networkObject, connection);
+            
+            Debug.Log($"Spawned player for connection {connection.ClientId} at {position}");
+        }
+
+        private async UniTask<GameObject> CreatePlayer(Vector3 at)
+        {
+            var playerPrefab = await assets.Load(AssetPath.PlayerPath);
+            
+            var newPlayer = Object.Instantiate(playerPrefab, at, Quaternion.identity);
+            return newPlayer;
+        }
+
+        private Vector3 GetSpawnPosition() => 
+            levelData.StartPoint;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\Movement\PlayerMove.cs ==========
+
+using Code.Infrastructure.Inputs;
+using FishNet.Object;
+using UnityEngine;
+using Zenject;
+
+namespace Code.Gameplay.Player
+{
+    public class PlayerMove : NetworkBehaviour
+    {
+        [SerializeField] private CharacterController characterController;
+        [SerializeField] private float movementSpeed = 5f;
+        [SerializeField] private float rotationSpeed = 5f;
+
+        private IInputService input;
+
+        [Inject]
+        public void Construct(IInputService input)
+        {
+            this.input = input;
+        }
+        
+        private void Update()
+        {
+            if (!IsOwner)
+                return;
+            
+            Movement();
+            Turn();
+        }
+
+        private void Turn()
+        {
+            if (Mathf.Abs(input.GetVerticalAxis()) > 0 || Mathf.Abs(input.GetHorizontalAxis()) > 0)
+            {
+                Vector3 currentLookDirection = characterController.velocity.normalized;
+                currentLookDirection.y = 0;
+                
+                currentLookDirection.Normalize();
+                
+                Quaternion targetRotation = Quaternion.LookRotation(currentLookDirection);
+                
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            }
+        }
+
+        private void Movement()
+        {
+            var move = new Vector3(
+                input.GetHorizontalAxis() * movementSpeed, 0, input.GetVerticalAxis() * rotationSpeed);
+            
+            characterController.Move(move * Time.deltaTime);
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\IStateSwitcher.cs ==========
+
+
+public  interface IStateSwitcher 
+{
+    void SwitchState<T>() where T : IPlayerState;
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\PlayerStateMachine.cs ==========
+
+using System.Collections.Generic;
+using System.Linq;
+
+public class PlayerStateMachine : IStateSwitcher
+{
+    private List<IPlayerState> states;
+    private IPlayerState _currentPlayerState;
+
+    public PlayerStateMachine(Player player)
+    {
+        PlayerStateMachineData data = new PlayerStateMachineData();
+        data.CameraController = player.PlayerCamera;
+        
+        states = new List<IPlayerState>()
+        {
+            new GroundIdlePlayerState(this, data, player),
+            new RunningPlayerState(this, data, player),
+            new JumpingPlayerState(this, data, player),
+            new FallingPlayerState(this, data, player),
+            new ClimbPlayerIdleState(this, data, player),
+            new ClimbPlayerMoveState(this, data, player),
+        };
+        
+        
+        _currentPlayerState = states[0];
+        _currentPlayerState.Enter();
+    }
+
+    public void SwitchState<T>() where T : IPlayerState
+    {
+        IPlayerState playerState = states.FirstOrDefault(state => state is T);
+        
+        _currentPlayerState.Exit();
+        _currentPlayerState = playerState;
+        _currentPlayerState.Enter();
+    }
+    
+    public void HandleInput() => _currentPlayerState.HandleInput();
+    
+    public void Update() => _currentPlayerState.Update();
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\PlayerStateMachineData.cs ==========
+
+using System;
+using UnityEngine;
+
+public class PlayerStateMachineData 
+{
+    public float XVelocity;
+    public float YVelocity;
+    public float ZVelocity;
+
+    private float speed;
+    private float rotationSpeed;
+    private Vector2 xYInput = Vector2.zero;
+
+    private CameraController cameraController;
+    
+    // === Данные для состояния лазания ===
+    public MeshCollider ClimbTargetCollider { get; set; }
+    public Mesh ClimbTargetMesh { get; set; }
+    public int ClimbTriangleIndex { get; set; } = -1;
+    public Vector3 ClimbBarycentricCoords { get; set; }
+    public SurfaceNavigator ClimbNavigator { get; set; }
+    public bool IsClimbing { get; set; } = false;
+    
+    public CameraController CameraController { get => cameraController; set => cameraController = value; }
+    public Vector2 XYInput
+    {
+        get { return xYInput; }
+        set
+        {
+            if ((xYInput.x < -1 || xYInput.x > 1) || (xYInput.y < -1 || xYInput.y > 1))
+                throw new ArgumentOutOfRangeException(nameof(value));
+            
+            xYInput = value;
+        }
+    }
+
+    public float Speed
+    {
+        get { return speed; }
+
+        set
+        {
+            if(value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value));
+
+            speed = value;
+        }
+    }
+
+    public float RotationSpeed
+    {
+        get { return rotationSpeed; }
+        set
+        {
+            if(value < 0)
+                throw new ArgumentOutOfRangeException(nameof(value));
+            rotationSpeed = value;
+        }
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\Factory\IStateFactory.cs ==========
+
+using Code.Infrastructure.States.GameStates;
+
+namespace Code.Infrastructure.States.Factory
+{
+    public interface IStateFactory
+    {
+        TState GetState<TState>() where TState : class, IExitableState;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\Factory\StateFactory.cs ==========
+
+using Code.Infrastructure.States.GameStates;
+using Zenject;
+
+namespace Code.Infrastructure.States.Factory
+{
+    public class StateFactory : IStateFactory
+    {
+        private readonly DiContainer container;
+
+        public StateFactory(DiContainer container)
+        {
+            this.container = container;
+        }
+
+        public TState GetState<TState>() where TState : class, IExitableState
+        {
+            return container.Resolve<TState>();
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\BootstrapState.cs ==========
+
+using Code.Infrastructure.States.StateMachine;
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public class BootstrapState : IState
+    {
+        private readonly IGameStateMachine gameStateMachine;
+        private readonly LoadingCurtainProxy loadingCurtain;
+
+        public BootstrapState(IGameStateMachine gameStateMachine, LoadingCurtainProxy loadingCurtain)
+        {
+            this.gameStateMachine = gameStateMachine;
+            this.loadingCurtain = loadingCurtain;
+        }
+
+        public async UniTask Enter()
+        {
+            await loadingCurtain.InitializeAsync();
+            await gameStateMachine.Enter<GameLoadingState>();
+        }
+
+        public UniTask Exit() => 
+            default;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\GameLoadingState.cs ==========
+
+using Code.Infrastructure.States.StateMachine;
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public class GameLoadingState : IState
+    {
+        private readonly ILoadingCurtain loadingCurtain;
+        private readonly IGameStateMachine stateMachine;
+
+        public GameLoadingState(IGameStateMachine stateMachine, ILoadingCurtain loadingCurtain)
+        {
+            this.loadingCurtain = loadingCurtain;
+            this.stateMachine = stateMachine;
+        }
+
+        public async UniTask Enter()
+        {
+            loadingCurtain.Show();
+
+            await stateMachine.Enter<MainMenuLoadingState>();
+            
+            loadingCurtain.Hide();
+        }
+
+        public UniTask Exit() => 
+            default;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\GameplayLoadingState.cs ==========
+
+using System.Collections.Generic;
+using Code.Gameplay.Lobby;
+using Code.Gameplay.Player.Factory;
+using Code.Infrastructure.SceneManagement;
+using Code.Infrastructure.States.StateMachine;
+using Code.Utils;
+using Cysharp.Threading.Tasks;
+using FishNet.Connection;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public class GameplayLoadingState : IPayloadState<GameplayLoadingStateEnterArgs>
+    {
+        private readonly ISceneLoader sceneLoader;
+        private readonly ILoadingCurtain loadingCurtain;
+        private readonly IGameStateMachine stateMachine;
+        private readonly IPlayerFactory playerFactory;
+
+        public GameplayLoadingState(
+            ISceneLoader sceneLoader,
+            ILoadingCurtain loadingCurtain,
+            IGameStateMachine stateMachine,
+            IPlayerFactory playerFactory)
+        {
+            this.sceneLoader = sceneLoader;
+            this.loadingCurtain = loadingCurtain;
+            this.stateMachine = stateMachine;
+            this.playerFactory = playerFactory;
+        }
+
+        public async UniTask Enter(bool asServer)
+        {
+            loadingCurtain.Show();
+            
+            if (asServer)
+                sceneLoader.LoadSceneNetwork(AssetPath.GameScene);
+            
+            await stateMachine.Enter<GameplayLoopState>();
+            
+            loadingCurtain.Hide();
+        }
+        
+        public async UniTask Enter(GameplayLoadingStateEnterArgs args)
+        {
+            loadingCurtain.Show();
+
+            if (args.AsServer)
+            {
+                sceneLoader.LoadSceneNetwork(AssetPath.GameScene);
+                
+                foreach (var player in args.Players) 
+                    playerFactory.SpawnPlayer(player.Connection);
+            }
+            
+            await stateMachine.Enter<GameplayLoopState>();
+            
+            loadingCurtain.Hide();
+        }
+
+        public UniTask Exit() => 
+            default;
+    }
+    
+    public class GameplayLoadingStateEnterArgs
+    {
+        public bool AsServer;
+        public List<LobbyPlayer> Players;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\GameplayLoopState.cs ==========
+
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public class GameplayLoopState : IState
+    {
+        public UniTask Exit() => 
+            default;
+
+        public UniTask Enter() => 
+            default;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\IExitableState.cs ==========
+
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public interface IExitableState
+    {
+        UniTask Exit();
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\IPayloadState.cs ==========
+
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public interface IPayloadState<TPayload> : IExitableState
+    {
+        UniTask Enter(TPayload payload);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\IState.cs ==========
+
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public interface IState : IExitableState
+    {
+        UniTask Enter();
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\LobbyLoadingState.cs ==========
+
+using Code.Infrastructure.SceneManagement;
+using Code.Infrastructure.States.StateMachine;
+using Code.Utils;
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public class LobbyLoadingState : IState
+    {
+        private readonly ISceneLoader sceneLoader;
+        private readonly ILoadingCurtain loadingCurtain;
+        private readonly IGameStateMachine stateMachine;
+
+        public LobbyLoadingState(
+            ISceneLoader sceneLoader,
+            ILoadingCurtain loadingCurtain,
+            IGameStateMachine stateMachine)
+        {
+            this.sceneLoader = sceneLoader;
+            this.loadingCurtain = loadingCurtain;
+            this.stateMachine = stateMachine;
+        }
+
+        public async UniTask Enter()
+        {
+            loadingCurtain.Show();
+            
+            await sceneLoader.LoadScene(AssetPath.LoadingScene);
+            await sceneLoader.LoadScene(AssetPath.LobbyScene);
+            
+            await stateMachine.Enter<LobbyState>();
+            
+            loadingCurtain.Hide();
+        }
+
+        public UniTask Exit() => 
+            default;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\LobbyState.cs ==========
+
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public class LobbyState : IState
+    {
+        public UniTask Exit() => 
+            default;
+
+        public UniTask Enter() => 
+            default;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\MainMenuLoadingState.cs ==========
+
+using Code.Infrastructure.SceneManagement;
+using Code.Infrastructure.States.StateMachine;
+using Code.Utils;
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public class MainMenuLoadingState : IState
+    {
+        private readonly ISceneLoader sceneLoader;
+        private readonly ILoadingCurtain loadingCurtain;
+        private readonly IGameStateMachine stateMachine;
+
+        public MainMenuLoadingState(
+            ISceneLoader sceneLoader,
+            ILoadingCurtain loadingCurtain,
+            IGameStateMachine stateMachine)
+        {
+            this.sceneLoader = sceneLoader;
+            this.loadingCurtain = loadingCurtain;
+            this.stateMachine = stateMachine;
+        }
+
+        public async UniTask Enter()
+        {
+            loadingCurtain.Show();
+            
+            await sceneLoader.LoadScene(AssetPath.LoadingScene);
+            await sceneLoader.LoadScene(AssetPath.MainMenuScene);
+            
+            await stateMachine.Enter<MainMenuState>();
+            
+            loadingCurtain.Hide();
+        }
+
+        public UniTask Exit() => 
+            default;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\GameStates\MainMenuState.cs ==========
+
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.GameStates
+{
+    public class MainMenuState : IState
+    {
+        public UniTask Exit() => 
+            default;
+
+        public UniTask Enter() => 
+            default;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\StateMachine\GameStateMachine.cs ==========
+
+using Code.Infrastructure.States.Factory;
+using Code.Infrastructure.States.GameStates;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+
+namespace Code.Infrastructure.States.StateMachine
+{
+    public class GameStateMachine : IGameStateMachine
+    {
+        private readonly IStateFactory stateFactory;
+        
+        private IExitableState activeState;
+
+        public GameStateMachine(IStateFactory stateFactory)
+        {
+            this.stateFactory = stateFactory;
+        }
+
+        public async UniTask Enter<TState>() where TState : class, IState
+        {
+            Debug.Log(typeof(TState));
+            await RequestEnter<TState>();
+        }
+
+        public async UniTask Enter<TState, TPayload>(TPayload payload) where TState : class, IPayloadState<TPayload>
+        {
+            await RequestEnter<TState, TPayload>(payload);
+        }
+
+        private async UniTask<TState> RequestEnter<TState>() where TState : class, IState
+        {
+            var state = await RequestChangeState<TState>();
+            await EnterState(state);
+            return state;
+        }
+
+        private async UniTask<TState> RequestEnter<TState, TPayload>(TPayload payload)
+            where TState : class, IPayloadState<TPayload>
+        {
+            var state = await RequestChangeState<TState>();
+            await EnterPayloadState(state, payload);
+            return state;
+        }
+
+        private async UniTask<TState> EnterState<TState>(TState state) where TState : class, IState
+        {
+            activeState = state;
+            await state.Enter();
+            return state;
+        }
+
+        private async UniTask<TState> EnterPayloadState<TState, TPayload>(TState state, TPayload payload)
+            where TState : class, IPayloadState<TPayload>
+        {
+            activeState = state;
+            await state.Enter(payload);
+            return state;
+        }
+
+        private async UniTask<TState> RequestChangeState<TState>() where TState : class, IExitableState
+        {
+            if (activeState != null) 
+                await activeState.Exit();
+
+            return ChangeState<TState>();
+        }
+
+        private TState ChangeState<TState>() where TState : class, IExitableState
+        {
+            return stateFactory.GetState<TState>();
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\States\StateMachine\IGameStateMachine.cs ==========
+
+using Code.Infrastructure.States.GameStates;
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.States.StateMachine
+{
+    public interface IGameStateMachine
+    {
+        UniTask Enter<TState>() where TState : class, IState;
+        UniTask Enter<TState, TPayload>(TPayload payload) where TState : class, IPayloadState<TPayload>;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\IPlayerState.cs ==========
+
+
+public interface IPlayerState
+{
+   void Enter();
+   void Exit();
+   void HandleInput();
+   void Update();
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\MovementPlayerState.cs ==========
+
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public abstract class MovementPlayerState : IPlayerState
+{
+    protected IMovementDirectionHandler movementDirectionHandler;
+    protected IRotationStrategy rotationStrategy;
+    
+    protected readonly IStateSwitcher StateSwitcher;
+    protected readonly PlayerStateMachineData Data;
+    
+    protected readonly ClimbChecker climbChecker;
+    
+    protected RotationContext rotationContext = new RotationContext();
+    protected MovementDirectionContext movementDirectionContext = new MovementDirectionContext();
+
+    private readonly Player _player;
+    private readonly CameraController playerCamera;
+    
+    public MovementPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data,
+        Player player)
+    {
+        StateSwitcher = stateSwitcher;
+        Data = data;
+        this._player = player;
+        playerCamera = data.CameraController;
+        climbChecker = player.ClimbChecker;
+
+        movementDirectionContext.Player = player;
+        movementDirectionContext.CameraTransform = playerCamera.CurrentCamera.transform;
+    }
+
+    protected PlayerInput Input => _player.Input;
+    protected CharacterController CharacterController => _player.Controller;
+    protected PlayerView View => _player.View;
+    public virtual void Enter()
+    {
+        View.StartMovement();
+        Debug.Log(GetType());
+        
+        CharacterController.detectCollisions = false;
+
+        AddInputActionsCallbacks();
+        rotationContext.CharacterTransform = _player.transform;
+    }
+
+    public virtual void Exit()
+    {
+        RemoveInputActionsCallbacks();
+        View.StopMovement();
+    }
+
+    public void HandleInput()
+    {
+        Data.XYInput = ReadVerticalAndHorizontalInput();
+        movementDirectionContext.Input = Data.XYInput;
+    }
+
+    public virtual void Update()
+    {
+        Vector3 velocity = GetConvertedVelocity();
+        velocity *= Data.Speed;
+        velocity.y = Data.YVelocity;
+        
+        rotationContext.MoveDirection = velocity;
+        
+        CharacterController.Move(velocity *Time.deltaTime);
+        _player.transform.rotation = GetRotationFrom();
+        
+    }
+
+    protected virtual void AddInputActionsCallbacks()
+    {
+        Input.Movement.Climb.started += OnClimbKeyPressed;
+    }
+
+    protected virtual void RemoveInputActionsCallbacks()
+    {
+        Input.Movement.Climb.started -= OnClimbKeyPressed;
+    }
+    
+    protected bool IsInputZero() => Data.XYInput == Vector2.zero;
+
+    protected virtual void OnClimbKeyPressed(InputAction.CallbackContext obj)
+    {
+        if (Data.IsClimbing == true)
+        {
+            return;
+        }
+        
+        climbChecker.CheckClimb();
+        if (climbChecker.IsClimbable == false)
+        {
+            return;
+        }
+        
+        if(Data.XYInput.y == 0)
+            StateSwitcher.SwitchState<ClimbPlayerIdleState>();
+        else
+            StateSwitcher.SwitchState<ClimbPlayerMoveState>();
+    }
+    
+    private Quaternion GetRotationFrom()
+    {
+        
+        Quaternion newRotation = rotationStrategy.GetTargetRotation(rotationContext);
+        
+        Quaternion targetRotation = Quaternion.Slerp(_player.transform.rotation, newRotation, 
+            Data.RotationSpeed * Time.deltaTime);
+
+        return targetRotation;
+    }
+    
+    private Vector3 GetConvertedVelocity()
+    {
+        return movementDirectionHandler.GetConvertedVelocity(movementDirectionContext);
+    }
+
+    private Vector2 ReadVerticalAndHorizontalInput() => Input.Movement.Move.ReadValue<Vector2>();
+
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\Airborne\AirbornePlayerState.cs ==========
+
+using UnityEngine;
+using UnityEngine.Rendering;
+
+public abstract class AirbornePlayerState : MovementPlayerState
+{
+    private readonly AirborneStateConfig airborneStateConfig;
+    public AirbornePlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player)
+        : base(stateSwitcher, data, player)
+    {
+        airborneStateConfig = player.Config.AirborneStateConfig;
+    }
+
+    public override void Enter()
+    {
+        base.Enter();
+        
+        View.StartAirborne();
+        
+        movementDirectionHandler = new StandartMovementDirection();
+        rotationStrategy = new StandartRotationStrategy();
+        
+        Data.Speed = airborneStateConfig.Speed;
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+        
+        View.StopAirborne();
+    }
+
+    public override void Update()
+    {
+        base.Update();
+        
+        Data.YVelocity -= airborneStateConfig.BaseGravity * Time.deltaTime;
+    }
+
+    protected virtual float GetGravityMultiplier() => airborneStateConfig.BaseGravity;
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\Airborne\FallingPlayerState.cs ==========
+
+using UnityEngine;
+
+public class FallingPlayerState : AirbornePlayerState
+{
+    private readonly GroundChecker groundChecker;
+    
+    public FallingPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player)
+        : base(stateSwitcher, data, player)
+    {
+        groundChecker = player.GroundChecker;
+    }
+
+    public override void Enter()
+    {
+        base.Enter();
+        
+        View.StartFalling();
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+        
+        View.StopFalling();
+    }
+
+    public override void Update()
+    {
+        base.Update();
+
+        if (groundChecker.IsTouches)
+        {
+            Data.YVelocity = 0;
+            
+            if(IsInputZero())
+                StateSwitcher.SwitchState<GroundIdlePlayerState>();
+            else
+                StateSwitcher.SwitchState<RunningPlayerState>();
+        }
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\Airborne\JumpingPlayerState.cs ==========
+
+using UnityEngine;
+
+public class JumpingPlayerState : AirbornePlayerState
+{
+    private JumpingStateConfig config;
+    
+    public JumpingPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) 
+        : base(stateSwitcher, data, player)
+    {
+        config = player.Config.AirborneStateConfig.JumpingStateConfig;
+    }
+
+    public override void Enter()
+    {
+        base.Enter();
+        
+        View.StartJumping();
+
+        Data.YVelocity = config.StartYVelocity;
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+        
+        View.StopJumping();
+    }
+
+    public override void Update()
+    {
+        base.Update();
+        
+        if(Data.YVelocity <= 0)
+            StateSwitcher.SwitchState<FallingPlayerState>();
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\ClimbMovement\ClimbChecker.cs ==========
+
+using FishNet.Object;
+using UnityEngine;
+
+public class ClimbChecker : NetworkBehaviour
+{
+    [SerializeField, Range(0f, 2f)] private float checkDistance;
+    [SerializeField] private LayerMask climbLayer;
+        
+    public bool IsClimbable { get; private set; }
+
+    private RaycastHit hitInfo;
+
+    public void CheckClimb()
+    {
+        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, checkDistance, climbLayer))
+        {
+            IsClimbable = ValidateHit(hit);
+            hitInfo = hit;
+        }
+        else IsClimbable = false;
+    }
+
+    public bool TryGetHitInfo(out RaycastHit hitInfo)
+    {
+        hitInfo = this.hitInfo;
+        if (IsClimbable)
+        {
+            return true;
+        }
+        else 
+            return false;
+
+    }
+    
+    private bool ValidateHit(RaycastHit hit)
+    {
+        MeshCollider targetCollider = hit.collider as MeshCollider;
+        TriangleAdjacency adjacency = targetCollider.GetComponentInChildren<TriangleAdjacency>();
+        
+        if (adjacency == null)
+            return false;
+        
+        return hit.collider is MeshCollider mc && mc.sharedMesh != null;
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\ClimbMovement\ClimbPlayerIdleState.cs ==========
+
+using UnityEngine;
+
+public class ClimbPlayerIdleState : ClimbPlayerState
+{
+    public ClimbPlayerIdleState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) 
+        : base(stateSwitcher, data, player)
+    {
+    }
+
+    protected override void OnClimbStateEnter()
+    {
+        View.StartClimbIdle();
+        // Сбрасываем контекст движения при переходе в idle
+        movementDirectionContext.Input = Vector2.zero;
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+        View.StopClimbIdle();
+    }
+
+    public override void Update()
+    {
+        base.Update();
+
+        // Поддерживаем прикрепление к поверхности
+        MaintainSurfaceAttachment();
+
+        // Переход в ClimbMoveState при начале движения
+        if (Data.XYInput.y != 0)
+        {
+            StateSwitcher.SwitchState<ClimbPlayerMoveState>();
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\ClimbMovement\ClimbPlayerMoveState.cs ==========
+
+using UnityEngine;
+
+public class ClimbPlayerMoveState : ClimbPlayerState
+{
+    public ClimbPlayerMoveState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) 
+        : base(stateSwitcher, data, player)
+    {
+    }
+
+    protected override void OnClimbStateEnter()
+    {
+        View.StartClimbMoving();
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+        View.StopClimbMoving();
+    }
+
+    public override void Update()
+    {
+        base.Update();
+
+        // Переход в ClimbIdleState при остановке движения
+        if (Data.XYInput.y == 0)
+        {
+            StateSwitcher.SwitchState<ClimbPlayerIdleState>();
+        }
+
+        // Обновляем контекст для вращения
+        rotationContext.XInput = Data.XYInput.x;
+
+        // Обрабатываем перемещение и вращение
+        HandleClimbMovement();
+        HandleClimbRotation();
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\ClimbMovement\ClimbPlayerState.cs ==========
+
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public abstract class ClimbPlayerState : MovementPlayerState
+{
+    protected TriangleMeshHelper triangleHelper;
+    
+    private readonly ClimbStateConfig config;
+    
+    public ClimbPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) 
+        : base(stateSwitcher, data, player)
+    {
+        config = player.Config.ClimbStateConfig;
+    }
+    
+    public override void Enter()
+    {
+        base.Enter();
+        View.StartClimbing();
+        
+        // ✅ Ключевое изменение: проверяем ПЕРЕД raycast
+        if (!Data.IsClimbing)
+        {
+            // Первое прикрепление - делаем raycast
+            if (!climbChecker.TryGetHitInfo(out RaycastHit hitInfo))
+            {
+                Debug.LogError("Failed to get climb hit info!");
+                return;
+            }
+            
+            InitializeClimbData(hitInfo);
+            AttachCharacterToSurface();
+            Data.IsClimbing = true;
+        }
+        else
+        {
+            // Переход между состояниями - НЕ делаем raycast!
+            RestoreTriangleHelper();
+        }
+        
+        // Общая настройка для всех состояний
+        movementDirectionHandler = new ClimbMovementDirection();
+        rotationStrategy = new ClimbRotation();
+        Data.Speed = config.MoveSpeed;
+        Data.RotationSpeed = config.RotationSpeed;
+        Data.YVelocity = 0f;
+        
+        OnClimbStateEnter();
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+        View.StopClimbing();
+    }
+
+    public override void Update()
+    {
+        base.Update();
+        
+    }
+
+    protected virtual void OnClimbStateEnter() { }
+
+    protected void MaintainSurfaceAttachment()
+    {
+        Vector3 worldPoint = triangleHelper.GetWorldPointOnTriangle(
+            Data.ClimbTriangleIndex,
+            Data.ClimbBarycentricCoords
+        );
+        
+        CharacterController.transform.position = worldPoint;
+
+        Vector3 surfaceNormal = triangleHelper.GetTriangleNormal(Data.ClimbTriangleIndex);
+        rotationContext.OldNormal = surfaceNormal;
+        rotationContext.NewNormal = surfaceNormal;
+    }
+
+    protected void HandleClimbMovement()
+    {
+        Vector3 currentWorldPos = triangleHelper.GetWorldPointOnTriangle(
+            Data.ClimbTriangleIndex, 
+            Data.ClimbBarycentricCoords);
+    
+        Vector3 moveDirection = movementDirectionHandler.GetConvertedVelocity(movementDirectionContext);
+    
+        if (moveDirection != Vector3.zero)
+        {
+            rotationContext.OldNormal = triangleHelper.GetTriangleNormal(Data.ClimbTriangleIndex);
+        
+            if (Data.ClimbNavigator.StepForward(
+                    Data.ClimbTriangleIndex, 
+                    currentWorldPos, 
+                    moveDirection, 
+                    out int nextTriangle, 
+                    out Vector3 nextWorldPos))
+            {
+                Data.ClimbTriangleIndex = nextTriangle;
+                Data.ClimbBarycentricCoords = triangleHelper.WorldToBarycentric(nextTriangle, nextWorldPos);
+            
+                Vector3 newNormal = triangleHelper.GetTriangleNormal(nextTriangle);
+                rotationContext.NewNormal = newNormal;
+            }
+        }
+    
+        // ВАЖНО: Обновляем позицию ВСЕГДА, независимо от результата StepForward!
+        // Это гарантирует, что персонаж остается приклеенным к анимированному мешу
+        Vector3 finalWorldPos = triangleHelper.GetWorldPointOnTriangle(
+            Data.ClimbTriangleIndex, 
+            Data.ClimbBarycentricCoords);
+    
+        CharacterController.transform.position = finalWorldPos;
+    }
+
+
+    protected void HandleClimbRotation()
+    {
+        Transform character = CharacterController.transform;
+        Quaternion targetRotation = rotationStrategy.GetTargetRotation(rotationContext);
+        
+        character.rotation = Quaternion.Slerp(
+            character.rotation,
+            targetRotation,
+            Time.deltaTime * Data.RotationSpeed
+        );
+    }
+
+    protected override void AddInputActionsCallbacks()
+    {
+        base.AddInputActionsCallbacks();
+        Input.Movement.Jump.started += OnJumpKeyPressed;
+        Input.Movement.Climb.started += OnClimbKeyPressed;
+    }
+
+    protected override void RemoveInputActionsCallbacks()
+    {
+        base.RemoveInputActionsCallbacks();
+        Input.Movement.Jump.started -= OnJumpKeyPressed;
+        Input.Movement.Climb.started -= OnClimbKeyPressed;
+    }
+    
+    protected void DetachFromSurface()
+    {
+        Data.IsClimbing = false;
+        triangleHelper = null;
+    }
+
+    protected override void OnClimbKeyPressed(InputAction.CallbackContext obj)
+    {
+        DetachFromSurface();
+        StateSwitcher.SwitchState<FallingPlayerState>();
+    }
+    
+    /// <summary>
+    /// Инициализирует данные о треугольнике при ПЕРВОМ прикреплении.
+    /// Вызывается только когда Data.IsClimbing == false.
+    /// </summary>
+    private void InitializeClimbData(RaycastHit hitInfo)
+    {
+        MeshCollider targetCollider = hitInfo.collider as MeshCollider;
+        
+        if (targetCollider == null || targetCollider.sharedMesh == null)
+        {
+            Debug.LogError("Invalid climb collider!");
+            return;
+        }
+
+        // ✅ Сохраняем данные из первого raycast
+        Data.ClimbTargetCollider = targetCollider;
+        Data.ClimbTargetMesh = targetCollider.sharedMesh;
+        Data.ClimbTriangleIndex = hitInfo.triangleIndex;
+        Data.ClimbBarycentricCoords = hitInfo.barycentricCoordinate;
+
+        triangleHelper = new TriangleMeshHelper(targetCollider);
+
+        targetCollider.GetComponent<BakeMesh>()?.ForceUpdateCollider();
+        InitializeSurfaceNavigator(targetCollider);
+        
+        rotationContext.TriangleMeshHelper = triangleHelper;
+    }
+
+    /// <summary>
+    /// Восстанавливает triangleHelper при переходе между состояниями.
+    /// НЕ делает raycast, НЕ изменяет Data.ClimbTriangleIndex/BarycentricCoords.
+    /// </summary>
+    private void RestoreTriangleHelper()
+    {
+        if (Data.ClimbTargetCollider == null || Data.ClimbTargetMesh == null)
+        {
+            Debug.LogWarning("Cannot restore triangle helper - collider or mesh is null!");
+            return;
+        }
+
+        // ✅ Только восстанавливаем helper, данные остаются в Data неизменными
+        triangleHelper = new TriangleMeshHelper(Data.ClimbTargetCollider);
+        rotationContext.TriangleMeshHelper = triangleHelper;
+    }
+
+    private void InitializeSurfaceNavigator(MeshCollider targetCollider)
+    {
+        TriangleAdjacency adjacency = targetCollider.GetComponentInChildren<TriangleAdjacency>();
+        
+        if (adjacency == null)
+        {
+            Debug.LogError("TriangleAdjacency component not found!");
+            return;
+        }
+
+        if (adjacency.Neighbors == null || adjacency.Neighbors.Count == 0)
+        {
+            adjacency.RebuildFromMesh(targetCollider.sharedMesh, 1e-6f);
+        }
+
+        Data.ClimbNavigator = new SurfaceNavigator(
+            targetCollider,
+            targetCollider.transform,
+            adjacency.Neighbors,
+            adjacency.VertexToTriangles,
+            adjacency.Remap,
+            config.MoveSpeed
+        );
+    }
+
+    private void AttachCharacterToSurface()
+    {
+        Vector3 surfacePoint = triangleHelper.GetWorldPointOnTriangle(
+            Data.ClimbTriangleIndex,
+            Data.ClimbBarycentricCoords
+        );
+        
+        Vector3 surfaceNormal = triangleHelper.GetTriangleNormal(Data.ClimbTriangleIndex);
+        rotationContext.OldNormal = surfaceNormal;
+        rotationContext.NewNormal = surfaceNormal;
+
+        //Vector3 offset = surfaceNormal * 0.01f;
+
+        CharacterController.enabled = false;
+        CharacterController.transform.position = surfacePoint;
+        CharacterController.enabled = true;
+
+        Vector3 forwardOnSurface = Vector3.ProjectOnPlane(
+            CharacterController.transform.forward, 
+            surfaceNormal
+        ).normalized;
+
+        if (forwardOnSurface.sqrMagnitude < 0.0001f)
+        {
+            forwardOnSurface = Vector3.ProjectOnPlane(Vector3.forward, surfaceNormal).normalized;
+        }
+
+        CharacterController.transform.rotation = Quaternion.LookRotation(forwardOnSurface, surfaceNormal);
+    }
+
+    private void OnJumpKeyPressed(InputAction.CallbackContext obj)
+    {
+        DetachFromSurface();
+        StateSwitcher.SwitchState<JumpingPlayerState>();
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\Configs\AirborneStateConfig.cs ==========
+
+using System;
+using UnityEngine;
+
+[Serializable]
+public class AirborneStateConfig
+{
+    [SerializeField, Range(0, 50)] private float speed;
+    [SerializeField] private JumpingStateConfig jumpingStateConfig;
+    
+    public JumpingStateConfig JumpingStateConfig  => jumpingStateConfig;
+    public float Speed => speed;
+    
+    public float BaseGravity 
+        => 2f * jumpingStateConfig.MaxJumpHeight /
+           (jumpingStateConfig.TimeToReachMaxHeight * jumpingStateConfig.TimeToReachMaxHeight); 
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\Configs\ClimbStateConfig.cs ==========
+
+using System;
+using UnityEngine;
+
+[Serializable]
+public class ClimbStateConfig 
+{
+    [SerializeField, Range(0, 50)] 
+    private float moveSpeed = 2f;
+    
+    [SerializeField, Range(0, 100)] 
+    private float rotationSpeed = 10f;
+    
+    [SerializeField] 
+    private float attachDistance = 2f;
+    
+    [SerializeField] 
+    private LayerMask climbableMask;
+    
+
+    public float MoveSpeed => moveSpeed;
+    public float RotationSpeed => rotationSpeed;
+    public float AttachDistance => attachDistance;
+    public LayerMask ClimbableMask => climbableMask;
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\Configs\JumpingStateConfig.cs ==========
+
+using System;
+using UnityEngine;
+
+[Serializable]
+public class JumpingStateConfig
+{
+    [SerializeField, Range(0, 20)] private float maxJumpHeight;
+    [SerializeField, Range(0, 20)] private float timeToReachMaxHeight;
+    
+    public float StartYVelocity => 2 * maxJumpHeight / timeToReachMaxHeight;
+    public float MaxJumpHeight => maxJumpHeight;
+    public float TimeToReachMaxHeight => timeToReachMaxHeight;
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\Configs\RunningStateConfig.cs ==========
+
+using System;
+using UnityEngine;
+
+[Serializable]
+public class RunningStateConfig
+{
+    [SerializeField, Range(0, 100)] private float speed;
+    [SerializeField, Range(0, 100)] private float rotationSpeed;
+    
+    public float Speed => speed;
+    public float RotationSpeed => rotationSpeed;
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\GroundMovement\GroundedPlayerState.cs ==========
+
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public abstract class GroundedPlayerState : MovementPlayerState
+{
+    private readonly GroundChecker groundChecker;
+    
+    public GroundedPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) : base(stateSwitcher, data, player)
+    {
+        groundChecker = player.GroundChecker;
+    }
+
+    public override void Enter()
+    {
+        base.Enter();
+        
+        View.StartGrounded();
+
+        movementDirectionHandler = new StandartMovementDirection();
+        rotationStrategy = new StandartRotationStrategy();
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+        
+        View.StopGrounded();
+        
+        
+    }
+
+    public override void Update()
+    {
+        base.Update();
+
+        if (groundChecker.IsTouches == false)
+            StateSwitcher.SwitchState<FallingPlayerState>();
+    }
+
+    protected override void AddInputActionsCallbacks()
+    {
+        base.AddInputActionsCallbacks();
+
+        Input.Movement.Jump.started += OnJumpKeyPressed;
+    }
+    
+
+    protected override void RemoveInputActionsCallbacks()
+    {
+        base.RemoveInputActionsCallbacks();
+        
+        Input.Movement.Jump.started -= OnJumpKeyPressed;
+
+    }
+    
+    private void OnJumpKeyPressed(InputAction.CallbackContext obj)
+    {
+        StateSwitcher.SwitchState<JumpingPlayerState>();
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\GroundMovement\GroundIdlePlayerState.cs ==========
+
+using UnityEngine;
+
+public class GroundIdlePlayerState : GroundedPlayerState
+{
+    public GroundIdlePlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) :
+        base(stateSwitcher, data, player)
+    {
+        
+    }
+
+    public override void Enter()
+    {
+        base.Enter();
+        
+        View.StartIdle();
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+        
+        View.StopIdle();
+    }
+
+    public override void Update()
+    {
+        base.Update();
+        if (IsInputZero())
+            return;
+        
+        StateSwitcher.SwitchState<RunningPlayerState>();
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\GroundMovement\RunningPlayerState.cs ==========
+
+using UnityEngine;
+
+public class RunningPlayerState : GroundedPlayerState
+{
+    private RunningStateConfig config;
+    public RunningPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) :
+        base(stateSwitcher, data,  player)
+    {
+        config = player.Config.RunningStateConfig;
+    }
+
+    public override void Enter()
+    {
+        base.Enter();
+        
+        View.StartRunning();
+
+        Data.Speed = config.Speed;
+        Data.RotationSpeed = config.RotationSpeed;
+    }
+
+    public override void Exit()
+    {
+        base.Exit();
+        
+        View.StopRunning();
+    }
+
+    public override void Update()
+    {
+        base.Update();
+        
+        if(IsInputZero())
+            StateSwitcher.SwitchState<GroundIdlePlayerState>();
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\MovementHandler\ClimbMovementDirection.cs ==========
+
+using UnityEngine;
+
+public class ClimbMovementDirection : IMovementDirectionHandler
+{
+    public Vector3 GetConvertedVelocity(MovementDirectionContext context)
+    {
+        Vector3 moveDirection = Vector3.zero;
+        
+        Transform characterTransform = context.Player.transform;
+        
+        float YInput = context.Input.y;
+
+        if (YInput > 0)
+            moveDirection += characterTransform.forward;
+        else if (YInput < 0)
+            moveDirection -= characterTransform.forward;
+        
+        moveDirection.Normalize();
+        return moveDirection;
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\MovementHandler\IMovementDirectionHandler.cs ==========
+
+using UnityEngine;
+
+public interface IMovementDirectionHandler
+{
+    public Vector3 GetConvertedVelocity(MovementDirectionContext context);
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\MovementHandler\MovementDirectionContext.cs ==========
+
+
+using UnityEngine;
+
+public class MovementDirectionContext
+{
+    public Vector2 Input;
+    public Player Player;
+    public Transform CameraTransform;
+    
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\MovementHandler\StandartMovementDirection.cs ==========
+
+using UnityEngine;
+
+public class StandartMovementDirection : IMovementDirectionHandler
+{
+    public Vector3 GetConvertedVelocity(MovementDirectionContext context)
+    {
+        Vector2 input = context.Input;
+        Transform cameraTransform = context.CameraTransform;
+        
+        Vector3 moveDirection = cameraTransform.forward * input.y;
+        moveDirection += cameraTransform.right * input.x;
+        moveDirection.Normalize();
+        moveDirection.y = 0f;
+        
+        return moveDirection;
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\RotationLogic\ClimbRotation.cs ==========
+
+using UnityEngine;
+
+public class ClimbRotation : IRotationStrategy
+{
+    public Quaternion GetTargetRotation(RotationContext context)
+    {
+        Vector3 rotationDirection = Vector3.zero;
+        
+        Vector3 oldNormal = context.OldNormal;
+        Vector3 newNormal = context.NewNormal;
+        float xInput = context.XInput;
+        Transform characterTransform = context.CharacterTransform;
+
+        if (xInput > 0)
+            rotationDirection += characterTransform.right;
+        else 
+            rotationDirection -= characterTransform.right;
+
+        // 1. Определяем forward: если игрок нажимает AD (накопилось), берем его
+        Vector3 desiredForward = xInput != 0 
+            ? rotationDirection.normalized 
+            : characterTransform.forward;
+
+        // 2. Проецируем forward на поверхность, чтобы forward не улетал в воздух
+        Vector3 forwardOnSurface = Vector3.ProjectOnPlane(desiredForward, newNormal).normalized;
+
+        // Если forward совпал с нормалью (редкий случай), берем крест к up
+        if (forwardOnSurface == Vector3.zero)
+            forwardOnSurface = Vector3.ProjectOnPlane(characterTransform.up, newNormal).normalized;
+
+        // 3. Создаем ориентацию: направление туда, куда хочет игрок, и вверх по нормали поверхности
+        Quaternion targetRot = Quaternion.LookRotation(forwardOnSurface, newNormal);
+
+        return targetRot;
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\RotationLogic\IRotationStrategy.cs ==========
+
+using UnityEngine;
+
+public interface IRotationStrategy
+{
+    Quaternion GetTargetRotation(RotationContext context);
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\RotationLogic\RotationContext.cs ==========
+
+using UnityEngine;
+
+public class RotationContext 
+{
+    public Vector3 MoveDirection { get; set; }
+    public Vector3 OldNormal { get; set; }
+    public Vector3 NewNormal { get; set; }
+    public Transform CharacterTransform { get; set; }
+    public TriangleMeshHelper TriangleMeshHelper { get; set; }
+    public float XInput { get; set; }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\RotationLogic\StandartRotationStrategy.cs ==========
+
+using UnityEngine;
+
+public class StandartRotationStrategy : IRotationStrategy
+{
+    public Quaternion GetTargetRotation(RotationContext context)
+    {
+        Vector3 moveDirection = context.MoveDirection;
+        Transform characterTransform = context.CharacterTransform;
+        
+        Vector3 targetRotationDirection = moveDirection;
+        targetRotationDirection.y = 0;
+        
+        if (targetRotationDirection == Vector3.zero)
+        {
+            targetRotationDirection = characterTransform.forward;
+        }
+
+        Quaternion newRotation = Quaternion.LookRotation(targetRotationDirection);
+        
+        return newRotation;
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
