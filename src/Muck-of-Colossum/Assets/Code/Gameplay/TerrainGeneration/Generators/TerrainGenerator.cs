@@ -24,6 +24,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
         private HeightMapGenerator heightMapGenerator;
         private MeshGenerator meshGenerator;
         private ColliderGenerator colliderGenerator;
+        private CharacterController characterController;
 
         public TerrainGenerator(
             HeightMapGenerator heightMapGenerator,
@@ -46,6 +47,14 @@ namespace Code.Gameplay.TerrainGeneration.Generators
 
             terrainChunks = new TerrainChunk[staticData.MeshSettings.terrainSizeX * staticData.MeshSettings.terrainSizeY];
             await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
+            
+            if (characterController == null) 
+                characterController = viewer.GetComponent<CharacterController>();
+            
+            characterController.enabled = false;
+            UpdateChunks();
+            characterController.enabled = true;
+            viewer.position += Vector3.up * 5;
         }
 
         public async UniTask GenerateTerrain()

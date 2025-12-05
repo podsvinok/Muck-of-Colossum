@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoUpdate: 1
   scale: 200
-  octaves: 6
-  persistance: 0.55
-  lacunarity: 2
-  seed: 228
+  octaves: 5
+  persistance: 0.48
+  lacunarity: 1.7
+  seed: 1613338101
   offset: {x: 0, y: 0}

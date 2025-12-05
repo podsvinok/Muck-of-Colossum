@@ -10,7 +10,7 @@ public class StandartMovementDirection : IMovementDirectionHandler
         Vector3 moveDirection = cameraTransform.forward * input.y;
         moveDirection += cameraTransform.right * input.x;
         moveDirection.Normalize();
-        moveDirection.y = 0f;
+        moveDirection.y = -1f;
         
         return moveDirection;
     }

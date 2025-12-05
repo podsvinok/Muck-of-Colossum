@@ -30,6 +30,7 @@ namespace Code.Gameplay.TerrainGeneration.Structures
             meshRenderer = meshObject.AddComponent<MeshRenderer>();
             meshFilter = meshObject.AddComponent<MeshFilter>();
             meshCollider = meshObject.AddComponent<MeshCollider>();
+            meshObject.layer = LayerMask.NameToLayer("Ground");
             meshRenderer.material = staticData.TextureSettings.mapMaterial;
 
             meshObject.transform.position = new Vector3(coord.x * staticData.MeshSettings.meshWorldSize,
