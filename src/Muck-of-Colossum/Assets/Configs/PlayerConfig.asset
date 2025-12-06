@@ -15,6 +15,7 @@ MonoBehaviour:
   runningStateConfig:
     speed: 10
     rotationSpeed: 10
+    gravityForceOnGround: 10
   airborneStateConfig:
     speed: 7
     jumpingStateConfig:
