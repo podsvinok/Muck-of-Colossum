@@ -1,13 +1,15 @@
-using UnityEngine;
 using UnityEngine.InputSystem;
 
 public abstract class GroundedPlayerState : MovementPlayerState
 {
     private readonly GroundChecker groundChecker;
+
+    private RunningStateConfig config;
     
     public GroundedPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) : base(stateSwitcher, data, player)
     {
         groundChecker = player.GroundChecker;
+        config = player.Config.RunningStateConfig;
     }
 
     public override void Enter()
@@ -33,6 +35,8 @@ public abstract class GroundedPlayerState : MovementPlayerState
     {
         base.Update();
 
+        Data.YVelocity = config.GravityForceOnGround;
+        
         if (groundChecker.IsTouches == false)
             StateSwitcher.SwitchState<FallingPlayerState>();
     }

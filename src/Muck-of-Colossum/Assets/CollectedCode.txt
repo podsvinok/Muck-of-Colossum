@@ -1,119 +1,30 @@
-﻿// Собрано файлов: 83
-// Дата: 02.12.2025 21:05:12
+﻿// Собрано файлов: 130
+// Дата: 06.12.2025 23:27:24
 ================================================================================
 
-// ========== Assets\Code\Network\LobbyPlayer.cs ==========
+// ========== Assets\Code\Random\IRandomService.cs ==========
 
-using FishNet.Connection;
-
-namespace Code.Gameplay.Lobby
+public interface IRandomService
 {
-    public struct LobbyPlayer
-    {
-        public NetworkConnection Connection;
-        public bool IsReady;
-        public bool IsServer;
-        public string PlayerName;
-    }
+    public int GetRandomSeed();
 }
 
 --------------------------------------------------------------------------------
 
-// ========== Assets\Code\Network\LobbyService.cs ==========
+// ========== Assets\Code\Random\RandomService.cs ==========
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using Code.Infrastructure.SceneManagement;
-using Code.Infrastructure.States.GameStates;
-using Code.Infrastructure.States.StateMachine;
-using Code.Utils;
-using FishNet.Connection;
-using FishNet.Managing;
-using FishNet.Object;
-using FishNet.Object.Synchronizing;
-using UnityEngine;
 using Zenject;
+using Random = UnityEngine.Random;
 
-namespace Code.Gameplay.Lobby
+public class RandomService : IRandomService
 {
-    public class LobbyService : NetworkBehaviour
+    public int GetRandomSeed()
     {
-        public IReadOnlyDictionary<NetworkConnection, LobbyPlayer> GetPlayers() => players;
-        
-        public event Action OnLobbyPlayerChanged;
-        
-        private readonly SyncDictionary<NetworkConnection, LobbyPlayer> players = new();
-        
-        private NetworkManager networkManager;
-        private IGameStateMachine stateMachine;
-        
-        [Inject]
-        public void Construct(
-            NetworkManager networkManager,
-            IGameStateMachine stateMachine)
-        {
-            this.networkManager = networkManager;
-            this.stateMachine = stateMachine;
-        }
-
-        public override void OnStartServer() => 
-            networkManager.SceneManager.OnClientLoadedStartScenes += OnClientLoadedStartScenes;
-
-        [ServerRpc(RequireOwnership = false)]
-        public void SetPlayerReady(NetworkConnection sender, bool isReady)
-        {
-            if (players.ContainsKey(sender))    
-            {
-                var player = players[sender];
-                player.IsReady = isReady;
-                players[sender] = player;
-
-                OnLobbyPlayerChanged?.Invoke();
-            }
-        }
-
-        [Server]
-        public void CheckAllReady()
-        {
-            bool allReady = players.Values.All(p => p.IsReady);
-
-            if (allReady) 
-                StartGameTransition();
-        }
-
-        private void OnClientLoadedStartScenes(NetworkConnection connection, bool asServer)
-        {
-            if (!asServer)
-                return;
-            
-            players.Add(connection, new LobbyPlayer
-            {
-                Connection = connection,
-                IsReady = false,
-                PlayerName = $"Player {connection.ClientId}",
-                IsServer = IsServerInitialized
-            });
-                
-            OnLobbyPlayerChanged?.Invoke();
-        }
-
-        [ObserversRpc]
-        private void StartGameTransition()
-        {
-            var args = new GameplayLoadingStateEnterArgs()
-            {
-                AsServer = IsServerInitialized,
-                Players = new List<LobbyPlayer>(players.Values)
-            };
-            
-            stateMachine.Enter<GameplayLoadingState, GameplayLoadingStateEnterArgs>(args);
-        }
-
-        private void OnDisable() => 
-            networkManager.SceneManager.OnClientLoadedStartScenes -= OnClientLoadedStartScenes;
+        return (int)DateTime.Now.Ticks;
     }
 }
+
 
 --------------------------------------------------------------------------------
 
@@ -123,12 +34,15 @@ namespace Code.Utils
 {
     public static class AssetPath
     {
-        public const string PlayerPath = "Player";
-        public const string LoadingScene = "LoadingScene";
-        public const string LoadingCurtain = "LoadingCurtain";
-        public const string MainMenuScene = "MainMenu";
-        public const string LobbyScene = "Lobby";
-        public const string GameScene = "Game";
+        public const string WindowStaticData = "StaticData/UI/WindowsStaticData";
+        public const string UIRoot = "UI/UIRoot";
+        public const string ItemPresets = "StaticData/ItemPresets";
+        public const string PlayerPath = "Characters/Player/Player";
+        public const string LoadingCurtain = "UI/LoadingCurtain";
+        public const string HeightMapSettings = "StaticData/TerrainSettings/Height Map Settings";
+        public const string MeshSettings = "StaticData/TerrainSettings/Mesh Settings";
+        public const string TextureSettings = "StaticData/TerrainSettings/Texture Settings";
+        public const string NoiseSettings = "StaticData/TerrainSettings/Noise Settings";
     }
 }
 
@@ -151,13 +65,105 @@ namespace Code.Utils
 
 --------------------------------------------------------------------------------
 
+// ========== Assets\Code\Utils\InventoryDataUtils.cs ==========
+
+using Code.Gameplay.Item;
+using FishNet.Serializing;
+
+namespace Code.Utils
+{
+    public static class InventoryDataUtils
+    {
+        private static ItemDatabase database;
+
+        public static void Initialize(ItemDatabase _database)
+        {
+            database = _database;
+        }
+        
+        public static void WriteItemPreset(this Writer writer, ItemPreset preset)
+        {
+            if (preset == null)
+            {
+                writer.WriteBoolean(false);
+                return;
+            } 
+            writer.WriteBoolean(true);
+            writer.WriteString(preset.uid);
+        }
+
+        public static ItemPreset ReadItemPreset(this Reader reader)
+        {
+            bool hasPreset = reader.ReadBoolean();
+            if (!hasPreset)
+                return null;
+
+            var uid = reader.ReadStringAllocated();
+            database.TryGetItemPreset(uid, out var preset);
+            
+            return preset;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Utils\ReadOnlyAttribute.cs ==========
+
+using UnityEditor;
+using UnityEngine;
+
+namespace Code.Utils
+{
+    public class ReadOnlyAttribute : PropertyAttribute
+    {
+
+    }
+
+    [CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
+    public class ReadOnlyDrawer : PropertyDrawer
+    {
+        public override float GetPropertyHeight(SerializedProperty property,
+            GUIContent label)
+        {
+            return EditorGUI.GetPropertyHeight(property, label, true);
+        }
+
+        public override void OnGUI(Rect position,
+            SerializedProperty property,
+            GUIContent label)
+        {
+            GUI.enabled = false;
+            EditorGUI.PropertyField(position, property, label, true);
+            GUI.enabled = true;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Utils\Scenes.cs ==========
+
+namespace Code.Utils
+{
+    public static class Scenes
+    {
+        public const string LoadingScene = "LoadingScene";
+        public const string MainMenuScene = "MainMenu";
+        public const string LobbyScene = "Lobby";
+        public const string GameScene = "Game";
+    }
+}
+
+--------------------------------------------------------------------------------
+
 // ========== Assets\Code\Utils\SwitchToEntrySceneInEditor.cs ==========
 
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Zenject;
 
-namespace Code.Infrastructure.Loading
+namespace Code.Utils
 {
     // Has execution order to start before every other script
     public class SwitchToEntrySceneInEditor : MonoBehaviour
@@ -239,12 +245,6 @@ public class CameraController : NetworkBehaviour
 
 using UnityEngine;
 
-/// <summary>
-/// Обновляет анимированный меш.
-/// Два режима:
-///   FastUpdate – только вертексы для навигации (без коллайдера).
-///   FullUpdate – ещё и MeshCollider (дорого).
-/// </summary>
 [RequireComponent(typeof(SkinnedMeshRenderer), typeof(MeshCollider))]
 public class BakeMesh : MonoBehaviour
 {
@@ -254,7 +254,7 @@ public class BakeMesh : MonoBehaviour
 
     [Header("Настройки")]
     [Tooltip("Обновлять ли коллайдер каждый кадр. Если выключено – он обновляется только вручную.")]
-    [SerializeField] private bool updateColliderEachFrame = false;
+    [SerializeField] public bool updateColliderEachFrame = false;
 
     [Tooltip("Пропускать обновление, если объект не виден камерой.")]
     [SerializeField] private bool skipIfNotVisible = true;
@@ -267,20 +267,20 @@ public class BakeMesh : MonoBehaviour
         meshCollider = GetComponent<MeshCollider>();
         bakedMesh = new Mesh();
         
-        ForceUpdateCollider();
+        //ForceUpdateCollider();
     }
 
     void LateUpdate()
     {
         if (skipIfNotVisible && !skinnedMeshRenderer.isVisible)
             return;
+        
+        
 
-        // Быстрое обновление вершин
         skinnedMeshRenderer.BakeMesh(bakedMesh);
-
+        
         if (updateColliderEachFrame)
         {
-            // Дорого, но точно
             meshCollider.sharedMesh = null;
             meshCollider.sharedMesh = bakedMesh;
         }
@@ -295,6 +295,11 @@ public class BakeMesh : MonoBehaviour
         meshCollider.sharedMesh = null;
         meshCollider.sharedMesh = bakedMesh;
     }
+
+    public void ClearBakedMesh()
+    {
+        meshCollider.sharedMesh = null;
+    } 
 
     public void ForceUpdateMesh()
     {
@@ -935,6 +940,18 @@ namespace MeshClimbSystem
     }
 
     #endregion
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Climbing System\MeshView.cs ==========
+
+using UnityEngine;
+
+public class MeshView : MonoBehaviour
+{
+    [SerializeField] public BakeMesh BakeMesh;
 }
 
 
@@ -1916,6 +1933,340 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
 
 --------------------------------------------------------------------------------
 
+// ========== Assets\Code\Gameplay\Inventory\Inventory.cs ==========
+
+using System.Collections.ObjectModel;
+using Code.Gameplay.Item;
+using Code.Gameplay.Item.Factory;
+using Cysharp.Threading.Tasks;
+using FishNet.Object;
+using FishNet.Object.Synchronizing;
+using UnityEngine;
+using Zenject;
+
+namespace Code.Gameplay.Inventory
+{
+    public class Inventory : NetworkBehaviour
+    {
+        protected ObservableCollection<InventoryItem> inventoryItems = new();
+        private IItemFactory itemFactory;
+
+        [Inject]
+        public void Construct(IItemFactory itemFactory)
+        {
+            this.itemFactory = itemFactory;
+        }
+        
+        public virtual bool TryAddItem(ItemPreset preset, int quantity)
+        {
+            if (TryStack(preset, quantity))
+                return true;
+
+            return TryAddNewItem(preset, quantity);
+        }
+
+        private bool TryStack(ItemPreset preset, int quantity)
+        {
+            for (var i = 0; i < inventoryItems.Count; i++)
+            {
+                var item = inventoryItems[i];
+                if (item.preset != preset)
+                    continue;
+
+                item.quantity += quantity;
+                inventoryItems[i] = item;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryAddNewItem(ItemPreset preset, int quantity)
+        {
+            for (var i = 0; i < inventoryItems.Count; i++)
+            {
+                var item = inventoryItems[i];
+                if (item.preset)
+                    continue;
+
+                item.preset = preset;
+                item.quantity = quantity;
+                inventoryItems[i] = item;
+                return true;
+            }
+            return false;
+        }
+
+        protected virtual void RemoveItem(int index, int amount)
+        {
+            var item = inventoryItems[index];
+
+            item.quantity -= amount;
+            if (item.quantity <= 0)
+                item.preset = null;
+
+            inventoryItems[index] = item;
+        }
+
+        public virtual void DropItem(int index, int amount)
+        {
+            var item = inventoryItems[index];
+            if (item.preset == null)
+                return;
+
+            amount = Mathf.Min(item.quantity, amount);
+            for (int i = 0; i < amount; i++)
+                SpawnItem(item.preset);
+            
+            RemoveItem(index, amount);
+        }
+
+        public virtual void Interact(int index)
+        {
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void SpawnItem(ItemPreset item) => 
+            itemFactory.SpawnItem(item, gameObject.transform.position + Vector3.forward * 2);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Inventory\InventoryItem.cs ==========
+
+using Code.Gameplay.Item;
+
+namespace Code.Gameplay.Inventory
+{
+    public struct InventoryItem
+    {
+        public ItemPreset preset;
+        public int quantity;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Inventory\InventoryTile.cs ==========
+
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+namespace Code.Gameplay.Inventory
+{
+    public class InventoryTile : MonoBehaviour, IPointerDownHandler
+    {
+        [SerializeField] private Image icon;
+        [SerializeField] private TMP_Text quantityText;
+
+        private InventoryView inventoryView;
+        private int index;
+
+        public void Initialize(InventoryView inventoryView, int index)
+        {
+            this.inventoryView = inventoryView;
+            this.index = index;
+        }
+
+        public void SetItem(InventoryItem item)
+        {
+            if (!item.preset)
+            {
+                ResetTile();
+                return;
+            }
+
+            icon.sprite = item.preset.icon;
+            quantityText.text = item.quantity.ToString();
+            icon.color = Color.white;
+        }
+        
+        private void ResetTile()
+        {
+            icon.color = Color.clear;
+            icon.sprite = null;
+            quantityText.text = "";
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            switch (eventData.button)
+            {
+                case PointerEventData.InputButton.Left:
+                    inventoryView.Interact(index);
+                    break;
+                case PointerEventData.InputButton.Right:
+                    inventoryView.DropItem(index);
+                    break;
+            }
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Inventory\InventoryView.cs ==========
+
+using UnityEngine;
+
+namespace Code.Gameplay.Inventory
+{
+    public class InventoryView : MonoBehaviour
+    {
+        [SerializeField] private InventoryTile[] inventoryTiles;
+
+        private Inventory inventory;
+
+        public void Initialize(Inventory inventory)
+        {
+            this.inventory = inventory;
+        }
+
+        private void Awake()
+        {
+            for (int i = 0; i < inventoryTiles.Length; i++)
+            {
+                inventoryTiles[i].Initialize(this, i);
+            }
+        }
+
+        public void RedrawEverything(InventoryItem[] inventoryItems)
+        {
+            for (int i = 0; i < inventoryItems.Length; i++)
+            {
+                var item = inventoryItems[i];
+                if (inventoryItems.Length <= i)
+                {
+                    Debug.LogError($"More items than tiles. {i} > {inventoryItems.Length}", this);
+                    return;
+                }
+                inventoryTiles[i].SetItem(item);
+            }
+        }
+
+        public void DropItem(int index)
+        {
+            inventory.DropItem(index, 1);
+        }
+        
+        public void Interact(int index)
+        {
+            inventory.Interact(index);
+        }
+
+        public int GetInventoryTilesLength() => 
+            inventoryTiles.Length;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Item\Item.cs ==========
+
+using FishNet.Object;
+using UnityEngine;
+
+namespace Code.Gameplay.Item
+{
+    public class Item : NetworkBehaviour
+    {
+        [SerializeField] private ItemPreset preset;
+        public ItemPreset Preset => preset;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Item\ItemDatabase.cs ==========
+
+using System.Collections.Generic;
+using Code.Infrastructure.AssetManagement;
+using Code.Utils;
+using FishNet.Managing;
+using UnityEngine;
+
+namespace Code.Gameplay.Item
+{
+    public class ItemDatabase
+    {
+        private Dictionary<string, ItemPreset> itemPresets = new();
+        private readonly NetworkManager networkManager;
+        private readonly IAssetProvider assets;
+
+        public ItemDatabase(
+            NetworkManager networkManager,
+            IAssetProvider assets)
+        {
+            this.networkManager = networkManager;
+            this.assets = assets;
+        }
+
+        public void LoadItems()
+        {
+            var presets = assets.LoadAll<ItemPreset>(AssetPath.ItemPresets);
+            foreach (var preset in presets)
+            {
+                if (!itemPresets.TryAdd(preset.uid, preset))
+                    Debug.LogError($"Duplicate {preset.uid}");
+            }
+        }
+
+        public bool TryGetItemPreset(string uid, out ItemPreset preset)
+        {
+            if (string.IsNullOrEmpty(uid))
+            {
+                preset = null;
+                return false;
+            }
+
+            return itemPresets.TryGetValue(uid, out preset);
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Item\ItemPreset.cs ==========
+
+using Code.Utils;
+using FishNet.CodeGenerating;
+using UnityEngine;
+
+namespace Code.Gameplay.Item
+{
+    [CreateAssetMenu(fileName = "ItemPreset", menuName = "ScriptableObjects/ItemAsset")]
+    [UseGlobalCustomSerializer]
+    public class ItemPreset : ScriptableObject
+    {
+        [ReadOnly] public string uid;
+        public string itemName;
+        public Item prefab;
+        public Sprite icon;
+        
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            var assetPath = UnityEditor.AssetDatabase.GetAssetPath(this);
+
+            if (assetPath == null)
+            {
+                uid = string.Empty;
+                return;
+            }
+
+            var assetGuid = UnityEditor.AssetDatabase.GUIDFromAssetPath(assetPath).ToString();
+            if (string.IsNullOrEmpty(uid) || uid != assetGuid)
+                uid = assetGuid;
+        }
+#endif
+    }
+}
+
+--------------------------------------------------------------------------------
+
 // ========== Assets\Code\Gameplay\Levels\ILevelDataProvider.cs ==========
 
 using UnityEngine;
@@ -1925,7 +2276,8 @@ namespace Code.Gameplay.Levels
     public interface ILevelDataProvider
     {
         public Vector3 StartPoint { get; set; }
-        public void SetStartPoint(Vector3 startPoint);
+        public Transform TerrainParent { get; set; }
+        public GameObject Player { get; set; }
     }
 }
 
@@ -1933,6 +2285,7 @@ namespace Code.Gameplay.Levels
 
 // ========== Assets\Code\Gameplay\Levels\LevelDataProvider.cs ==========
 
+using Code.Gameplay.Inventory;
 using UnityEngine;
 
 namespace Code.Gameplay.Levels
@@ -1940,11 +2293,9 @@ namespace Code.Gameplay.Levels
     public class LevelDataProvider : ILevelDataProvider
     {
         public Vector3 StartPoint { get; set; }
-
-        public void SetStartPoint(Vector3 startPoint)
-        {
-            StartPoint = startPoint;
-        }
+        public Transform TerrainParent { get; set; }
+        public GameObject Player { get; set; }
+        public InventoryView InventoryView { get; set; }
     }
 }
 
@@ -2048,6 +2399,38 @@ public class PlayerConfig : ScriptableObject
 
 --------------------------------------------------------------------------------
 
+// ========== Assets\Code\Gameplay\Player\PlayerNetworkInjecter.cs ==========
+
+using Code.Gameplay.Levels;
+using FishNet.Object;
+using Zenject;
+
+namespace Code.Gameplay.Player
+{
+    public class PlayerNetworkInjecter : NetworkBehaviour
+    {
+        private ILevelDataProvider levelData;
+
+        [Inject] 
+        public void Construct(ILevelDataProvider levelData)
+        {
+            this.levelData = levelData;
+        }
+
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+
+            if (!IsOwner)
+                return;
+            
+            levelData.Player = gameObject;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
 // ========== Assets\Code\Gameplay\Player\PlayerView.cs ==========
 
 using System;
@@ -2125,20 +2508,36 @@ namespace Code.Infrastructure.AssetManagement
 {
     public class AssetProvider : IAssetProvider
     {
-        public async UniTask<GameObject> Load(string path)
+        public async UniTask<GameObject> LoadAsync(string path)
         {
             var request = Resources.LoadAsync<GameObject>(path);
             await request;
             
+            if (request.asset == null)
+                Debug.LogError($"Attempt to load {path} was unsuccessful");
+            
             return request.asset as GameObject;
         }
 
-        public async UniTask<T> Load<T>(string path) where T : Component
+        public async UniTask<T> LoadAsync<T>(string path) where T : Object
         {
             var request = Resources.LoadAsync<T>(path);
             await request;
             
+            if (request.asset == null)
+                Debug.LogError($"Attempt to load {path} was unsuccessful");
+            
             return request.asset as T;
+        }
+
+        public T[] LoadAll<T>(string path) where T : Object
+        {
+            var obj = Resources.LoadAll<T>(path) as T[];
+            
+            if (obj == null)
+                Debug.LogError($"Attempt to load {path} was unsuccessful");
+            
+            return obj;
         }
     }
 }
@@ -2154,8 +2553,9 @@ namespace Code.Infrastructure.AssetManagement
 {
     public interface IAssetProvider
     {
-        UniTask<GameObject> Load(string path);
-        UniTask<T> Load<T>(string path) where T : Component;
+        UniTask<GameObject> LoadAsync(string path);
+        UniTask<T> LoadAsync<T>(string path) where T : Object;
+        T[] LoadAll<T>(string path) where T : Object;
     }
 }
 
@@ -2182,11 +2582,54 @@ namespace Code.Infrastructure.AssetManagement
 
         public async UniTask<TComponent> Create(string path)
         {
-            GameObject prefab = await assetProvider.Load(path);
+            GameObject prefab = await assetProvider.LoadAsync(path);
             GameObject newObject = instantiator.InstantiatePrefab(prefab);
             
             return newObject.GetComponent<TComponent>();
         }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\Extensions\ExtensionsServiceProvider.cs ==========
+
+using Code.Gameplay.Item;
+using Code.Utils;
+using Zenject;
+
+namespace Code.Infrastructure.Extensions
+{
+    public class ExtensionsServiceProvider : IExtensionsServiceProvider, IInitializable
+    {
+        private readonly ItemDatabase database;
+
+        public ExtensionsServiceProvider(ItemDatabase database)
+        {
+            this.database = database;
+        }
+
+        public void Initialize()
+        {
+            ProvideServices();
+        }
+
+        public void ProvideServices()
+        {
+            InventoryDataUtils.Initialize(database);
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\Extensions\IExtensionsServiceProvider.cs ==========
+
+namespace Code.Infrastructure.Extensions
+{
+    public interface IExtensionsServiceProvider
+    {
+        public void ProvideServices();
     }
 }
 
@@ -2239,6 +2682,8 @@ namespace Code.Infrastructure.Inputs
         Vector2 GetScreenMousePosition();
         Vector2 GetWorldMousePosition();
         bool GetLeftMouseButtonUp();
+        bool GetJumpButtonUp();
+        bool GetInventoryButton();
     }
 }
 
@@ -2260,31 +2705,40 @@ namespace Code.Infrastructure.Inputs
         {
             get
             {
-                if(mainCamera == null && Camera.main != null)
+                if (mainCamera == null && Camera.main != null)
                   mainCamera = Camera.main;
                 
                 return mainCamera;
             }
         }
 
-        public Vector2 GetScreenMousePosition() => 
-            CameraMain ? (Vector2) Input.mousePosition : new Vector2();
-
         public Vector2 GetWorldMousePosition()
         {
-            if(CameraMain == null)
-              return Vector2.zero;
+            if (CameraMain == null)
+                return Vector2.zero;
             
             screenPosition.x = Input.mousePosition.x;
             screenPosition.y = Input.mousePosition.y;
             return CameraMain.ScreenToWorldPoint(screenPosition);
         }
 
-        public bool HasAxisInput() => GetHorizontalAxis() != 0 || GetVerticalAxis() != 0;
+        public Vector2 GetScreenMousePosition() => 
+            CameraMain ? (Vector2) Input.mousePosition : new Vector2();
+
+        public bool HasAxisInput() => 
+            GetHorizontalAxis() != 0 || GetVerticalAxis() != 0;
         
-        public float GetVerticalAxis() => Input.GetAxis("Vertical");
-        public float GetHorizontalAxis() => Input.GetAxis("Horizontal");
+        public float GetVerticalAxis() => 
+            Input.GetAxis("Vertical");
         
+        public float GetHorizontalAxis() => 
+            Input.GetAxis("Horizontal");
+
+        public bool GetJumpButtonUp() => 
+            Input.GetButtonDown("Jump");
+
+        public bool GetInventoryButton() =>
+            Input.GetButtonDown("Inventory");
 
         public bool GetLeftMouseButton() => 
           Input.GetMouseButton(0) && !EventSystem.current.IsPointerOverGameObject();
@@ -2301,14 +2755,22 @@ namespace Code.Infrastructure.Inputs
 
 // ========== Assets\Code\Infrastructure\Installers\BootstrapInstaller.cs ==========
 
+using Code.Gameplay.Item;
+using Code.Gameplay.Item.Factory;
 using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
+using Code.Gameplay.TerrainGeneration.Generators;
 using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.Extensions;
 using Code.Infrastructure.Inputs;
 using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.Factory;
 using Code.Infrastructure.States.GameStates;
 using Code.Infrastructure.States.StateMachine;
+using Code.Infrastructure.StaticData;
+using Code.UI.LoadingCurtain;
+using Code.UI.Services.Factory;
+using Code.UI.Services.Windows;
 using Cysharp.Threading.Tasks;
 using FishNet;
 using FishNet.Managing;
@@ -2318,6 +2780,7 @@ namespace Code.Infrastructure.Installers
 {
     public class BootstrapInstaller : MonoInstaller, IInitializable
     {
+
         public override void InstallBindings()
         {
             BindGameFactories();
@@ -2330,6 +2793,88 @@ namespace Code.Infrastructure.Installers
             BindLoadingCurtain();
             BindInputService();
             BindAssetProvider();
+            BindStaticDataService();
+            BindTerrainGenerators();
+            BindExtensionsServiceProvider();
+            BindItemDatabase();
+            BindItemFactory();
+            BindUIFactory();
+            BindWindowService();
+            BindRandomService();
+        }
+
+        private void BindRandomService()
+        {
+            Container
+                .Bind<IRandomService>()
+                .To<RandomService>()
+                .AsSingle();
+        }
+
+        private void BindWindowService()
+        {
+            Container
+                .Bind<IWindowService>()
+                .To<WindowService>()
+                .AsSingle();
+        }
+
+        private void BindUIFactory()
+        {
+            Container
+                .Bind<IUIFactory>()
+                .To<UIFactory>()
+                .AsSingle();
+        }
+
+        private void BindItemFactory()
+        {
+            Container
+                .Bind<IItemFactory>()
+                .To<ItemFactory>()
+                .AsSingle();
+        }
+
+        private void BindItemDatabase()
+        {
+            Container
+                .BindInterfacesAndSelfTo<ItemDatabase>()
+                .AsSingle();
+        }
+
+        private void BindExtensionsServiceProvider()
+        {
+            Container
+                .Bind(typeof(IExtensionsServiceProvider), typeof(IInitializable))
+                .To<ExtensionsServiceProvider>()
+                .AsSingle();
+        }
+
+        private void BindTerrainGenerators()
+        {
+            Container
+                .BindInterfacesAndSelfTo<ColliderGenerator>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<MeshGenerator>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<HeightMapGenerator>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<TerrainGenerator>()
+                .AsSingle();
+        }
+
+        private void BindStaticDataService()
+        {
+            Container
+                .Bind<IStaticDataService>()
+                .To<StaticDataService>()
+                .AsSingle();
         }
 
         private void BindLoadingCurtain()
@@ -2447,8 +2992,7 @@ namespace Code.Infrastructure.Installers
 
         public void Initialize()
         {
-            Container
-                .Resolve<IGameStateMachine>()
+            Container.Resolve<IGameStateMachine>()
                 .Enter<BootstrapState>();
         }
     }
@@ -2467,9 +3011,10 @@ namespace Code.Infrastructure.Installers
     public class GameplaySceneInstaller : MonoInstaller
     { 
         [SerializeField] private Transform startPoint;
+        [SerializeField] private Transform terrainParent;
         
         private ILevelDataProvider levelData;
-        
+
         [Inject]
         public void Construct(ILevelDataProvider levelData)
         {
@@ -2478,7 +3023,8 @@ namespace Code.Infrastructure.Installers
         
         public override void InstallBindings()
         {
-            levelData.SetStartPoint(startPoint.position);
+            levelData.StartPoint = startPoint.position;
+            levelData.TerrainParent = terrainParent;
         }
     }
 }
@@ -2487,7 +3033,7 @@ namespace Code.Infrastructure.Installers
 
 // ========== Assets\Code\Infrastructure\Installers\LobbySceneInstaller.cs ==========
 
-using Code.Gameplay.Lobby;
+using Code.Network;
 using UnityEngine;
 using Zenject;
 
@@ -2518,14 +3064,13 @@ namespace Code.Infrastructure.Installers
 
 using System;
 using Cysharp.Threading.Tasks;
-using UnityEngine.SceneManagement;
 
 namespace Code.Infrastructure.SceneManagement
 {
     public interface ISceneLoader
     {
-        UniTask LoadScene(string sceneName, Action onLoaded = null);
-        void LoadSceneNetwork(string sceneName);
+        public UniTask LoadSceneAsync(string sceneName, Action onLoaded = null);
+        public void LoadSceneNetwork(string sceneName);
     }
 }
 
@@ -2535,11 +3080,8 @@ namespace Code.Infrastructure.SceneManagement
 
 using System;
 using Cysharp.Threading.Tasks;
-using FishNet.Connection;
 using FishNet.Managing;
 using FishNet.Managing.Scened;
-using FishNet.Object;
-using UnityEngine.SceneManagement;
 using SceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace Code.Infrastructure.SceneManagement
@@ -2553,7 +3095,7 @@ namespace Code.Infrastructure.SceneManagement
             this.networkManager = networkManager;
         }
 
-        public async UniTask LoadScene(string sceneName, Action onLoaded = null)
+        public async UniTask LoadSceneAsync(string sceneName, Action onLoaded = null)
         {
             if (SceneManager.GetActiveScene().name == sceneName)
             {
@@ -2573,7 +3115,6 @@ namespace Code.Infrastructure.SceneManagement
         {
             var sceneLoadData = new SceneLoadData(sceneToLoad)
             {
-                
                 ReplaceScenes = ReplaceOption.All
             };
 
@@ -2584,9 +3125,225 @@ namespace Code.Infrastructure.SceneManagement
 
 --------------------------------------------------------------------------------
 
+// ========== Assets\Code\Infrastructure\StaticData\IStaticDataService.cs ==========
+
+using Code.Gameplay.TerrainGeneration.StaticData;
+using Code.UI.Services.Windows;
+using Code.UI.Windows;
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.StaticData
+{
+    public interface IStaticDataService
+    {
+        public HeightMapSettings HeightMapSettings { get; set; }
+        public MeshSettings MeshSettings { get; set; }
+        public TextureSettings TextureSettings { get; set; }
+        public NoiseSettings NoiseSettings { get; set; }
+        
+        public UniTask LoadAllAsync();
+        public WindowConfig ForWindow(WindowId windowId);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Infrastructure\StaticData\StaticDataService.cs ==========
+
+using System.Collections.Generic;
+using System.Linq;
+using Code.Gameplay.TerrainGeneration.StaticData;
+using Code.Infrastructure.AssetManagement;
+using Code.UI.Services.Windows;
+using Code.UI.Windows;
+using Code.UI.Windows.StaticData;
+using Code.Utils;
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.StaticData
+{
+    public class StaticDataService : IStaticDataService
+    {
+        public HeightMapSettings HeightMapSettings { get; set; }
+        public MeshSettings MeshSettings { get; set; }
+        public TextureSettings TextureSettings { get; set; }
+        public NoiseSettings NoiseSettings { get; set; }
+
+        private readonly IAssetProvider assetProvider;
+        private Dictionary<WindowId, WindowConfig> windowConfigs;
+
+        public StaticDataService(IAssetProvider assetProvider)
+        {
+            this.assetProvider = assetProvider;
+        }
+
+        public async UniTask LoadAllAsync()
+        {
+            await LoadTerrainGenerationSettings();
+            await LoadWindowConfigs();
+        }
+
+        public WindowConfig ForWindow(WindowId windowId)
+            => windowConfigs.GetValueOrDefault(windowId);
+
+        private async UniTask LoadTerrainGenerationSettings()
+        {
+            await UniTask.WhenAll(
+                LoadHeightMapSettings(),
+                LoadMeshSettings(),
+                LoadTextureSettings(),
+                LoadNoiseSettings());
+        }
+
+        private async UniTask LoadWindowConfigs()
+        {
+            var windowsStaticData = await assetProvider
+                .LoadAsync<WindowStaticData>(AssetPath.WindowStaticData);
+            
+            windowConfigs = windowsStaticData
+                .Configs
+                .ToDictionary(x => x.WindowId, x => x);
+        }
+
+        private async UniTask LoadHeightMapSettings() => 
+            HeightMapSettings = await assetProvider.LoadAsync<HeightMapSettings>(AssetPath.HeightMapSettings);
+
+        private async UniTask LoadMeshSettings() => 
+            MeshSettings = await assetProvider.LoadAsync<MeshSettings>(AssetPath.MeshSettings);
+
+        private async UniTask LoadTextureSettings() => 
+            TextureSettings = await assetProvider.LoadAsync<TextureSettings>(AssetPath.TextureSettings);
+        
+        private async UniTask LoadNoiseSettings() => 
+            NoiseSettings = await assetProvider.LoadAsync<NoiseSettings>(AssetPath.NoiseSettings);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Network\Lobby\LobbyPlayer.cs ==========
+
+using FishNet.Connection;
+
+namespace Code.Network
+{
+    public struct LobbyPlayer
+    {
+        public NetworkConnection Connection;
+        public bool IsReady;
+        public bool IsServer;
+        public string PlayerName;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Network\Lobby\LobbyService.cs ==========
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Code.Infrastructure.States.GameStates;
+using Code.Infrastructure.States.StateMachine;
+using FishNet.Connection;
+using FishNet.Managing;
+using FishNet.Object;
+using FishNet.Object.Synchronizing;
+using Unity.Cinemachine;
+using UnityEngine;
+using Zenject;
+
+namespace Code.Network
+{
+    public class LobbyService : NetworkBehaviour
+    {
+        [SerializeField] private int seed;
+        public event Action OnLobbyPlayerChanged;
+        
+        private readonly SyncDictionary<NetworkConnection, LobbyPlayer> players = new();
+        
+        private NetworkManager networkManager;
+        private IGameStateMachine stateMachine;
+        private IRandomService random;
+
+        [Inject]
+        public void Construct(
+            NetworkManager networkManager,
+            IGameStateMachine stateMachine,
+            IRandomService random)
+        {
+            this.networkManager = networkManager;
+            this.stateMachine = stateMachine;
+            this.random = random;
+        }
+
+        public override void OnStartServer() => 
+            networkManager.SceneManager.OnClientLoadedStartScenes += OnClientLoadedStartScenes;
+
+        [ServerRpc(RequireOwnership = false)]
+        public void SetPlayerReady(NetworkConnection sender, bool isReady) //TODO: show in clients too
+        {
+            if (players.ContainsKey(sender))    
+            {
+                var player = players[sender];
+                player.IsReady = isReady;
+                players[sender] = player;
+
+                OnLobbyPlayerChanged?.Invoke();
+            }
+        }
+
+        [Server]
+        public void CheckAllReady()
+        {
+            bool allReady = players.Values.All(p => p.IsReady);
+
+            if (allReady) 
+                StartGameTransition();
+        }
+
+        private void OnClientLoadedStartScenes(NetworkConnection connection, bool asServer)
+        {
+            if (!asServer)
+                return;
+            
+            players.Add(connection, new LobbyPlayer
+            {
+                Connection = connection,
+                IsReady = false,
+                PlayerName = $"Player {connection.ClientId}",
+                IsServer = IsServerInitialized
+            });
+                
+            OnLobbyPlayerChanged?.Invoke();
+        }
+
+        [ObserversRpc]
+        private void StartGameTransition()
+        {
+            var args = new GameplayLoadingStateEnterArgs()
+            {
+                AsServer = IsServerInitialized,
+                Players = new List<LobbyPlayer>(players.Values),
+                CurrentConnection = LocalConnection,
+                Seed = random.GetRandomSeed()
+            };
+            
+            stateMachine.Enter<GameplayLoadingState, GameplayLoadingStateEnterArgs>(args);
+        }
+
+        public IReadOnlyDictionary<NetworkConnection, LobbyPlayer> GetPlayers() => players;
+        
+        private void OnDisable() => 
+            networkManager.SceneManager.OnClientLoadedStartScenes -= OnClientLoadedStartScenes;
+    }
+}
+
+--------------------------------------------------------------------------------
+
 // ========== Assets\Code\UI\HUD\LobbyHUD.cs ==========
 
-using Code.Gameplay.Lobby;
+using Code.Network;
 using FishNet.Managing;
 using UnityEngine;
 using UnityEngine.UI;
@@ -2595,9 +3352,6 @@ using Zenject;
 
 namespace Code.UI.HUD
 {
-    /// <summary>
-    /// Lobby UI that displays player list and handles ready states
-    /// </summary>
     public class LobbyHUD : MonoBehaviour
     {
         [Header("Connection Buttons")]
@@ -2700,7 +3454,7 @@ namespace Code.UI.HUD
         }
 
         private void StartAsClient()
-        {
+        { 
             networkManager.ClientManager.StartConnection();
             
             ShowLobbyPanel();
@@ -2773,7 +3527,7 @@ namespace Code.UI.HUD
 
 // ========== Assets\Code\UI\LoadingCurtain\ILoadingCurtain.cs ==========
 
-namespace Code.Infrastructure.States.GameStates
+namespace Code.UI.LoadingCurtain
 {
     public interface ILoadingCurtain
     {
@@ -2791,7 +3545,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Zenject;
 
-namespace Code.Infrastructure.States.GameStates
+namespace Code.UI.LoadingCurtain
 {
     public class LoadingCurtain : MonoBehaviour, ILoadingCurtain
     {
@@ -2835,7 +3589,7 @@ namespace Code.Infrastructure.States.GameStates
 using Code.Utils;
 using Cysharp.Threading.Tasks;
 
-namespace Code.Infrastructure.States.GameStates
+namespace Code.UI.LoadingCurtain
 {
     public class LoadingCurtainProxy : ILoadingCurtain
     {
@@ -2858,16 +3612,29 @@ namespace Code.Infrastructure.States.GameStates
 
 --------------------------------------------------------------------------------
 
-// ========== Assets\Code\UI\Windows\WindowsBase.cs ==========
+// ========== Assets\Code\UI\Windows\InventoryWindow.cs ==========
+
+using Code.Gameplay.Inventory;
+
+namespace Code.UI.Windows
+{
+    public class InventoryWindow : WindowBase
+    {
+        public InventoryView inventoryView;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\Windows\WindowBase.cs ==========
 
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Code.UI.Windows
 {
-    public class WindowsBase: MonoBehaviour
+    public class WindowBase: MonoBehaviour
     {
-        //TODO
         [SerializeField] protected Button CloseButton;
         
         private void Awake() => 
@@ -2882,12 +3649,90 @@ namespace Code.UI.Windows
         private void OnDestroy() => 
             Cleanup();
 
-        protected virtual void OnAwake() => 
-            CloseButton?.onClick.AddListener(()=> Destroy(gameObject));
+        protected virtual void OnAwake()
+        {
+            if (!CloseButton)
+                return;
+            
+            CloseButton.onClick.AddListener(()=> Destroy(gameObject));
+        }
 
+        public virtual void Show() => 
+            gameObject.SetActive(true);
+
+        public virtual void Hide() => 
+            gameObject.SetActive(false);
         protected virtual void Initialize(){}
         protected virtual void SubscribeUpdates(){}
         protected virtual void Cleanup(){}
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\Windows\WindowConfig.cs ==========
+
+using System;
+using Code.UI.Services.Windows;
+
+namespace Code.UI.Windows
+{
+    [Serializable]
+    public class WindowConfig
+    {
+        public WindowId WindowId;
+        public WindowBase Prefab;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Item\Factory\IItemFactory.cs ==========
+
+using UnityEngine;
+
+namespace Code.Gameplay.Item.Factory
+{
+    public interface IItemFactory
+    {
+        public Item SpawnItem(ItemPreset item, Vector3 at);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Item\Factory\ItemFactory.cs ==========
+
+using FishNet.Managing;
+using FishNet.Object;
+using UnityEngine;
+
+namespace Code.Gameplay.Item.Factory
+{
+    public class ItemFactory : IItemFactory
+    {
+        private readonly NetworkManager networkManager;
+
+        public ItemFactory(NetworkManager networkManager)
+        {
+            this.networkManager = networkManager;
+        }
+
+        public Item SpawnItem(ItemPreset itemPreset, Vector3 at)
+        {
+            var itemGameObject = CreateItem(itemPreset, at);
+            var networkObject = itemGameObject.GetComponent<NetworkObject>();
+            
+            networkManager.ServerManager.Spawn(networkObject);
+
+            return itemGameObject;
+        }
+
+        private Item CreateItem(ItemPreset itemPreset, Vector3 at)
+        {
+            var item = Object.Instantiate(itemPreset.prefab, at, Quaternion.identity);
+            return item;
+        }
     }
 }
 
@@ -2897,12 +3742,14 @@ namespace Code.UI.Windows
 
 using Cysharp.Threading.Tasks;
 using FishNet.Connection;
+using FishNet.Managing.Scened;
+using UnityEngine;
 
 namespace Code.Gameplay.Player.Factory
 {
     public interface IPlayerFactory
     {
-        public UniTask SpawnPlayer(NetworkConnection connection);
+        public UniTask<GameObject> SpawnPlayer(NetworkConnection connection);
     }
 }
 
@@ -2938,33 +3785,170 @@ namespace Code.Gameplay.Player.Factory
             this.networkManager = networkManager;
         }
 
-        public async UniTask SpawnPlayer(NetworkConnection connection)
+        public async UniTask<GameObject> SpawnPlayer(NetworkConnection connection)
         {
             Vector3 spawnPosition = GetSpawnPosition();
-            await SpawnPlayer(connection, spawnPosition);
+            return await SpawnPlayer(connection, spawnPosition);
         }
 
-        private async UniTask SpawnPlayer(NetworkConnection connection, Vector3 position)
+        private async UniTask<GameObject> SpawnPlayer(NetworkConnection connection, Vector3 position)
         {
-            GameObject playerObject = await CreatePlayer(position);
-
-            NetworkObject networkObject = playerObject.GetComponent<NetworkObject>();
-
+            var playerObject = await CreatePlayer(position);
+            var networkObject = playerObject.GetComponent<NetworkObject>();
             networkManager.ServerManager.Spawn(networkObject, connection);
-            
-            Debug.Log($"Spawned player for connection {connection.ClientId} at {position}");
+
+            return playerObject;
         }
 
         private async UniTask<GameObject> CreatePlayer(Vector3 at)
         {
-            var playerPrefab = await assets.Load(AssetPath.PlayerPath);
-            
+            var playerPrefab = await assets.LoadAsync(AssetPath.PlayerPath);
             var newPlayer = Object.Instantiate(playerPrefab, at, Quaternion.identity);
+            
             return newPlayer;
         }
 
         private Vector3 GetSpawnPosition() => 
             levelData.StartPoint;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\Inventory\PlayerInventory.cs ==========
+
+using System.Collections.Specialized;
+using System.Linq;
+using Code.Gameplay.Inventory;
+using Code.Infrastructure.Inputs;
+using Code.UI.Services.Windows;
+using Code.UI.Windows;
+using FishNet.Object;
+using FishNet.Object.Synchronizing;
+using UnityEngine;
+using Zenject;
+
+namespace Code.Gameplay.Player.Inventory
+{
+    public class PlayerInventory : Gameplay.Inventory.Inventory
+    {
+        private InventoryView inventoryView;
+        private IInputService input;
+        private WindowBase inventoryWindow;
+        private IWindowService windows;
+
+        private bool isWindowOpened;
+
+        [Inject]
+        public void Construct(
+            IInputService input,
+            IWindowService windows)
+        {
+            this.input = input;
+            this.windows = windows;
+        }
+
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+            
+            if (!IsOwner)
+                return;
+            
+            Initialize();
+        }
+
+        private void Update()
+        {
+            if (input.GetInventoryButton())
+            {
+                if (!isWindowOpened)
+                {
+                    windows.Open(WindowId.Inventory);
+                    isWindowOpened = true;
+                    
+                    Cursor.visible = true;
+                    Cursor.lockState = CursorLockMode.None;
+                }
+                else
+                {
+                    windows.Close(WindowId.Inventory);
+                    isWindowOpened = false;
+                    
+                    Cursor.visible = false;
+                    Cursor.lockState = CursorLockMode.Locked;
+                }
+            }
+        }
+
+        private void Initialize()
+        {
+            inventoryWindow = windows.Open(WindowId.Inventory);
+            windows.Close(WindowId.Inventory);
+            
+            inventoryView = ((InventoryWindow)inventoryWindow).inventoryView;
+            inventoryView.Initialize(this);
+            
+            for (int i = 0; i < inventoryView.GetInventoryTilesLength(); i++) 
+                inventoryItems.Add(new InventoryItem());
+                    
+            inventoryItems.CollectionChanged += OnInventoryChanged;
+        }
+        
+
+        public override void Interact(int index)
+        {
+            Debug.Log($"Interact item with index: {index}");
+        }
+
+        private void OnInventoryChanged(object sender, NotifyCollectionChangedEventArgs args) => 
+            inventoryView.RedrawEverything(inventoryItems.ToArray());
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\Inventory\PlayerItemCollector.cs ==========
+
+using Code.Gameplay.Levels;
+using Code.Infrastructure.Inputs;
+using FishNet.Object;
+using UnityEngine;
+using Zenject;
+
+namespace Code.Gameplay.Player.Inventory
+{
+    public class PlayerItemCollector : NetworkBehaviour
+    {
+        [SerializeField] private Gameplay.Inventory.Inventory inventory;
+        private IInputService input;
+        private ILevelDataProvider levelData;
+
+        [Inject]
+        public void Construct(IInputService input, ILevelDataProvider levelData)
+        {
+            this.input = input;
+            this.levelData = levelData;
+        }
+
+        private void Update()
+        {
+            if (!IsOwner)
+                return;
+            
+            if (!input.GetLeftMouseButtonUp())
+                return;
+
+            if (!Physics.Raycast(levelData.Player.GetComponentInChildren<Camera>().ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f)), out var hit, 50)) 
+                return;
+            
+            if (hit.collider.TryGetComponent(out Item.Item item) && inventory.TryAddItem(item.Preset, 1))
+                Despawn(item);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void Despawn(Item.Item item) => 
+            Despawn(item.gameObject, DespawnType.Destroy);
     }
 }
 
@@ -2977,14 +3961,23 @@ using FishNet.Object;
 using UnityEngine;
 using Zenject;
 
-namespace Code.Gameplay.Player
+namespace Code.Gameplay.Player.Movement
 {
     public class PlayerMove : NetworkBehaviour
     {
         [SerializeField] private CharacterController characterController;
-        [SerializeField] private float movementSpeed = 5f;
-        [SerializeField] private float rotationSpeed = 5f;
-
+        [SerializeField] private Camera playerCamera;
+        
+        [SerializeField] private float moveSpeed = 5f;
+        [SerializeField] private float sprintSpeed = 8f;
+        [SerializeField] private float jumpForce = 1f;
+        [SerializeField] private float gravity = -9.81f;
+        [SerializeField] private float groundCheckDistance = 0.2f;
+        [SerializeField] private float lookSensitivity = 2f;
+        [SerializeField] private float maxLookAngle = 80f;
+    
+        private Vector3 velocity;
+        private float verticalRotation;
         private IInputService input;
 
         [Inject]
@@ -2993,38 +3986,64 @@ namespace Code.Gameplay.Player
             this.input = input;
         }
         
-        private void Update()
+        public override void OnStartClient()
         {
             if (!IsOwner)
-                return;
-            
-            Movement();
-            Turn();
-        }
-
-        private void Turn()
-        {
-            if (Mathf.Abs(input.GetVerticalAxis()) > 0 || Mathf.Abs(input.GetHorizontalAxis()) > 0)
             {
-                Vector3 currentLookDirection = characterController.velocity.normalized;
-                currentLookDirection.y = 0;
-                
-                currentLookDirection.Normalize();
-                
-                Quaternion targetRotation = Quaternion.LookRotation(currentLookDirection);
-                
-                transform.rotation = Quaternion.Slerp(
-                    transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+                Destroy(playerCamera.gameObject);
+                enabled = false;
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
             }
         }
 
-        private void Movement()
+        private void Update()
         {
-            var move = new Vector3(
-                input.GetHorizontalAxis() * movementSpeed, 0, input.GetVerticalAxis() * rotationSpeed);
-            
-            characterController.Move(move * Time.deltaTime);
+            if (!characterController.enabled)
+                return;
+            HandleMovement();
+            HandleRotation();
         }
+
+        private void HandleMovement()
+        {
+            bool isGrounded = true;//IsGrounded();
+            if (isGrounded && velocity.y < 0) 
+                velocity.y = -2f;
+
+            float horizontal = Input.GetAxisRaw("Horizontal");
+            float vertical = Input.GetAxisRaw("Vertical");
+
+            Vector3 moveDirection = transform.right * horizontal + transform.forward * vertical;
+            moveDirection = Vector3.ClampMagnitude(moveDirection, 1f);
+
+            float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
+            characterController.Move(moveDirection * (currentSpeed * Time.deltaTime));
+
+            if (input.GetJumpButtonUp() && isGrounded) 
+                velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
+
+            velocity.y += gravity * Time.deltaTime;
+            characterController.Move(velocity * Time.deltaTime);
+        }
+
+        private void HandleRotation()
+        {
+            float mouseX = Input.GetAxis("Mouse X") * lookSensitivity;
+            float mouseY = Input.GetAxis("Mouse Y") * lookSensitivity;
+
+            verticalRotation -= mouseY;
+            verticalRotation = Mathf.Clamp(verticalRotation, -maxLookAngle, maxLookAngle);
+            playerCamera.transform.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
+
+            transform.Rotate(Vector3.up * mouseX);
+        }
+
+        private bool IsGrounded() => 
+            Physics.Raycast(transform.position + Vector3.up * 0.03f, Vector3.down, groundCheckDistance);
     }
 }
 
@@ -3154,6 +4173,1068 @@ public class PlayerStateMachineData
 
 --------------------------------------------------------------------------------
 
+// ========== Assets\Code\Gameplay\TerrainGeneration\Debug\TerrainGeneratorDebug.cs ==========
+
+using Code.Gameplay.TerrainGeneration.Generators;
+using Code.Gameplay.TerrainGeneration.StaticData;
+using Code.Utils;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Zenject;
+
+namespace Code.Gameplay.TerrainGeneration.Debug
+{
+    public class TerrainGeneratorDebug : MonoBehaviour
+    {
+        public bool autoUpdate;
+        public float timeToDraw = 1f;
+
+        public MeshSettings meshSettings;
+        public NoiseSettings noiseSetting;
+        public TextureSettings textureSettings;
+        public HeightMapSettings heightMapSettings;
+
+        private float lastDrawTime;
+        private bool hasPendingChanges;
+
+        private TerrainGenerator terrainGenerator;
+
+        [Inject]
+        public void Construct(TerrainGenerator terrainGenerator)
+        {
+            this.terrainGenerator = terrainGenerator;
+        }
+
+        private void Start()
+        {
+            lastDrawTime = Time.timeSinceLevelLoad + timeToDraw;
+        
+            meshSettings.OnValuesUpdated += MarkAutoChanged;
+            noiseSetting.OnValuesUpdated += MarkAutoChanged;
+            textureSettings.OnValuesUpdated += MarkAutoChanged;
+            heightMapSettings.OnValuesUpdated += MarkAutoChanged;
+        }
+
+        private void MarkAutoChanged()
+        {
+            if (autoUpdate)
+                MarkChanged();
+        }
+    
+        private void MarkChanged() => 
+            hasPendingChanges = true;
+
+        public void Generate() => 
+            MarkChanged();
+
+        private async void Update()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (SceneManager.GetActiveScene().name != Scenes.GameScene)
+                return;
+
+            if (!hasPendingChanges)
+                return;
+
+            if (Time.timeSinceLevelLoad > lastDrawTime + timeToDraw)
+            {
+                lastDrawTime = Time.timeSinceLevelLoad;
+                hasPendingChanges = false;
+                await terrainGenerator.RegenerateTerrain();
+            }
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Debug\TerrainGeneratorEditor.cs ==========
+
+using UnityEditor;
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.Debug
+{
+    [CustomEditor(typeof(TerrainGeneratorDebug))]
+    public class TerrainGeneratorEditor : Editor
+    {
+        private bool showMesh;
+        private bool showNoise;
+        private bool showTexture;
+        private bool showHeight;
+
+        public override void OnInspectorGUI()
+        {
+            TerrainGeneratorDebug t = (TerrainGeneratorDebug)target;
+
+            DrawDefaultInspector();
+
+            EditorGUILayout.Space();
+
+            DrawSOSection("Mesh Settings", t.meshSettings, ref showMesh);
+            DrawSOSection("Noise Settings", t.noiseSetting, ref showNoise);
+            DrawSOSection("Texture Settings", t.textureSettings, ref showTexture);
+            DrawSOSection("Height Map Settings", t.heightMapSettings, ref showHeight);
+
+            EditorGUILayout.Space();
+
+            if (GUILayout.Button("Generate"))
+                t.Generate();
+        }
+
+        private void DrawSOSection(string title, ScriptableObject so, ref bool foldout)
+        {
+            if (so == null)
+            {
+                EditorGUILayout.HelpBox($"{title} is NULL", MessageType.Info);
+                return;
+            }
+
+            foldout = EditorGUILayout.Foldout(foldout, title, true);
+
+            if (foldout)
+            {
+                EditorGUI.indentLevel++;
+                Editor editor = CreateEditor(so);
+                editor.OnInspectorGUI();
+                EditorGUI.indentLevel--;
+            }
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Generators\ColliderGenerator.cs ==========
+
+using System.Collections.Generic;
+using Code.Gameplay.TerrainGeneration.Jobs;
+using Code.Gameplay.TerrainGeneration.Structures;
+using Cysharp.Threading.Tasks;
+using Unity.Collections;
+using Unity.Jobs;
+
+namespace Code.Gameplay.TerrainGeneration.Generators
+{
+    public class ColliderGenerator
+    {
+        public async void GenerateCollider(List<TerrainChunk> chunksToBakeMesh)
+        {
+            var meshIds = new NativeList<int>(Allocator.Persistent);
+
+            foreach (var chunk in chunksToBakeMesh)
+            {
+                meshIds.Add(chunk.GetMeshForBaking().GetInstanceID());
+            }
+            
+            var colliderJob = new GenerateColliderJob
+            {
+                MeshIds = meshIds
+            };
+
+            var colliderHandle = colliderJob.Schedule(meshIds.Length, 32);
+
+            await UniTask.WaitUntil(() => colliderHandle.IsCompleted);
+            colliderHandle.Complete();
+
+            foreach (var chunk in chunksToBakeMesh) 
+                chunk.SetBakedCollider();
+            
+            meshIds.Dispose();
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Generators\HeightMapGenerator.cs ==========
+
+using Code.Gameplay.TerrainGeneration.Jobs;
+using Code.Infrastructure.StaticData;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.Generators
+{
+    public class HeightMapGenerator
+    {
+        private IStaticDataService staticData;
+
+        public HeightMapGenerator(IStaticDataService staticData)
+        {
+            this.staticData = staticData;
+        }
+
+        public NativeArray<float> GenerateHeightMap(Vector2 coord,
+            float leftFalloff, float rightFalloff, float topFalloff, float bottomFalloff)
+        {
+            int numVertsPerLine = staticData.MeshSettings.numVertsPerLine;
+            
+            var heightMap = new NativeArray<float>(numVertsPerLine * numVertsPerLine, Allocator.TempJob);
+            var curveData = new NativeArray<Keyframe>(staticData.HeightMapSettings.heightCurve.keys.Length, Allocator.TempJob);
+            for (int i = 0; i < curveData.Length; i++) 
+                curveData[i] = staticData.HeightMapSettings.heightCurve.keys[i];
+            
+            var heightJob = new GenerateHeightMapJob
+            {
+                HeightMap = heightMap,
+                
+                Width = numVertsPerLine,
+                Height = numVertsPerLine,
+                SampleCentre = new float2(coord.x * staticData.MeshSettings.meshWorldSize / staticData.MeshSettings.meshScale,
+                    coord.y * staticData.MeshSettings.meshWorldSize / staticData.MeshSettings.meshScale),
+                Seed = staticData.NoiseSettings.seed,
+                Scale = staticData.NoiseSettings.scale,
+                Octaves = staticData.NoiseSettings.octaves,
+                Persistence = staticData.NoiseSettings.persistance,
+                Lacunarity = staticData.NoiseSettings.lacunarity,
+                Offset = new float2(staticData.NoiseSettings.offset.x, staticData.NoiseSettings.offset.y),
+                FalloffA = 3f,
+                FalloffB = 2.2f,
+                FalloffEdges = new float4(leftFalloff, rightFalloff, topFalloff, bottomFalloff),
+                CurveData = curveData,
+                HeightMultiplier = staticData.HeightMapSettings.heightMultiplier
+            };
+            
+            JobHandle heightHandle = heightJob.Schedule(numVertsPerLine * numVertsPerLine, 64);
+            heightHandle.Complete();
+            
+            curveData.Dispose();
+
+            return heightMap;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Generators\MeshGenerator.cs ==========
+
+using Code.Gameplay.TerrainGeneration.Jobs;
+using Code.Infrastructure.StaticData;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.Generators
+{
+    public class MeshGenerator
+    {
+        private readonly IStaticDataService staticData;
+
+        public MeshGenerator(IStaticDataService staticData)
+        {
+            this.staticData = staticData;
+        }
+
+        public Mesh GenerateMesh(int lod, NativeArray<float> heightMap)
+        {
+            int numVertsPerLine = staticData.MeshSettings.numVertsPerLine;
+            int skipIncrement = (lod == 0) ? 1 : lod * 2;
+            float topLeftX = (numVertsPerLine - 1) / -2f;
+            float topLeftZ = (numVertsPerLine - 1) / 2f;
+
+            var vertices = new NativeList<float3>(numVertsPerLine * numVertsPerLine, Allocator.TempJob);
+            var triangles = new NativeList<int>((numVertsPerLine - 1) * (numVertsPerLine - 1) * 6, Allocator.TempJob);
+            var uvs = new NativeList<float2>(numVertsPerLine * numVertsPerLine, Allocator.TempJob);
+            
+            var meshJob = new GenerateMeshJob
+            {
+                Vertices = vertices,
+                Triangles = triangles,
+                UVs = uvs,
+                
+                HeightMap = heightMap,
+                NumVertsPerLine = numVertsPerLine,
+                SkipIncrement = skipIncrement,
+                MeshWorldSize = staticData.MeshSettings.meshWorldSize,
+                TopLeftX = topLeftX * staticData.MeshSettings.meshWorldSize / (numVertsPerLine - 3) * 2,
+                TopLeftZ = topLeftZ * staticData.MeshSettings.meshWorldSize / (numVertsPerLine - 3) * 2,
+            };
+
+            JobHandle meshHandle = meshJob.Schedule();
+            meshHandle.Complete();
+
+            var mesh = new Mesh();
+            mesh.SetVertices(vertices.AsArray());
+            mesh.SetTriangles(triangles.AsArray().ToArray(), 0);
+            mesh.SetUVs(0, uvs.AsArray());
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            
+            vertices.Dispose();
+            triangles.Dispose();
+            uvs.Dispose();
+            
+            return mesh;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Generators\TerrainGenerator.cs ==========
+
+using System.Collections.Generic;
+using Code.Gameplay.Levels;
+using Code.Gameplay.TerrainGeneration.Structures;
+using Code.Infrastructure.StaticData;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+using Zenject;
+using Object = UnityEngine.Object;
+
+namespace Code.Gameplay.TerrainGeneration.Generators
+{
+    public class TerrainGenerator : IFixedTickable
+    {
+        private const float ViewerMoveThresholdForChunkUpdate = 25f;
+        private const float SqrViewerMoveThresholdForChunkUpdate = 
+            ViewerMoveThresholdForChunkUpdate * ViewerMoveThresholdForChunkUpdate;
+        
+        private Vector2 viewerPositionOld;
+        private Transform viewer;
+        private TerrainChunk[] terrainChunks;
+        
+        private IStaticDataService staticData;
+        private ILevelDataProvider levelData;
+        private HeightMapGenerator heightMapGenerator;
+        private MeshGenerator meshGenerator;
+        private ColliderGenerator colliderGenerator;
+        private CharacterController characterController;
+
+        public TerrainGenerator(
+            HeightMapGenerator heightMapGenerator,
+            MeshGenerator meshGenerator,
+            ColliderGenerator colliderGenerator,
+            IStaticDataService staticData,
+            ILevelDataProvider levelData)
+        {
+            this.heightMapGenerator = heightMapGenerator;
+            this.meshGenerator = meshGenerator;
+            this.colliderGenerator = colliderGenerator;
+            this.staticData = staticData;
+            this.levelData = levelData;
+        }
+
+        public async UniTask RegenerateTerrain()
+        {
+            foreach (var chunk in terrainChunks) 
+                Object.Destroy(chunk.meshObject);
+
+            terrainChunks = new TerrainChunk[staticData.MeshSettings.terrainSizeX * staticData.MeshSettings.terrainSizeY];
+            await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
+            
+            if (characterController == null) 
+                characterController = viewer.GetComponent<CharacterController>();
+            
+            characterController.enabled = false;
+            UpdateChunks();
+            characterController.enabled = true;
+            viewer.position += Vector3.up * 5;
+        }
+
+        public async UniTask GenerateTerrain()
+        {
+            await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
+        }
+
+        private async UniTask GenerateChunks(int width, int height)
+        {
+            terrainChunks = new TerrainChunk[staticData.MeshSettings.terrainSizeX 
+                                             * staticData.MeshSettings.terrainSizeY];
+            var halfWidth = width / 2;
+            var halfHeight = height / 2;
+
+            for (var y = 0; y < height; y++)
+            for (var x = 0; x < width; x++)
+            {
+                var currentChunkCoord = new Vector2(x - halfWidth, y - halfHeight);
+
+                float bottomFalloff = (y == 0) ? 1 : 0;
+                float topFalloff = (y == height - 1) ? 1 : 0;
+                float leftFalloff = (x == 0) ? 1 : 0;
+                float rightFalloff = (x == width - 1) ? 1 : 0;
+                
+                terrainChunks[y + width * x] = new TerrainChunk(
+                    staticData, 
+                    heightMapGenerator,
+                    meshGenerator,
+                    currentChunkCoord,
+                    levelData.TerrainParent, 
+                    bottomFalloff, 
+                    topFalloff,
+                    leftFalloff, 
+                    rightFalloff);
+                
+                await UniTask.Yield();
+            }
+        }
+
+        private void UpdateChunks()
+        {
+            var chunkToBakeMesh = new List<TerrainChunk>();
+            
+            foreach (var chunk in terrainChunks)
+            {
+                if (chunk.UpdateTerrainChunk(viewer)) 
+                    chunkToBakeMesh.Add(chunk);
+            }
+            colliderGenerator.GenerateCollider(chunkToBakeMesh);
+        }
+
+        public void InitializeChunks(Transform player)
+        {
+            viewer = player;
+            var position = viewer.position;
+            var viewerPosition = new Vector2(position.x, position.z);
+            UpdateChunks();
+        }
+        
+        public void FixedTick()
+        {
+            if (viewer == null)
+                return;
+            
+            var position = viewer.position;
+            var viewerPosition = new Vector2(position.x, position.z);
+            if ((viewerPositionOld - viewerPosition).sqrMagnitude > SqrViewerMoveThresholdForChunkUpdate) 
+            {
+                viewerPositionOld = viewerPosition;
+                UpdateChunks();
+            }
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Jobs\GenerateColliderJob.cs ==========
+
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.Jobs
+{
+    [BurstCompile]
+    public struct GenerateColliderJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeList<int> MeshIds;
+        public void Execute(int index)
+        {
+            Physics.BakeMesh(MeshIds[index], false, MeshColliderCookingOptions.None);
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Jobs\GenerateHeightMapJob.cs ==========
+
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.Jobs
+{
+    [BurstCompile]
+    public struct GenerateHeightMapJob : IJobParallelFor
+    {
+        //Output
+        public NativeArray<float> HeightMap;
+
+        //Input
+        public int Width;
+        public int Height;
+        public float2 SampleCentre;
+        
+        public int Seed;
+        public float Scale;
+        public int Octaves;
+        public float Persistence;
+        public float Lacunarity;
+        public float2 Offset;
+
+        public float FalloffA;
+        public float FalloffB;
+        public float4 FalloffEdges; // x=left, y=right, z=top, w=bottom
+
+        public float HeightMultiplier;
+        [ReadOnly] public NativeArray<Keyframe> CurveData;
+
+        public void Execute(int index)
+        {
+            //Convert 1D index to x, y
+            int x = index % Width;
+            int y = index / Width;
+
+            //Noise Generation
+            float amplitude = 1;
+            float frequency = 1;
+            float noiseHeight = 0;
+            float maxPossibleHeight = 0;
+
+            var random = new Unity.Mathematics.Random((uint)(Seed + 1));
+
+            for (int i = 0; i < Octaves; i++)
+            {
+                float offsetX = random.NextFloat(-100000, 100000) + Offset.x + SampleCentre.x;
+                float offsetY = random.NextFloat(-100000, 100000) - Offset.y - SampleCentre.y;
+
+                float sampleX = (x - Width / 2f + offsetX) / Scale * frequency;
+                float sampleY = (y - Height / 2f + offsetY) / Scale * frequency;
+
+                float perlinValue = noise.cnoise(new float2(sampleX, sampleY)); 
+                
+                noiseHeight += perlinValue * amplitude;
+                maxPossibleHeight += amplitude;
+
+                amplitude *= Persistence;
+                frequency *= Lacunarity;
+            }
+
+            float normalizedHeight = (noiseHeight + 1) / (maxPossibleHeight / 0.9f);
+            float finalValue = math.clamp(normalizedHeight, 0, 1);
+
+            //Falloff Calculation
+            float nx = x / (float)(Width - 1);
+            float ny = y / (float)(Height - 1);
+
+            float fx = math.max(FalloffEdges.x * (1 - nx), FalloffEdges.y * nx); //Left/Right
+            float fy = math.max(FalloffEdges.z * (1 - ny), FalloffEdges.w * ny); //Top/Bottom
+            float falloffValue = EvaluateFalloff(math.max(fx, fy), FalloffA, FalloffB);
+
+            finalValue = math.clamp(finalValue - falloffValue, 0, 1);
+            HeightMap[index] = finalValue * EvaluateAnimationCurve(CurveData, finalValue) * HeightMultiplier;
+        }
+
+        float EvaluateAnimationCurve(NativeArray<Keyframe> curve, float t)
+        {
+            float value = 0;
+
+            for (int i = 0; i < curve.Length; i++)
+            {
+                int next = math.clamp(i + 1, 0, curve.Length - 1);
+                Keyframe start = curve[i];
+                Keyframe end = curve[next];
+
+                int minCheck = math.select(0, 1, t > start.time);
+                int maxCheck = math.select(0, 1, t <= end.time);
+                int check = minCheck * maxCheck;
+
+                float distanceTime = end.time - start.time;
+                
+                float m0 = start.outTangent * distanceTime;
+                float m1 = end.inTangent * distanceTime;
+
+                float t2 = t * t;
+                float t3 = t2 * t;
+
+                float a = 2 * t3 - 3 * t2 + 1;
+                float b = t3 - 2 * t2 + t;
+                float c = t3 - t2;
+                float d = -2 * t3 + 3 * t2;
+
+                value += (a * start.value + b * m0 + c * m1 + d * end.value) * check;
+            }
+            return value;
+        }
+        
+        private float EvaluateFalloff(float value, float a, float b) => 
+            math.pow(value, a) / (math.pow(value, a) + math.pow(b - b * value, a));
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Jobs\GenerateMeshJob.cs ==========
+
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+
+namespace Code.Gameplay.TerrainGeneration.Jobs
+{
+    [BurstCompile]
+    public struct GenerateMeshJob : IJob
+    {
+        //Output
+        public NativeList<float3> Vertices;
+        public NativeList<int> Triangles;
+        public NativeList<float2> UVs;
+        
+        //Input
+        [ReadOnly] public NativeArray<float> HeightMap;
+        public int NumVertsPerLine;   
+        public int SkipIncrement;    
+        public float MeshWorldSize;   
+        public float TopLeftX;        
+        public float TopLeftZ;
+
+        public void Execute()
+        {
+            int width = NumVertsPerLine;
+            int meshVertexIndex = 0;
+            
+            NativeArray<int> vertexIndicesMap = new NativeArray<int>(width * width, Allocator.Temp);
+
+            //Generate Vertices
+            for (int y = 0; y < width; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    bool isOutOfMeshVertex = y == 0 || y == width - 1 || x == 0 || x == width - 1;
+                    bool isSkippedVertex = x > 2 && x < width - 3 && y > 2 && y < width - 3 &&
+                                           ((x - 2) % SkipIncrement != 0 || (y - 2) % SkipIncrement != 0);
+                    if (isOutOfMeshVertex)
+                    {
+                        vertexIndicesMap[y * width + x] = meshVertexIndex;
+                        meshVertexIndex++;
+                    }
+                    else if (!isSkippedVertex)
+                    {
+                        vertexIndicesMap[y * width + x] = meshVertexIndex;
+                        meshVertexIndex++;
+                    }
+                    else
+                    {
+                        vertexIndicesMap[y * width + x] = -1;
+                        continue;
+                    }
+
+                    //Vertex Position Logic
+                    bool isMeshEdgeVertex = (y == 1 || y == width - 2 || x == 1 || x == width - 2) && !isOutOfMeshVertex;
+                    bool isMainVertex = (x - 2) % SkipIncrement == 0 && (y - 2) % SkipIncrement == 0 && !isOutOfMeshVertex && !isMeshEdgeVertex;
+                    bool isEdgeConnectionVertex = (y == 2 || y == width - 3 || x == 2 || x == width - 3) && !isOutOfMeshVertex && !isMeshEdgeVertex && !isMainVertex;
+                    
+                    float2 percent = new float2(x - 1, y - 1) / (width - 3);
+                    float2 vertexPosition2D = new float2(TopLeftX, TopLeftZ) + new float2(percent.x, -percent.y) * MeshWorldSize;
+                    
+                    float height = HeightMap[y * width + x];
+
+                    //Stitching Logic
+                    if (isEdgeConnectionVertex)
+                    {
+                        bool isVertical = x == 2 || x == width - 3;
+                        
+                        int dstToMainVertexA = (isVertical ? y - 2 : x - 2) % SkipIncrement;
+                        int dstToMainVertexB = SkipIncrement - dstToMainVertexA;
+                        float dstPercentFromAToB = dstToMainVertexA / (float)SkipIncrement;
+
+                        float heightMainVertexA = HeightMap[(isVertical ? y - dstToMainVertexA : y) * width + (isVertical ? x : x - dstToMainVertexA)];
+                        float heightMainVertexB = HeightMap[(isVertical ? y + dstToMainVertexB : y) * width + (isVertical ? x : x + dstToMainVertexB)];
+
+                        height = heightMainVertexA * (1 - dstPercentFromAToB) + heightMainVertexB * dstPercentFromAToB;
+                    }
+
+                    Vertices.Add(new float3(vertexPosition2D.x, height, vertexPosition2D.y));
+                    UVs.Add(percent);
+                }
+            }
+
+            //Generate Triangles
+            for (int y = 0; y < width; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    bool isSkippedVertex = x > 2 && x < width - 3 && y > 2 && y < width - 3 &&
+                                           ((x - 2) % SkipIncrement != 0 || (y - 2) % SkipIncrement != 0);
+                    if (isSkippedVertex) continue;
+                    
+                    bool isOutOfMeshVertex = y == 0 || y == width - 1 || x == 0 || x == width - 1;
+                    bool isMeshEdgeVertex = (y == 1 || y == width - 2 || x == 1 || x == width - 2) && !isOutOfMeshVertex;
+                    bool isMainVertex = (x - 2) % SkipIncrement == 0 && (y - 2) % SkipIncrement == 0 && !isOutOfMeshVertex && !isMeshEdgeVertex;
+                    bool isEdgeConnectionVertex = (y == 2 || y == width - 3 || x == 2 || x == width - 3) && !isOutOfMeshVertex && !isMeshEdgeVertex && !isMainVertex;
+
+                    bool createTriangle = x < width - 1 && y < width - 1 && (!isEdgeConnectionVertex || (x != 2 && y != 2));
+                    if (createTriangle)
+                    {
+                        int currentIncrement = (isMainVertex && x != width - 3 && y != width - 3) ? SkipIncrement : 1;
+
+                        int a = vertexIndicesMap[y * width + x];
+                        int b = vertexIndicesMap[y * width + (x + currentIncrement)];
+                        int c = vertexIndicesMap[(y + currentIncrement) * width + x];
+                        int d = vertexIndicesMap[(y + currentIncrement) * width + (x + currentIncrement)];
+
+                        if (a != -1 && b != -1 && c != -1 && d != -1)
+                        {
+                            Triangles.Add(d);
+                            Triangles.Add(a);
+                            Triangles.Add(b);
+                            
+                            Triangles.Add(a);
+                            Triangles.Add(d);
+                            Triangles.Add(c);
+                        }
+                    }
+                }
+            }
+            vertexIndicesMap.Dispose();
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\StaticData\HeightMapSettings.cs ==========
+
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.StaticData
+{
+    [CreateAssetMenu(fileName = "HeightMapSettings", menuName = "TerrainGenerationSettings/HeightMapSettings")]
+    public class HeightMapSettings : UpdatableData
+    {
+        public NoiseSettings noiseSettings;
+        public bool useFalloff;
+        public float heightMultiplier;
+        public int falloffX;
+        public int falloffY;
+        public AnimationCurve heightCurve;
+        public float MinHeight =>
+            heightMultiplier * heightCurve.Evaluate(0);
+        public float MaxHeight =>
+            heightMultiplier * heightCurve.Evaluate(1);
+
+#if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            noiseSettings.ValidateValues();
+            base.OnValidate();
+        }
+#endif
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\StaticData\MeshSettings.cs ==========
+
+using Code.Gameplay.TerrainGeneration.Structures;
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.StaticData
+{
+    [CreateAssetMenu(fileName = "MeshSettings", menuName = "TerrainGenerationSettings/MeshSettings")]
+    public class MeshSettings : UpdatableData
+    {
+        public const int NumSupportedLoDs = 5;
+        public const int NumSupportedChunkSizes = 9;
+        public const int NumSupportedFlatshadedChunkSizes = 3;
+        public static readonly int[] SupportedChunkSizes = { 48, 72, 96, 120, 144, 168, 192, 216, 240 };
+
+        public float meshScale = 2.5f;
+        public bool useFlatShading;
+
+        [Range(0, NumSupportedChunkSizes - 1)] 
+        public int chunkSizeIndex;
+
+        [Range(0, NumSupportedFlatshadedChunkSizes - 1)]
+        public int flatshadedChunkSizeIndex;
+
+        public int terrainSizeX;
+        public int terrainSizeY;
+        
+        public int colliderLODIndex;
+        public LODInfo[] detailLevels;
+        
+        // num verts per line of mesh rendered at LOD = 0. Includes the 2 extra verts that are excluded from final mesh, but used for calculating normals
+        public int numVertsPerLine => 
+            SupportedChunkSizes[useFlatShading ? flatshadedChunkSizeIndex : chunkSizeIndex] + 5;
+        public float meshWorldSize => 
+            (numVertsPerLine - 3) * meshScale;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\StaticData\NoiseSettings.cs ==========
+
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.StaticData
+{
+    [CreateAssetMenu(fileName = "NoiseSettings", menuName = "TerrainGenerationSettings/NoiseSettings")]
+    public class NoiseSettings : UpdatableData
+    {
+        public float scale = 50;
+
+        public int octaves = 6;
+        [Range(0, 1)] public float persistance = .6f;
+        public float lacunarity = 2;
+
+        public int seed;
+        public Vector2 offset;
+
+        public void ValidateValues()
+        {
+            scale = Mathf.Max(scale, 0.01f);
+            octaves = Mathf.Max(octaves, 1);
+            lacunarity = Mathf.Max(lacunarity, 1);
+            persistance = Mathf.Clamp01(persistance);
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\StaticData\TextureSettings.cs ==========
+
+using System.Linq;
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.StaticData
+{
+    [CreateAssetMenu(fileName = "TextureSettings", menuName = "TerrainGenerationSettings/TextureSettings")]
+    public class TextureSettings : UpdatableData
+    {
+        public Material mapMaterial;
+        public Layer[] layers;
+        public HeightMapSettings heightMapSettings;
+        
+        private const int TextureSize = 512;
+        private const TextureFormat TextureFormat = UnityEngine.TextureFormat.RGB565;
+        
+        private readonly int layerCount = Shader.PropertyToID("layerCount");
+        private readonly int baseColours = Shader.PropertyToID("baseColours");
+        private readonly int baseStartHeights = Shader.PropertyToID("baseStartHeights");
+        private readonly int baseBlends = Shader.PropertyToID("baseBlends");
+        private readonly int baseColourStrength = Shader.PropertyToID("baseColourStrength");
+        private readonly int baseTextureScales = Shader.PropertyToID("baseTextureScales");
+        private readonly int baseTextures = Shader.PropertyToID("baseTextures");
+        private readonly int minHeight = Shader.PropertyToID("minHeight");
+        private readonly int maxHeight = Shader.PropertyToID("maxHeight");
+
+        public void ApplyToMaterial()
+        {
+            mapMaterial.SetInt(layerCount, layers.Length);
+            
+            mapMaterial.SetColorArray(baseColours, layers.Select(x => x.tint).ToArray());
+            mapMaterial.SetFloatArray(baseStartHeights, layers.Select(x => x.startHeight).ToArray());
+            mapMaterial.SetFloatArray(baseBlends, layers.Select(x => x.blendStrength).ToArray());
+            mapMaterial.SetFloatArray(baseColourStrength, layers.Select(x => x.tintStrength).ToArray());
+            mapMaterial.SetFloatArray(baseTextureScales, layers.Select(x => x.textureScale).ToArray());
+            
+            mapMaterial.SetTexture(baseTextures, GenerateTextureArray(layers.Select(x => x.texture).ToArray()));
+
+            mapMaterial.SetFloat(minHeight, heightMapSettings.MinHeight);
+            mapMaterial.SetFloat(maxHeight, heightMapSettings.MaxHeight);
+        }
+
+        private Texture2DArray GenerateTextureArray(Texture2D[] textures)
+        {
+            var textureArray = new Texture2DArray(TextureSize, TextureSize, textures.Length, TextureFormat, true);
+            for (var i = 0; i < textures.Length; i++) 
+                textureArray.SetPixels(textures[i].GetPixels(), i);
+            
+            textureArray.Apply();
+            return textureArray;
+        }
+        
+#if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            ApplyToMaterial();
+            base.OnValidate();
+        }
+#endif
+
+        [System.Serializable]
+        public class Layer
+        {
+            public Texture2D texture;
+            public Color tint;
+            [Range(0, 1)] public float tintStrength;
+            /*[Range(0, 1)]*/ public float startHeight;
+            [Range(0, 1)] public float blendStrength;
+            public float textureScale;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\StaticData\UpdatableData.cs ==========
+
+using System;
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.StaticData
+{
+    public class UpdatableData : ScriptableObject
+    {
+        public event Action OnValuesUpdated;
+        public bool autoUpdate;
+
+#if UNITY_EDITOR
+        protected virtual void OnValidate()
+        {
+            if (autoUpdate)
+                UnityEditor.EditorApplication.update += NotifyOfUpdatedValues;
+        }
+
+        private void NotifyOfUpdatedValues()
+        {
+            UnityEditor.EditorApplication.update -= NotifyOfUpdatedValues;
+            OnValuesUpdated?.Invoke();
+        }
+#endif
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Structures\HeightMap.cs ==========
+
+namespace Code.Gameplay.TerrainGeneration.Structures
+{
+    public struct HeightMap
+    {
+        public readonly float[,] Values;
+        public readonly float MinValue;
+        public readonly float MaxValue;
+
+        public HeightMap(float[,] values, float minValue, float maxValue)
+        {
+            this.Values = values;
+            this.MinValue = minValue;
+            this.MaxValue = maxValue;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Structures\LODInfo.cs ==========
+
+using Code.Gameplay.TerrainGeneration.StaticData;
+using UnityEngine;
+
+namespace Code.Gameplay.TerrainGeneration.Structures
+{
+    [System.Serializable]
+    public struct LODInfo
+    {
+        [Range(0, MeshSettings.NumSupportedLoDs - 1)]
+        public int lod;
+        public float visibleDstThreshold;
+        public float SqrVisibleDstThreshold => 
+            visibleDstThreshold * visibleDstThreshold;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\TerrainGeneration\Structures\TerrainChunk.cs ==========
+
+using Code.Gameplay.TerrainGeneration.Generators;
+using UnityEngine;
+using Code.Infrastructure.StaticData;
+
+namespace Code.Gameplay.TerrainGeneration.Structures
+{
+    public class TerrainChunk
+    {
+        public GameObject meshObject;
+        private MeshRenderer meshRenderer;
+        private MeshFilter meshFilter;
+        private MeshCollider meshCollider;
+        private int lodIndex = -1;
+        private Bounds bounds;
+
+        private readonly IStaticDataService staticData;
+        private readonly Vector2 coord;
+        private readonly Mesh[] lodMeshes;
+
+        public TerrainChunk(IStaticDataService staticData, HeightMapGenerator heightMapGenerator, MeshGenerator meshGenerator,
+            Vector2 coord, Transform parent, float bottomFalloff, float topFalloff, float leftFalloff, float rightFalloff)
+        {
+            this.staticData = staticData;
+            this.coord = coord;
+            
+            var position = coord * staticData.MeshSettings.meshWorldSize;
+            bounds = new Bounds(position, Vector2.one * staticData.MeshSettings.meshWorldSize);
+            
+            meshObject = new GameObject("Terrain Chunk");
+            meshRenderer = meshObject.AddComponent<MeshRenderer>();
+            meshFilter = meshObject.AddComponent<MeshFilter>();
+            meshCollider = meshObject.AddComponent<MeshCollider>();
+            meshObject.layer = LayerMask.NameToLayer("Ground");
+            meshRenderer.material = staticData.TextureSettings.mapMaterial;
+
+            meshObject.transform.position = new Vector3(coord.x * staticData.MeshSettings.meshWorldSize,
+                0, coord.y * staticData.MeshSettings.meshWorldSize);
+            meshObject.transform.parent = parent;
+
+            var heightMap = heightMapGenerator.GenerateHeightMap(
+                coord, leftFalloff, rightFalloff, topFalloff, bottomFalloff);
+            
+            lodMeshes = new Mesh[this.staticData.MeshSettings.detailLevels.Length];
+            for (var i = 0; i < staticData.MeshSettings.detailLevels.Length; i++)
+            {
+                var mesh = meshGenerator.GenerateMesh(staticData.MeshSettings.detailLevels[i].lod, heightMap);
+                lodMeshes[i] = mesh;
+            }
+
+            heightMap.Dispose();
+        }
+        
+        /// <summary>
+        /// return true if collider needed and false if not
+        /// </summary>
+        /// <param name="viewer"></param>
+        /// <returns></returns>
+        public bool UpdateTerrainChunk(Transform viewer)
+        {
+            var viewerDstFromNearestEdge = Mathf.Sqrt(bounds.SqrDistance(new Vector3(viewer.position.x, viewer.position.z)));
+            
+            int newLodIndex = 0;
+            for (var i = 0; i < staticData.MeshSettings.detailLevels.Length - 1; i++)
+            {
+                if (viewerDstFromNearestEdge > staticData.MeshSettings.detailLevels[i].visibleDstThreshold)
+                    newLodIndex = i + 1;
+                else
+                    break;
+            }
+
+            if (newLodIndex != lodIndex)
+            {
+                meshFilter.sharedMesh = lodMeshes[newLodIndex];
+                if (lodIndex == staticData.MeshSettings.detailLevels[0].lod)
+                    meshCollider.sharedMesh = null;
+                lodIndex = newLodIndex;
+                if (lodIndex == staticData.MeshSettings.detailLevels[0].lod)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public Mesh GetMeshForBaking()
+        {
+            return lodMeshes[lodIndex];
+        }
+
+        public void SetBakedCollider()
+        {
+            meshCollider.cookingOptions = MeshColliderCookingOptions.None;
+            meshCollider.sharedMesh = lodMeshes[lodIndex];
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
 // ========== Assets\Code\Infrastructure\States\Factory\IStateFactory.cs ==========
 
 using Code.Infrastructure.States.GameStates;
@@ -3196,6 +5277,7 @@ namespace Code.Infrastructure.States.Factory
 // ========== Assets\Code\Infrastructure\States\GameStates\BootstrapState.cs ==========
 
 using Code.Infrastructure.States.StateMachine;
+using Code.UI.LoadingCurtain;
 using Cysharp.Threading.Tasks;
 
 namespace Code.Infrastructure.States.GameStates
@@ -3205,7 +5287,8 @@ namespace Code.Infrastructure.States.GameStates
         private readonly IGameStateMachine gameStateMachine;
         private readonly LoadingCurtainProxy loadingCurtain;
 
-        public BootstrapState(IGameStateMachine gameStateMachine, LoadingCurtainProxy loadingCurtain)
+        public BootstrapState(IGameStateMachine gameStateMachine,
+            LoadingCurtainProxy loadingCurtain)
         {
             this.gameStateMachine = gameStateMachine;
             this.loadingCurtain = loadingCurtain;
@@ -3227,6 +5310,8 @@ namespace Code.Infrastructure.States.GameStates
 // ========== Assets\Code\Infrastructure\States\GameStates\GameLoadingState.cs ==========
 
 using Code.Infrastructure.States.StateMachine;
+using Code.Infrastructure.StaticData;
+using Code.UI.LoadingCurtain;
 using Cysharp.Threading.Tasks;
 
 namespace Code.Infrastructure.States.GameStates
@@ -3235,20 +5320,23 @@ namespace Code.Infrastructure.States.GameStates
     {
         private readonly ILoadingCurtain loadingCurtain;
         private readonly IGameStateMachine stateMachine;
+        private readonly IStaticDataService staticData;
 
-        public GameLoadingState(IGameStateMachine stateMachine, ILoadingCurtain loadingCurtain)
+        public GameLoadingState(
+            ILoadingCurtain loadingCurtain,
+            IGameStateMachine stateMachine, 
+            IStaticDataService staticData)
         {
             this.loadingCurtain = loadingCurtain;
             this.stateMachine = stateMachine;
+            this.staticData = staticData;
         }
 
         public async UniTask Enter()
         {
             loadingCurtain.Show();
-
+            await staticData.LoadAllAsync();
             await stateMachine.Enter<MainMenuLoadingState>();
-            
-            loadingCurtain.Hide();
         }
 
         public UniTask Exit() => 
@@ -3260,14 +5348,26 @@ namespace Code.Infrastructure.States.GameStates
 
 // ========== Assets\Code\Infrastructure\States\GameStates\GameplayLoadingState.cs ==========
 
+using System;
 using System.Collections.Generic;
-using Code.Gameplay.Lobby;
+using System.Threading.Tasks;
+using Code.Gameplay.Item;
+using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
+using Code.Gameplay.TerrainGeneration.Generators;
 using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.StateMachine;
+using Code.Infrastructure.StaticData;
+using Code.Network;
+using Code.UI.LoadingCurtain;
+using Code.UI.Services.Factory;
 using Code.Utils;
 using Cysharp.Threading.Tasks;
+using FishNet.Broadcast;
 using FishNet.Connection;
+using FishNet.Managing;
+using FishNet.Managing.Scened;
+using UnityEngine;
 
 namespace Code.Infrastructure.States.GameStates
 {
@@ -3276,48 +5376,96 @@ namespace Code.Infrastructure.States.GameStates
         private readonly ISceneLoader sceneLoader;
         private readonly ILoadingCurtain loadingCurtain;
         private readonly IGameStateMachine stateMachine;
+        private readonly IStaticDataService staticData;
+        private readonly TerrainGenerator terrainGenerator;
+        private readonly ILevelDataProvider levelData;
+        private readonly IUIFactory uiFactory;
         private readonly IPlayerFactory playerFactory;
+        private readonly NetworkManager networkManager;
+        private readonly ItemDatabase itemDatabase;
 
         public GameplayLoadingState(
             ISceneLoader sceneLoader,
             ILoadingCurtain loadingCurtain,
             IGameStateMachine stateMachine,
-            IPlayerFactory playerFactory)
+            IStaticDataService staticData,
+            TerrainGenerator terrainGenerator, 
+            ILevelDataProvider levelData, 
+            IUIFactory uiFactory,
+            NetworkManager networkManager,
+            IPlayerFactory playerFactory,
+            ItemDatabase itemDatabase)
         {
             this.sceneLoader = sceneLoader;
             this.loadingCurtain = loadingCurtain;
             this.stateMachine = stateMachine;
+            this.staticData = staticData;
+            this.terrainGenerator = terrainGenerator;
+            this.levelData = levelData;
+            this.uiFactory = uiFactory;
+            this.networkManager = networkManager;
             this.playerFactory = playerFactory;
-        }
-
-        public async UniTask Enter(bool asServer)
-        {
-            loadingCurtain.Show();
-            
-            if (asServer)
-                sceneLoader.LoadSceneNetwork(AssetPath.GameScene);
-            
-            await stateMachine.Enter<GameplayLoopState>();
-            
-            loadingCurtain.Hide();
+            this.itemDatabase = itemDatabase;
         }
         
         public async UniTask Enter(GameplayLoadingStateEnterArgs args)
         {
             loadingCurtain.Show();
-
-            if (args.AsServer)
-            {
-                sceneLoader.LoadSceneNetwork(AssetPath.GameScene);
-                
-                foreach (var player in args.Players) 
-                    playerFactory.SpawnPlayer(player.Connection);
-            }
+            
+            await LoadScene(args);
+            await CreateUIRoot();
+            await GenerateTerrain(args.Seed);
+            LoadItemDataBase();
+            await SpawnPlayers(args);
+            InitializeChunks();
             
             await stateMachine.Enter<GameplayLoopState>();
-            
             loadingCurtain.Hide();
         }
+
+        private void LoadItemDataBase()
+        {
+            itemDatabase.LoadItems();
+        }
+
+        private async UniTask LoadScene(GameplayLoadingStateEnterArgs args)
+        {
+            var utcs = new UniTaskCompletionSource();
+
+            void OnLoadEnd(SceneLoadEndEventArgs loadArgs) => 
+                utcs.TrySetResult();
+
+            networkManager.SceneManager.OnLoadEnd += OnLoadEnd;
+            
+            if (args.AsServer)
+                sceneLoader.LoadSceneNetwork(Scenes.GameScene);
+            
+            await utcs.Task;
+        }
+
+        private async UniTask CreateUIRoot() => 
+            await uiFactory.CreateUIRoot();
+
+        private async UniTask SpawnPlayers(GameplayLoadingStateEnterArgs args)
+        {
+            if (args.AsServer)
+            {
+                foreach (var lobbyPlayer in args.Players) 
+                    await playerFactory.SpawnPlayer(lobbyPlayer.Connection);
+            }
+
+            while (levelData.Player == null)
+                await UniTask.Yield();
+        }
+
+        private async UniTask GenerateTerrain(int seed)
+        {
+            staticData.NoiseSettings.seed = seed;
+            await terrainGenerator.GenerateTerrain();
+        }
+
+        private void InitializeChunks() => 
+            terrainGenerator.InitializeChunks(levelData.Player.transform);
 
         public UniTask Exit() => 
             default;
@@ -3327,6 +5475,8 @@ namespace Code.Infrastructure.States.GameStates
     {
         public bool AsServer;
         public List<LobbyPlayer> Players;
+        public NetworkConnection CurrentConnection;
+        public int Seed;
     }
 }
 
@@ -3396,6 +5546,7 @@ namespace Code.Infrastructure.States.GameStates
 
 using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.StateMachine;
+using Code.UI.LoadingCurtain;
 using Code.Utils;
 using Cysharp.Threading.Tasks;
 
@@ -3421,8 +5572,7 @@ namespace Code.Infrastructure.States.GameStates
         {
             loadingCurtain.Show();
             
-            await sceneLoader.LoadScene(AssetPath.LoadingScene);
-            await sceneLoader.LoadScene(AssetPath.LobbyScene);
+            await sceneLoader.LoadSceneAsync(Scenes.LobbyScene);
             
             await stateMachine.Enter<LobbyState>();
             
@@ -3458,6 +5608,7 @@ namespace Code.Infrastructure.States.GameStates
 
 using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.StateMachine;
+using Code.UI.LoadingCurtain;
 using Code.Utils;
 using Cysharp.Threading.Tasks;
 
@@ -3481,10 +5632,7 @@ namespace Code.Infrastructure.States.GameStates
 
         public async UniTask Enter()
         {
-            loadingCurtain.Show();
-            
-            await sceneLoader.LoadScene(AssetPath.LoadingScene);
-            await sceneLoader.LoadScene(AssetPath.MainMenuScene);
+            await sceneLoader.LoadSceneAsync(Scenes.MainMenuScene);
             
             await stateMachine.Enter<MainMenuState>();
             
@@ -3521,7 +5669,6 @@ namespace Code.Infrastructure.States.GameStates
 using Code.Infrastructure.States.Factory;
 using Code.Infrastructure.States.GameStates;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 
 namespace Code.Infrastructure.States.StateMachine
 {
@@ -3538,7 +5685,7 @@ namespace Code.Infrastructure.States.StateMachine
 
         public async UniTask Enter<TState>() where TState : class, IState
         {
-            Debug.Log(typeof(TState));
+            //Debug.Log(typeof(TState));
             await RequestEnter<TState>();
         }
 
@@ -3605,6 +5752,162 @@ namespace Code.Infrastructure.States.StateMachine
     {
         UniTask Enter<TState>() where TState : class, IState;
         UniTask Enter<TState, TPayload>(TPayload payload) where TState : class, IPayloadState<TPayload>;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\Services\Factory\IUIFactory.cs ==========
+
+using Code.UI.Windows;
+using Cysharp.Threading.Tasks;
+
+namespace Code.UI.Services.Factory
+{
+    public interface IUIFactory
+    {
+        public WindowBase CreateInventory();
+        public UniTask CreateUIRoot();
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\Services\Factory\UIFactory.cs ==========
+
+using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.StaticData;
+using Code.UI.Services.Windows;
+using Code.UI.Windows;
+using Code.Utils;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+
+namespace Code.UI.Services.Factory
+{
+    public class UIFactory : IUIFactory
+    {
+        private readonly IStaticDataService staticData;
+        private readonly IAssetProvider assetProvider;
+        
+        private Transform uiRoot;
+
+        public UIFactory(
+            IStaticDataService staticData,
+            IAssetProvider assetProvider)
+        {
+            this.staticData = staticData;
+            this.assetProvider = assetProvider;
+        }
+
+        public WindowBase CreateInventory()
+        {
+            var windowConfig = staticData.ForWindow(WindowId.Inventory);
+            var inventory = Object.Instantiate(windowConfig.Prefab, uiRoot);
+            return inventory;
+        }
+
+        public async UniTask CreateUIRoot()
+        {
+            var instantiate = await assetProvider.LoadAsync(AssetPath.UIRoot);
+            uiRoot = Object.Instantiate(instantiate).transform;
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\Services\Windows\IWindowService.cs ==========
+
+using Code.UI.Windows;
+
+namespace Code.UI.Services.Windows
+{
+    public interface IWindowService
+    {
+        public WindowBase Open(WindowId windowId);
+        public void Close(WindowId windowId);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\Services\Windows\WindowId.cs ==========
+
+namespace Code.UI.Services.Windows
+{
+    public enum WindowId
+    {
+        Inventory = 0
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\Services\Windows\WindowService.cs ==========
+
+using Code.UI.Services.Factory;
+using Code.UI.Windows;
+using UnityEngine;
+
+namespace Code.UI.Services.Windows
+{
+    public class WindowService : IWindowService
+    {
+        private readonly IUIFactory uiFactory;
+        private WindowBase inventoryWindow;
+
+        public WindowService(IUIFactory uiFactory)
+        {
+            this.uiFactory = uiFactory;
+        }
+
+        public WindowBase Open(WindowId windowId)
+        {
+            WindowBase openedWindow = null;
+            switch (windowId)
+            {
+                case WindowId.Inventory:
+                    if (inventoryWindow == null) 
+                        inventoryWindow = uiFactory.CreateInventory();
+                    
+                    openedWindow = inventoryWindow;
+                    inventoryWindow.Show();
+                    break;
+            }
+
+            if (openedWindow == null)
+                Debug.LogError($"There's no implementation for WindowId: {windowId}");
+            
+            return openedWindow;
+        }
+
+        public void Close(WindowId windowId)
+        {
+            switch (windowId)
+            {
+                case WindowId.Inventory:
+                    if (inventoryWindow != null)
+                        inventoryWindow.Hide();
+                    break;
+            }
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\UI\Windows\StaticData\WindowStaticData.cs ==========
+
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Code.UI.Windows.StaticData
+{
+    [CreateAssetMenu(menuName = "StaticData/WindowsStaticData", fileName = "WindowsStaticData")]
+    public class WindowStaticData : ScriptableObject
+    {
+        public List<WindowConfig> Configs;
     }
 }
 
@@ -3894,6 +6197,7 @@ using UnityEngine;
 public class ClimbChecker : NetworkBehaviour
 {
     [SerializeField, Range(0f, 2f)] private float checkDistance;
+    [SerializeField] private LayerMask checkLayer;
     [SerializeField] private LayerMask climbLayer;
         
     public bool IsClimbable { get; private set; }
@@ -3902,10 +6206,16 @@ public class ClimbChecker : NetworkBehaviour
 
     public void CheckClimb()
     {
-        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, checkDistance, climbLayer))
+        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hitCheck, checkDistance, checkLayer))
         {
-            IsClimbable = ValidateHit(hit);
-            hitInfo = hit;
+            BakeMesh bakeMesh = hitCheck.collider.GetComponentInParent<MeshView>().BakeMesh;
+            bakeMesh.ForceUpdateCollider();
+            
+            if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, checkDistance, climbLayer))
+            {
+                IsClimbable = ValidateHit(hit);
+                hitInfo = hit;
+            }
         }
         else IsClimbable = false;
     }
@@ -4591,7 +6901,7 @@ public class StandartMovementDirection : IMovementDirectionHandler
         Vector3 moveDirection = cameraTransform.forward * input.y;
         moveDirection += cameraTransform.right * input.x;
         moveDirection.Normalize();
-        moveDirection.y = 0f;
+        moveDirection.y = -1f;
         
         return moveDirection;
     }
