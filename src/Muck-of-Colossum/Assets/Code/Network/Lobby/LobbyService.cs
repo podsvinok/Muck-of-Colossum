@@ -38,16 +38,20 @@ namespace Code.Network
         public override void OnStartServer() => 
             networkManager.SceneManager.OnClientLoadedStartScenes += OnClientLoadedStartScenes;
 
+        public override void OnStartClient() => 
+            players.OnChange += LobbyPlayerChange;
+
+        private void LobbyPlayerChange(SyncDictionaryOperation op, NetworkConnection key, LobbyPlayer value, bool asServer) => 
+            OnLobbyPlayerChanged?.Invoke();
+
         [ServerRpc(RequireOwnership = false)]
-        public void SetPlayerReady(NetworkConnection sender, bool isReady) //TODO: show in clients too
+        public void SetPlayerReady(NetworkConnection sender, bool isReady)
         {
             if (players.ContainsKey(sender))    
             {
                 var player = players[sender];
                 player.IsReady = isReady;
                 players[sender] = player;
-
-                OnLobbyPlayerChanged?.Invoke();
             }
         }
 
@@ -72,8 +76,6 @@ namespace Code.Network
                 PlayerName = $"Player {connection.ClientId}",
                 IsServer = IsServerInitialized
             });
-                
-            OnLobbyPlayerChanged?.Invoke();
         }
 
         [ObserversRpc]
