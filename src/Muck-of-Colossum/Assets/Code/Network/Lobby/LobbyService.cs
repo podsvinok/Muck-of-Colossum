@@ -15,7 +15,6 @@ namespace Code.Network
 {
     public class LobbyService : NetworkBehaviour
     {
-        [SerializeField] private int seed;
         public event Action OnLobbyPlayerChanged;
         
         private readonly SyncDictionary<NetworkConnection, LobbyPlayer> players = new();
@@ -60,8 +59,11 @@ namespace Code.Network
         {
             bool allReady = players.Values.All(p => p.IsReady);
 
-            if (allReady) 
-                StartGameTransition();
+            if (allReady)
+            {
+                var seed = random.GetRandomSeed();
+                StartGameTransition(seed);
+            }
         }
 
         private void OnClientLoadedStartScenes(NetworkConnection connection, bool asServer)
@@ -79,14 +81,14 @@ namespace Code.Network
         }
 
         [ObserversRpc]
-        private void StartGameTransition()
+        private void StartGameTransition(int seed)
         {
             var args = new GameplayLoadingStateEnterArgs()
             {
                 AsServer = IsServerInitialized,
                 Players = new List<LobbyPlayer>(players.Values),
                 CurrentConnection = LocalConnection,
-                Seed = random.GetRandomSeed()
+                Seed = seed
             };
             
             stateMachine.Enter<GameplayLoadingState, GameplayLoadingStateEnterArgs>(args);

@@ -15,10 +15,8 @@ namespace Code.Gameplay.Inventory
 
         private void Awake()
         {
-            for (int i = 0; i < inventoryTiles.Length; i++)
-            {
+            for (int i = 0; i < inventoryTiles.Length; i++) 
                 inventoryTiles[i].Initialize(this, i);
-            }
         }
 
         public void RedrawEverything(InventoryItem[] inventoryItems)
@@ -35,15 +33,11 @@ namespace Code.Gameplay.Inventory
             }
         }
 
-        public void DropItem(int index)
-        {
+        public void DropItem(int index) => 
             inventory.DropItem(index, 1);
-        }
-        
-        public void Interact(int index)
-        {
+
+        public void Interact(int index) => 
             inventory.Interact(index);
-        }
 
         public int GetInventoryTilesLength() => 
             inventoryTiles.Length;

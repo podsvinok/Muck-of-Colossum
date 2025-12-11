@@ -26,12 +26,6 @@ public class PlayerView : NetworkBehaviour
         animator = GetComponent<Animator>();
     }
 
-    private void Update()
-    {
-        if (IsOwner == false)
-            return;
-    }
-
     public void StartMovement() => animator.SetBool(IsMovement, true);
     public void StopMovement() => animator.SetBool(IsMovement, false);
 
@@ -55,8 +49,10 @@ public class PlayerView : NetworkBehaviour
     
     public void StartClimbing() => animator.SetBool(IsClimbing, true);
     public void StopClimbing() => animator.SetBool(IsClimbing, false);
+    
     public void StartClimbIdle() => animator.SetBool(IsClimbIdle, true);
     public void StopClimbIdle() => animator.SetBool(IsClimbIdle, false);
+    
     public void StartClimbMoving() => animator.SetBool(IsClimbMoving, true);
     public void StopClimbMoving() => animator.SetBool(IsClimbMoving, false);
 }

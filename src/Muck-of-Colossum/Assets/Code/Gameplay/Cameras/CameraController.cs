@@ -11,12 +11,12 @@ public class CameraController : NetworkBehaviour
 
     public override void OnStartClient()
     {
-        Init();
-        currentCamera.enabled = IsOwner;
-    }
-    
-    public void Init()
-    {
-        currentCamera = GetComponentInChildren<CinemachineCamera>();
+        if (IsOwner)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        else
+            currentCamera.gameObject.SetActive(false);
     }
 }

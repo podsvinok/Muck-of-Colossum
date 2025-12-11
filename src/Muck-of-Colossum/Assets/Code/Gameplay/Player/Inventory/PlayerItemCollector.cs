@@ -9,25 +9,30 @@ namespace Code.Gameplay.Player.Inventory
     public class PlayerItemCollector : NetworkBehaviour
     {
         [SerializeField] private Gameplay.Inventory.Inventory inventory;
+        private Camera playerCamera; 
+            
         private IInputService input;
         private ILevelDataProvider levelData;
 
         [Inject]
-        public void Construct(IInputService input, ILevelDataProvider levelData)
+        public void Construct(
+            IInputService input, 
+            ILevelDataProvider levelData)
         {
             this.input = input;
             this.levelData = levelData;
         }
 
-        private void Update()
+        public override void OnStartClient()
         {
-            if (!IsOwner)
-                return;
-            
-            if (!input.GetLeftMouseButtonUp())
-                return;
+            if (!IsOwner) return;
+            playerCamera = levelData.Player.GetComponentInChildren<Camera>();
+            input.CollectItemButtonDown += OnCollectItemButtonDown;
+        }
 
-            if (!Physics.Raycast(levelData.Player.GetComponentInChildren<Camera>().ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f)), out var hit, 50)) 
+        private void OnCollectItemButtonDown()
+        {
+            if (!Physics.Raycast(playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f)), out var hit, 50)) 
                 return;
             
             if (hit.collider.TryGetComponent(out Item.Item item) && inventory.TryAddItem(item.Preset, 1))
@@ -37,5 +42,11 @@ namespace Code.Gameplay.Player.Inventory
         [ServerRpc(RequireOwnership = false)]
         private void Despawn(Item.Item item) => 
             Despawn(item.gameObject, DespawnType.Destroy);
+
+        private void OnDestroy()
+        {
+            if (!IsOwner) return;
+            input.CollectItemButtonDown -= OnCollectItemButtonDown;
+        }
     }
 }

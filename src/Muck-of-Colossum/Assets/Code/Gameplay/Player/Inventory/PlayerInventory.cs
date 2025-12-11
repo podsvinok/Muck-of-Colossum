@@ -1,4 +1,5 @@
-﻿using System.Collections.Specialized;
+﻿using System;
+using System.Collections.Specialized;
 using System.Linq;
 using Code.Gameplay.Inventory;
 using Code.Infrastructure.Inputs;
@@ -39,31 +40,10 @@ namespace Code.Gameplay.Player.Inventory
             Initialize();
         }
 
-        private void Update()
-        {
-            if (input.GetInventoryButton())
-            {
-                if (!isWindowOpened)
-                {
-                    windows.Open(WindowId.Inventory);
-                    isWindowOpened = true;
-                    
-                    Cursor.visible = true;
-                    Cursor.lockState = CursorLockMode.None;
-                }
-                else
-                {
-                    windows.Close(WindowId.Inventory);
-                    isWindowOpened = false;
-                    
-                    Cursor.visible = false;
-                    Cursor.lockState = CursorLockMode.Locked;
-                }
-            }
-        }
-
         private void Initialize()
         {
+            input.InventoryUIButtonDown += OnInventoryButtonDown;
+            
             inventoryWindow = windows.Open(WindowId.Inventory);
             windows.Close(WindowId.Inventory);
             
@@ -75,14 +55,34 @@ namespace Code.Gameplay.Player.Inventory
                     
             inventoryItems.CollectionChanged += OnInventoryChanged;
         }
-        
 
-        public override void Interact(int index)
+        private void OnInventoryButtonDown()
         {
-            Debug.Log($"Interact item with index: {index}");
+            if (!isWindowOpened)
+            {
+                windows.Open(WindowId.Inventory);
+                isWindowOpened = true;
+                
+                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.None;
+            }
+            else
+            {
+                windows.Close(WindowId.Inventory);
+                isWindowOpened = false;
+                
+                Cursor.visible = false;
+                Cursor.lockState = CursorLockMode.Locked;
+            }
         }
+
+        public override void Interact(int index) => 
+            Debug.Log($"Interact item with index: {index}");
 
         private void OnInventoryChanged(object sender, NotifyCollectionChangedEventArgs args) => 
             inventoryView.RedrawEverything(inventoryItems.ToArray());
+
+        private void OnDestroy() => 
+            input.InventoryUIButtonDown -= OnInventoryButtonDown;
     }
 }

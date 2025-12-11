@@ -1,18 +1,14 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Code.Infrastructure.Inputs
 {
     public interface IInputService
     {
-        float GetVerticalAxis();
-        float GetHorizontalAxis();
-        bool HasAxisInput();
-    
-        bool GetLeftMouseButtonDown();
-        Vector2 GetScreenMousePosition();
-        Vector2 GetWorldMousePosition();
-        bool GetLeftMouseButtonUp();
-        bool GetJumpButtonUp();
-        bool GetInventoryButton();
+        public PlayerInput Input { get; set; }
+        public event Action InventoryUIButtonDown;        
+        public event Action CollectItemButtonDown;
+        public event Action LeftMouseButtonDown;
+        public event Action RightMouseButtonDown;
     }
 }

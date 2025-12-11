@@ -1,6 +1,8 @@
+using Code.Infrastructure.Inputs;
 using FishNet.Object;
 using LiteNetLib;
 using UnityEngine;
+using Zenject;
 
 [RequireComponent(typeof(CharacterController))]
 public class Player : NetworkBehaviour
@@ -24,14 +26,17 @@ public class Player : NetworkBehaviour
     
     public GroundChecker GroundChecker => groundChecker;
     public ClimbChecker ClimbChecker => climbChecker;
-    
+
+    [Inject]
+    public void Construct(IInputService inputService)
+    {
+        input = inputService.Input;
+    }
 
     private void Awake()
     {
         view.Init();
-        playerCamera.Init();
         characterController = GetComponent<CharacterController>();
-        input = new PlayerInput();
         stateMachine = new PlayerStateMachine(this);
     }
 

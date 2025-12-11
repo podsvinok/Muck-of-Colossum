@@ -113,6 +113,102 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "Inventory",
+            "id": "d372cd43-2f04-40af-9f89-3e2dcac5bbe9",
+            "actions": [
+                {
+                    "name": "InventoryUI",
+                    "type": "Button",
+                    "id": "536ab0c6-2761-423a-ba45-064208963d81",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Collect Item",
+                    "type": "Button",
+                    "id": "248e7d6a-3e28-47c3-8fc9-76dd82562e07",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "ff7dfb1d-edba-4748-af00-8f30c8e73339",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "InventoryUI",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7d949f69-28f6-4585-936d-84476340f376",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Collect Item",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "UI",
+            "id": "b5a443a6-0f10-40da-9e3d-eb13faab6c2f",
+            "actions": [
+                {
+                    "name": "LeftMouseButtonClick",
+                    "type": "Button",
+                    "id": "bc78fdc8-0988-449b-adc0-cf9c8ec605f2",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "RightMouseButtonClick",
+                    "type": "Button",
+                    "id": "d7a04a2b-361c-4ac1-a4c8-7b91b76dd64b",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "1dffc54d-2553-4515-bc1d-34201ba5e0f7",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "LeftMouseButtonClick",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "acfa7eed-fa7f-442b-9117-6de133ac9c97",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RightMouseButtonClick",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": []

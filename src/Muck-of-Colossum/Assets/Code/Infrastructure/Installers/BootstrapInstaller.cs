@@ -23,7 +23,6 @@ namespace Code.Infrastructure.Installers
 {
     public class BootstrapInstaller : MonoInstaller, IInitializable
     {
-
         public override void InstallBindings()
         {
             BindGameFactories();
@@ -163,7 +162,7 @@ namespace Code.Infrastructure.Installers
         private void BindInputService()
         {
             Container
-                .Bind<IInputService>()
+                .Bind(typeof(IInputService), typeof(IInitializable))
                 .To<StandaloneInputService>()
                 .AsSingle();
         }
