@@ -1,12 +1,11 @@
 ﻿using System;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Zenject;
 
 namespace Code.Infrastructure.Inputs
 {
-    public class StandaloneInputService : IInputService, IInitializable
+    public class StandaloneInputService : IInputService, IInitializable, IDisposable
     {
         public PlayerInput Input { get; set; }
         public event Action InventoryUIButtonDown;
@@ -21,9 +20,10 @@ namespace Code.Infrastructure.Inputs
             Input.Inventory.CollectItem.started += OnCollectItemButtonDown;
             Input.UI.LeftMouseButtonClick.started += OnLeftMouseButtonClick;
             Input.UI.RightMouseButtonClick.started += OnRightMouseButtonClick;
+            Input.Enable();
         }
 
-        private void OnInventoryUIButtonDown(InputAction.CallbackContext obj) =>
+        private void OnInventoryUIButtonDown(InputAction.CallbackContext obj) => 
             InventoryUIButtonDown?.Invoke();
 
         private void OnCollectItemButtonDown(InputAction.CallbackContext obj) => 
@@ -34,5 +34,13 @@ namespace Code.Infrastructure.Inputs
 
         private void OnRightMouseButtonClick(InputAction.CallbackContext obj) => 
             RightMouseButtonDown?.Invoke();
+
+        public void Dispose()
+        {
+            Input.Inventory.InventoryUI.started -= OnInventoryUIButtonDown;
+            Input.Inventory.CollectItem.started -= OnCollectItemButtonDown;
+            Input.UI.LeftMouseButtonClick.started -= OnLeftMouseButtonClick;
+            Input.UI.RightMouseButtonClick.started -= OnRightMouseButtonClick;
+        }
     }
 }

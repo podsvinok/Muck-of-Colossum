@@ -4,7 +4,6 @@ using LiteNetLib;
 using UnityEngine;
 using Zenject;
 
-[RequireComponent(typeof(CharacterController))]
 public class Player : NetworkBehaviour
 {
     [SerializeField] private PlayerConfig config;
@@ -12,10 +11,7 @@ public class Player : NetworkBehaviour
     [SerializeField] private CameraController playerCamera;
     [SerializeField] private GroundChecker groundChecker;
     [SerializeField] private ClimbChecker climbChecker;
-    
-    private PlayerInput input;
-    private PlayerStateMachine stateMachine;
-    private CharacterController characterController;
+    [SerializeField] private CharacterController characterController;
     
     public PlayerInput Input => input;
     public CharacterController Controller => characterController;
@@ -27,28 +23,29 @@ public class Player : NetworkBehaviour
     public GroundChecker GroundChecker => groundChecker;
     public ClimbChecker ClimbChecker => climbChecker;
 
+    private IInputService inputService;
+    private PlayerInput input;
+    private PlayerStateMachine stateMachine;
+
     [Inject]
     public void Construct(IInputService inputService)
     {
-        input = inputService.Input;
+        this.inputService = inputService;
     }
 
-    private void Awake()
+    public override void OnStartClient()
     {
-        view.Init();
-        characterController = GetComponent<CharacterController>();
+        if (!IsOwner) return;
+        
+        input = inputService.Input;
         stateMachine = new PlayerStateMachine(this);
     }
 
     private void Update()
     {
-        if (IsOwner == false)
-            return;
+        if (!IsOwner) return;
         
         stateMachine.HandleInput();
         stateMachine.Update();
     }
-    
-    private void OnEnable() => input.Enable();
-    private void OnDisable() => input.Disable();
 }

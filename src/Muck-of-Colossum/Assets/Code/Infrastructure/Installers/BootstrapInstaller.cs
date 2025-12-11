@@ -162,8 +162,7 @@ namespace Code.Infrastructure.Installers
         private void BindInputService()
         {
             Container
-                .Bind(typeof(IInputService), typeof(IInitializable))
-                .To<StandaloneInputService>()
+                .BindInterfacesAndSelfTo<StandaloneInputService>()
                 .AsSingle();
         }
 

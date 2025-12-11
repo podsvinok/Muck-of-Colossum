@@ -137,7 +137,7 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 2
+  <PrefabId>k__BackingField: 3
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 4955501797054023137
   <SceneId>k__BackingField: 0
@@ -161,7 +161,7 @@ MonoBehaviour:
   _componentIndexCache: 0
   _addedNetworkObject: {fileID: 6755619139509213770}
   _networkObjectCache: {fileID: 6755619139509213770}
-  _componentConfiguration: 0
+  _componentConfiguration: 2
   _synchronizeParent: 0
   _packing:
     Position: 1
@@ -172,7 +172,7 @@ MonoBehaviour:
   _extrapolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  _clientAuthoritative: 1
+  _clientAuthoritative: 0
   _sendToOwner: 1
   _interval: 1
   _synchronizePosition: 1

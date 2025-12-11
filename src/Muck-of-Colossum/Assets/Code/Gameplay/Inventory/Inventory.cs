@@ -11,8 +11,9 @@ namespace Code.Gameplay.Inventory
 {
     public class Inventory : NetworkBehaviour
     {
-        protected ObservableCollection<InventoryItem> inventoryItems = new();
+        [SerializeField] private Transform itemSpawnPoint;
         private IItemFactory itemFactory;
+        protected ObservableCollection<InventoryItem> inventoryItems = new();
 
         [Inject]
         public void Construct(IItemFactory itemFactory)
@@ -90,6 +91,6 @@ namespace Code.Gameplay.Inventory
 
         [ServerRpc(RequireOwnership = false)]
         private void SpawnItem(ItemPreset item) => 
-            itemFactory.SpawnItem(item, gameObject.transform.position + Vector3.forward * 2);
+            itemFactory.SpawnItem(item, itemSpawnPoint.position);
     }
 }

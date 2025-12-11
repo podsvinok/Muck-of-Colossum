@@ -32,18 +32,12 @@ namespace Code.Gameplay.Player.Inventory
 
         public override void OnStartClient()
         {
-            base.OnStartClient();
-            
-            if (!IsOwner)
-                return;
-            
+            if (!IsOwner) return;
             Initialize();
         }
 
         private void Initialize()
         {
-            input.InventoryUIButtonDown += OnInventoryButtonDown;
-            
             inventoryWindow = windows.Open(WindowId.Inventory);
             windows.Close(WindowId.Inventory);
             
@@ -54,6 +48,7 @@ namespace Code.Gameplay.Player.Inventory
                 inventoryItems.Add(new InventoryItem());
                     
             inventoryItems.CollectionChanged += OnInventoryChanged;
+            input.InventoryUIButtonDown += OnInventoryButtonDown;
         }
 
         private void OnInventoryButtonDown()
@@ -82,7 +77,10 @@ namespace Code.Gameplay.Player.Inventory
         private void OnInventoryChanged(object sender, NotifyCollectionChangedEventArgs args) => 
             inventoryView.RedrawEverything(inventoryItems.ToArray());
 
-        private void OnDestroy() => 
+        private void OnDestroy()
+        {
+            if (!IsOwner) return;
             input.InventoryUIButtonDown -= OnInventoryButtonDown;
+        }
     }
 }

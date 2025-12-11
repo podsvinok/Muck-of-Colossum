@@ -5,6 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(Animator))]
 public class PlayerView : NetworkBehaviour
 {
+    [SerializeField] private Animator animator;
+    
     private const string IsMovement = "IsMovement";
 
     private const string IsGrounded = "IsGrounded";
@@ -18,14 +20,7 @@ public class PlayerView : NetworkBehaviour
     private const string IsClimbing = "IsClimbing";
     private const string IsClimbIdle = "IsClimbIdle";
     private const string IsClimbMoving = "IsClimbMoving";
-
-    private Animator animator;
-
-    public void Init()
-    {
-        animator = GetComponent<Animator>();
-    }
-
+    
     public void StartMovement() => animator.SetBool(IsMovement, true);
     public void StopMovement() => animator.SetBool(IsMovement, false);
 

@@ -34,7 +34,6 @@ namespace Code.Gameplay.Player.Inventory
         {
             if (!Physics.Raycast(playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f)), out var hit, 50)) 
                 return;
-            
             if (hit.collider.TryGetComponent(out Item.Item item) && inventory.TryAddItem(item.Preset, 1))
                 Despawn(item);
         }
