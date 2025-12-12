@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8744076978264443227}
   - component: {fileID: 8708509342281361020}
   - component: {fileID: 957598661347573563}
+  - component: {fileID: 5961003147947503370}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -71,3 +72,25 @@ MonoBehaviour:
   DisableServerRpcLinks: 0
   DisableReplicateRpcLinks: 0
   DisableReconcileRpcLinks: 0
+--- !u!114 &5961003147947503370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6463916031194732740}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f48f002b825cbd45a19bd96d90f9edb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stopSocketsOnThread: 0
+  _dontRoute: 0
+  _reuseAddress: 0
+  _unreliableMtu: 1023
+  _ipv4BindAddress: 
+  _enableIpv6: 1
+  _ipv6BindAddress: 
+  _port: 7770
+  _maximumClients: 3
+  _clientAddress: localhost

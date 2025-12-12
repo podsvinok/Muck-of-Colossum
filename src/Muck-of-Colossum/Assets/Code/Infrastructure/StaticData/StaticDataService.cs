@@ -59,9 +59,12 @@ namespace Code.Infrastructure.StaticData
         private async UniTask LoadMeshSettings() => 
             MeshSettings = await assetProvider.LoadAsync<MeshSettings>(AssetPath.MeshSettings);
 
-        private async UniTask LoadTextureSettings() => 
+        private async UniTask LoadTextureSettings()
+        {
             TextureSettings = await assetProvider.LoadAsync<TextureSettings>(AssetPath.TextureSettings);
-        
+            TextureSettings.ApplyToMaterial();
+        }
+
         private async UniTask LoadNoiseSettings() => 
             NoiseSettings = await assetProvider.LoadAsync<NoiseSettings>(AssetPath.NoiseSettings);
     }
