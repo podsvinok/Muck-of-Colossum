@@ -47,20 +47,11 @@ namespace Code.Gameplay.TerrainGeneration.Generators
 
             terrainChunks = new TerrainChunk[staticData.MeshSettings.terrainSizeX * staticData.MeshSettings.terrainSizeY];
             await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
-            
-            if (characterController == null) 
-                characterController = viewer.GetComponent<CharacterController>();
-            
-            characterController.enabled = false;
-            UpdateChunks();
-            characterController.enabled = true;
-            viewer.position += Vector3.up * 5;
+            await UpdateChunks(new Vector3(0, 0, 0));
         }
 
-        public async UniTask GenerateTerrain()
-        {
+        public async UniTask GenerateTerrain() => 
             await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
-        }
 
         private async UniTask GenerateChunks(int width, int height)
         {
@@ -94,24 +85,25 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             }
         }
 
-        private void UpdateChunks()
+        private async UniTask UpdateChunks(Vector3 updatePoint)
         {
             var chunkToBakeMesh = new List<TerrainChunk>();
             
             foreach (var chunk in terrainChunks)
             {
-                if (chunk.UpdateTerrainChunk(viewer)) 
+                if (chunk.UpdateTerrainChunk(updatePoint)) 
                     chunkToBakeMesh.Add(chunk);
             }
-            colliderGenerator.GenerateCollider(chunkToBakeMesh);
+            await colliderGenerator.GenerateCollider(chunkToBakeMesh);
         }
 
-        public void InitializeChunks(Transform player)
+        public async UniTask InitializeChunks(Vector3 updatePoint) => 
+            await UpdateChunks(updatePoint);
+
+        public async UniTask InitializeViewer(Transform viewer)
         {
-            viewer = player;
-            var position = viewer.position;
-            var viewerPosition = new Vector2(position.x, position.z);
-            UpdateChunks();
+            this.viewer = viewer;
+            await UpdateChunks(viewer.position);
         }
         
         public void FixedTick()
@@ -124,7 +116,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             if ((viewerPositionOld - viewerPosition).sqrMagnitude > SqrViewerMoveThresholdForChunkUpdate) 
             {
                 viewerPositionOld = viewerPosition;
-                UpdateChunks();
+                UpdateChunks(position).Forget();
             }
         }
     }

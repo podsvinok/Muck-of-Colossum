@@ -67,7 +67,7 @@ namespace Code.Infrastructure.States.GameStates
             await GenerateTerrain(args.Seed);
             LoadItemDataBase();
             await SpawnPlayers(args);
-            InitializeChunks();
+            await InitializeChunks();
             
             await stateMachine.Enter<GameplayLoopState>();
             loadingCurtain.Hide();
@@ -101,7 +101,7 @@ namespace Code.Infrastructure.States.GameStates
             if (args.AsServer)
             {
                 foreach (var lobbyPlayer in args.Players) 
-                    await playerFactory.SpawnPlayer(lobbyPlayer.Connection);
+                    await playerFactory.SpawnPlayerAtRandomPoint(lobbyPlayer.Connection);
             }
 
             while (levelData.Player == null)
@@ -112,10 +112,11 @@ namespace Code.Infrastructure.States.GameStates
         {
             staticData.NoiseSettings.seed = seed;
             await terrainGenerator.GenerateTerrain();
+            await terrainGenerator.InitializeChunks(levelData.StartPoint);
         }
 
-        private void InitializeChunks() => 
-            terrainGenerator.InitializeChunks(levelData.Player.transform);
+        private async UniTask InitializeChunks() => 
+            await terrainGenerator.InitializeViewer(levelData.Player.transform);
 
         public UniTask Exit() => 
             default;

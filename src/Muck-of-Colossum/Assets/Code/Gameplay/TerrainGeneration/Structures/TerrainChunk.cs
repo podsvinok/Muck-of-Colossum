@@ -55,9 +55,9 @@ namespace Code.Gameplay.TerrainGeneration.Structures
         /// </summary>
         /// <param name="viewer"></param>
         /// <returns></returns>
-        public bool UpdateTerrainChunk(Transform viewer)
+        public bool UpdateTerrainChunk(Vector3 viewerPosition)
         {
-            var viewerDstFromNearestEdge = Mathf.Sqrt(bounds.SqrDistance(new Vector3(viewer.position.x, viewer.position.z)));
+            var viewerDstFromNearestEdge = Mathf.Sqrt(bounds.SqrDistance(new Vector3(viewerPosition.x, viewerPosition.z)));
             
             int newLodIndex = 0;
             for (var i = 0; i < staticData.MeshSettings.detailLevels.Length - 1; i++)

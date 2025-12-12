@@ -9,7 +9,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
 {
     public class ColliderGenerator
     {
-        public async void GenerateCollider(List<TerrainChunk> chunksToBakeMesh)
+        public async UniTask GenerateCollider(List<TerrainChunk> chunksToBakeMesh)
         {
             var meshIds = new NativeList<int>(Allocator.Persistent);
 
