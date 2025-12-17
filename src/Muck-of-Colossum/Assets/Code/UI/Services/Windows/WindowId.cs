@@ -2,6 +2,7 @@
 {
     public enum WindowId
     {
-        Inventory = 0
+        Inventory = 0,
+        InventoryActiveSlots = 1
     }
 }

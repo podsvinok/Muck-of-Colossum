@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Zenject;
 
 namespace Code.Gameplay.Inventory
@@ -12,8 +13,8 @@ namespace Code.Gameplay.Inventory
     public class Inventory : NetworkBehaviour
     {
         [SerializeField] private Transform itemSpawnPoint;
-        private IItemFactory itemFactory;
         protected ObservableCollection<InventoryItem> inventoryItems = new();
+        protected IItemFactory itemFactory;
 
         [Inject]
         public void Construct(IItemFactory itemFactory)

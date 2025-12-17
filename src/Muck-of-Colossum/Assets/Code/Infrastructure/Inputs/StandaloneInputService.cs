@@ -12,16 +12,21 @@ namespace Code.Infrastructure.Inputs
         public event Action CollectItemButtonDown;
         public event Action LeftMouseButtonDown;
         public event Action RightMouseButtonDown;
+        public event Action<float> ChangeActiveSlotButtonDown; 
 
         public void Initialize()
         {
             Input = new PlayerInput();
-            Input.Inventory.InventoryUI.started += OnInventoryUIButtonDown;
-            Input.Inventory.CollectItem.started += OnCollectItemButtonDown;
-            Input.UI.LeftMouseButtonClick.started += OnLeftMouseButtonClick;
-            Input.UI.RightMouseButtonClick.started += OnRightMouseButtonClick;
+            Input.Inventory.InventoryUI.performed += OnInventoryUIButtonDown;
+            Input.Inventory.CollectItem.performed += OnCollectItemButtonDown;
+            Input.UI.LeftMouseButtonClick.performed += OnLeftMouseButtonClick;
+            Input.UI.RightMouseButtonClick.performed += OnRightMouseButtonClick;
+            Input.Inventory.ChangeActiveSlot.performed += OnChangeActiveSlotButtonDown;
             Input.Enable();
         }
+
+        private void OnChangeActiveSlotButtonDown(InputAction.CallbackContext obj) => 
+            ChangeActiveSlotButtonDown?.Invoke(obj.ReadValue<float>());
 
         private void OnInventoryUIButtonDown(InputAction.CallbackContext obj) => 
             InventoryUIButtonDown?.Invoke();
@@ -41,6 +46,7 @@ namespace Code.Infrastructure.Inputs
             Input.Inventory.CollectItem.started -= OnCollectItemButtonDown;
             Input.UI.LeftMouseButtonClick.started -= OnLeftMouseButtonClick;
             Input.UI.RightMouseButtonClick.started -= OnRightMouseButtonClick;
+            Input.Inventory.ChangeActiveSlot.performed -= OnChangeActiveSlotButtonDown;
         }
     }
 }

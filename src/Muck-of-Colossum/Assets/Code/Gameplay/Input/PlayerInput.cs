@@ -221,6 +221,15 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Change Active Slot"",
+                    ""type"": ""Value"",
+                    ""id"": ""7d1867b5-e567-495f-8141-bfe67f30dfc8"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -243,6 +252,105 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Collect Item"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f3d80d70-c7d6-4a55-b66d-cb07dda41bcb"",
+                    ""path"": ""<Keyboard>/1"",
+                    ""interactions"": """",
+                    ""processors"": ""Scale"",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""66cdeb5a-03b3-4f02-9caa-c255e85e10d4"",
+                    ""path"": ""<Keyboard>/2"",
+                    ""interactions"": """",
+                    ""processors"": ""Scale(factor=2)"",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""83972fc1-947a-4170-8250-fde73fd128d9"",
+                    ""path"": ""<Keyboard>/3"",
+                    ""interactions"": """",
+                    ""processors"": ""Scale(factor=3)"",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""660d5181-50c3-4bb4-bb34-1904c8a1dd11"",
+                    ""path"": ""<Keyboard>/4"",
+                    ""interactions"": """",
+                    ""processors"": ""Scale(factor=4)"",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0b685c39-aa1d-4e3d-a0b8-3f4fffefa16a"",
+                    ""path"": ""<Keyboard>/5"",
+                    ""interactions"": """",
+                    ""processors"": ""Scale(factor=5)"",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d149d26d-10b8-4691-805e-182bc33d803b"",
+                    ""path"": ""<Keyboard>/6"",
+                    ""interactions"": """",
+                    ""processors"": ""Scale(factor=6)"",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""6a8c3bb5-7e7e-41d5-9bd2-9c8ff8d270b1"",
+                    ""path"": ""<Keyboard>/7"",
+                    ""interactions"": """",
+                    ""processors"": ""Scale(factor=7)"",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""67d4508f-366e-4763-be50-e7e62a8237fa"",
+                    ""path"": ""<Keyboard>/8"",
+                    ""interactions"": """",
+                    ""processors"": ""Scale(factor=8)"",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d8b7495a-2e82-45e4-8e1b-a86ed67e84d2"",
+                    ""path"": ""<Keyboard>/9"",
+                    ""interactions"": """",
+                    ""processors"": ""Scale(factor=9)"",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -308,6 +416,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         m_Inventory = asset.FindActionMap("Inventory", throwIfNotFound: true);
         m_Inventory_InventoryUI = m_Inventory.FindAction("InventoryUI", throwIfNotFound: true);
         m_Inventory_CollectItem = m_Inventory.FindAction("Collect Item", throwIfNotFound: true);
+        m_Inventory_ChangeActiveSlot = m_Inventory.FindAction("Change Active Slot", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_LeftMouseButtonClick = m_UI.FindAction("LeftMouseButtonClick", throwIfNotFound: true);
@@ -514,6 +623,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
     private List<IInventoryActions> m_InventoryActionsCallbackInterfaces = new List<IInventoryActions>();
     private readonly InputAction m_Inventory_InventoryUI;
     private readonly InputAction m_Inventory_CollectItem;
+    private readonly InputAction m_Inventory_ChangeActiveSlot;
     /// <summary>
     /// Provides access to input actions defined in input action map "Inventory".
     /// </summary>
@@ -533,6 +643,10 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Inventory/CollectItem".
         /// </summary>
         public InputAction @CollectItem => m_Wrapper.m_Inventory_CollectItem;
+        /// <summary>
+        /// Provides access to the underlying input action "Inventory/ChangeActiveSlot".
+        /// </summary>
+        public InputAction @ChangeActiveSlot => m_Wrapper.m_Inventory_ChangeActiveSlot;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -565,6 +679,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @CollectItem.started += instance.OnCollectItem;
             @CollectItem.performed += instance.OnCollectItem;
             @CollectItem.canceled += instance.OnCollectItem;
+            @ChangeActiveSlot.started += instance.OnChangeActiveSlot;
+            @ChangeActiveSlot.performed += instance.OnChangeActiveSlot;
+            @ChangeActiveSlot.canceled += instance.OnChangeActiveSlot;
         }
 
         /// <summary>
@@ -582,6 +699,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @CollectItem.started -= instance.OnCollectItem;
             @CollectItem.performed -= instance.OnCollectItem;
             @CollectItem.canceled -= instance.OnCollectItem;
+            @ChangeActiveSlot.started -= instance.OnChangeActiveSlot;
+            @ChangeActiveSlot.performed -= instance.OnChangeActiveSlot;
+            @ChangeActiveSlot.canceled -= instance.OnChangeActiveSlot;
         }
 
         /// <summary>
@@ -772,6 +892,13 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnCollectItem(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Change Active Slot" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnChangeActiveSlot(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

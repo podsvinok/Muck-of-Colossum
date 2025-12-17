@@ -10,5 +10,6 @@ namespace Code.Infrastructure.Inputs
         public event Action CollectItemButtonDown;
         public event Action LeftMouseButtonDown;
         public event Action RightMouseButtonDown;
+        public event Action<float> ChangeActiveSlotButtonDown; 
     }
 }

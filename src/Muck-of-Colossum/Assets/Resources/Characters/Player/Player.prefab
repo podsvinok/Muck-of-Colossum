@@ -233,6 +233,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5604572364322473768}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &395340936892462909
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4980395125102534670}
+  m_Layer: 0
+  m_Name: ItemHolder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4980395125102534670
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 395340936892462909}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1939573715703196472}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &406359774077527743
 GameObject:
   m_ObjectHideFlags: 0
@@ -755,6 +786,7 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: -1925983978342147385}
   _networkObjectCache: {fileID: 0}
   itemSpawnPoint: {fileID: 7235061445644206653}
+  itemHolder: {fileID: 4980395125102534670}
 --- !u!114 &2690182709647916323
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2996,6 +3028,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8343547639118688329}
+  - {fileID: 4980395125102534670}
   m_Father: {fileID: 3561364168981556102}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4971064725637842939

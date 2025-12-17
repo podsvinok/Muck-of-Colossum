@@ -21,6 +21,7 @@ namespace Code.UI.HUD
         [SerializeField] private TextMeshProUGUI readyButtonText;
         [SerializeField] private Transform playerListContainer;
         [SerializeField] private GameObject playerListItemPrefab;
+        [SerializeField] private TMP_Text serverIP;
         
         private NetworkManager networkManager;
         private LobbyService lobbyService;
@@ -110,6 +111,8 @@ namespace Code.UI.HUD
 
         private void StartAsClient()
         { 
+            if (serverIP.text != "")
+                networkManager.TransportManager.Transport.SetClientAddress(serverIP.text);
             networkManager.ClientManager.StartConnection();
             
             ShowLobbyPanel();

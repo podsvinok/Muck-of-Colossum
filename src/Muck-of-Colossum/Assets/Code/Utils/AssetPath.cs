@@ -2,6 +2,7 @@
 {
     public static class AssetPath
     {
+        public const string InventoryActiveSlots = "UI/ActiveInventorySlots";
         public const string WindowStaticData = "StaticData/UI/WindowsStaticData";
         public const string UIRoot = "UI/UIRoot";
         public const string ItemPresets = "StaticData/ItemPresets";

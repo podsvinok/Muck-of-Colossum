@@ -23,6 +23,13 @@ namespace Code.UI.Services.Factory
             this.assetProvider = assetProvider;
         }
 
+        public WindowBase CreateInventoryActiveSlots()
+        {
+            var windowConfig = staticData.ForWindow(WindowId.InventoryActiveSlots);
+            var inventoryActiveSlots = Object.Instantiate(windowConfig.Prefab, uiRoot);
+            return inventoryActiveSlots;
+        }
+        
         public WindowBase CreateInventory()
         {
             var windowConfig = staticData.ForWindow(WindowId.Inventory);

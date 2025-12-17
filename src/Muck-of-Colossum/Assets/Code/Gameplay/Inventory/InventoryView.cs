@@ -1,20 +1,16 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Code.Gameplay.Inventory
 {
     public class InventoryView : MonoBehaviour
     {
         [SerializeField] private InventoryTile[] inventoryTiles;
-
         private Inventory inventory;
 
         public void Initialize(Inventory inventory)
         {
             this.inventory = inventory;
-        }
-
-        private void Awake()
-        {
             for (int i = 0; i < inventoryTiles.Length; i++) 
                 inventoryTiles[i].Initialize(this, i);
         }
@@ -24,11 +20,6 @@ namespace Code.Gameplay.Inventory
             for (int i = 0; i < inventoryItems.Length; i++)
             {
                 var item = inventoryItems[i];
-                if (inventoryItems.Length <= i)
-                {
-                    Debug.LogError($"More items than tiles. {i} > {inventoryItems.Length}", this);
-                    return;
-                }
                 inventoryTiles[i].SetItem(item);
             }
         }

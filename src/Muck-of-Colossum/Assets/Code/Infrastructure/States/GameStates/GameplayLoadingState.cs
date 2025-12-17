@@ -73,11 +73,6 @@ namespace Code.Infrastructure.States.GameStates
             loadingCurtain.Hide();
         }
 
-        private void LoadItemDataBase()
-        {
-            itemDatabase.LoadItems();
-        }
-
         private async UniTask LoadScene(GameplayLoadingStateEnterArgs args)
         {
             var utcs = new UniTaskCompletionSource();
@@ -96,6 +91,16 @@ namespace Code.Infrastructure.States.GameStates
         private async UniTask CreateUIRoot() => 
             await uiFactory.CreateUIRoot();
 
+        private async UniTask GenerateTerrain(int seed)
+        {
+            staticData.NoiseSettings.seed = seed;
+            await terrainGenerator.GenerateTerrain();
+            await terrainGenerator.InitializeChunks(levelData.StartPoint);
+        }
+
+        private void LoadItemDataBase() => 
+            itemDatabase.LoadItems();
+
         private async UniTask SpawnPlayers(GameplayLoadingStateEnterArgs args)
         {
             if (args.AsServer)
@@ -106,13 +111,6 @@ namespace Code.Infrastructure.States.GameStates
 
             while (levelData.Player == null)
                 await UniTask.Yield();
-        }
-
-        private async UniTask GenerateTerrain(int seed)
-        {
-            staticData.NoiseSettings.seed = seed;
-            await terrainGenerator.GenerateTerrain();
-            await terrainGenerator.InitializeChunks(levelData.StartPoint);
         }
 
         private async UniTask InitializeChunks() => 

@@ -8,6 +8,7 @@ namespace Code.UI.Services.Windows
     {
         private readonly IUIFactory uiFactory;
         private WindowBase inventoryWindow;
+        private WindowBase inventoryActiveSlotsWindow;
 
         public WindowService(IUIFactory uiFactory)
         {
@@ -22,9 +23,15 @@ namespace Code.UI.Services.Windows
                 case WindowId.Inventory:
                     if (inventoryWindow == null) 
                         inventoryWindow = uiFactory.CreateInventory();
-                    
                     openedWindow = inventoryWindow;
                     inventoryWindow.Show();
+                    break;
+                
+                case WindowId.InventoryActiveSlots:
+                    if (inventoryActiveSlotsWindow == null)
+                        inventoryActiveSlotsWindow = uiFactory.CreateInventoryActiveSlots();
+                    openedWindow = inventoryActiveSlotsWindow;
+                    inventoryActiveSlotsWindow.Show();
                     break;
             }
 
@@ -41,6 +48,11 @@ namespace Code.UI.Services.Windows
                 case WindowId.Inventory:
                     if (inventoryWindow != null)
                         inventoryWindow.Hide();
+                    break;
+                
+                case WindowId.InventoryActiveSlots:
+                    if (inventoryActiveSlotsWindow != null)
+                        inventoryActiveSlotsWindow.Hide();
                     break;
             }
         }
