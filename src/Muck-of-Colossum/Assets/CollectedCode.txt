@@ -1,5 +1,5 @@
-﻿// Собрано файлов: 130
-// Дата: 06.12.2025 23:27:24
+﻿// Собрано файлов: 128
+// Дата: 18.12.2025 14:33:27
 ================================================================================
 
 // ========== Assets\Code\Random\IRandomService.cs ==========
@@ -7,6 +7,7 @@
 public interface IRandomService
 {
     public int GetRandomSeed();
+    float GetRandomFloatInRange(float minValue, float maxValue);
 }
 
 --------------------------------------------------------------------------------
@@ -19,10 +20,11 @@ using Random = UnityEngine.Random;
 
 public class RandomService : IRandomService
 {
-    public int GetRandomSeed()
-    {
-        return (int)DateTime.Now.Ticks;
-    }
+    public int GetRandomSeed() => 
+        (int)DateTime.Now.Ticks;
+
+    public float GetRandomFloatInRange(float minValue, float maxValue) => 
+        UnityEngine.Random.Range(minValue, maxValue);
 }
 
 
@@ -119,25 +121,6 @@ namespace Code.Utils
     {
 
     }
-
-    [CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
-    public class ReadOnlyDrawer : PropertyDrawer
-    {
-        public override float GetPropertyHeight(SerializedProperty property,
-            GUIContent label)
-        {
-            return EditorGUI.GetPropertyHeight(property, label, true);
-        }
-
-        public override void OnGUI(Rect position,
-            SerializedProperty property,
-            GUIContent label)
-        {
-            GUI.enabled = false;
-            EditorGUI.PropertyField(position, property, label, true);
-            GUI.enabled = true;
-        }
-    }
 }
 
 --------------------------------------------------------------------------------
@@ -228,13 +211,13 @@ public class CameraController : NetworkBehaviour
 
     public override void OnStartClient()
     {
-        Init();
-        currentCamera.enabled = IsOwner;
-    }
-    
-    public void Init()
-    {
-        currentCamera = GetComponentInChildren<CinemachineCamera>();
+        if (IsOwner)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        else
+            currentCamera.gameObject.SetActive(false);
     }
 }
 
@@ -1696,6 +1679,102 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""Inventory"",
+            ""id"": ""d372cd43-2f04-40af-9f89-3e2dcac5bbe9"",
+            ""actions"": [
+                {
+                    ""name"": ""InventoryUI"",
+                    ""type"": ""Button"",
+                    ""id"": ""536ab0c6-2761-423a-ba45-064208963d81"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Collect Item"",
+                    ""type"": ""Button"",
+                    ""id"": ""248e7d6a-3e28-47c3-8fc9-76dd82562e07"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""ff7dfb1d-edba-4748-af00-8f30c8e73339"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventoryUI"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7d949f69-28f6-4585-936d-84476340f376"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Collect Item"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""UI"",
+            ""id"": ""b5a443a6-0f10-40da-9e3d-eb13faab6c2f"",
+            ""actions"": [
+                {
+                    ""name"": ""LeftMouseButtonClick"",
+                    ""type"": ""Button"",
+                    ""id"": ""bc78fdc8-0988-449b-adc0-cf9c8ec605f2"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""RightMouseButtonClick"",
+                    ""type"": ""Button"",
+                    ""id"": ""d7a04a2b-361c-4ac1-a4c8-7b91b76dd64b"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""1dffc54d-2553-4515-bc1d-34201ba5e0f7"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""LeftMouseButtonClick"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""acfa7eed-fa7f-442b-9117-6de133ac9c97"",
+                    ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""RightMouseButtonClick"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": []
@@ -1705,11 +1784,21 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         m_Movement_Move = m_Movement.FindAction("Move", throwIfNotFound: true);
         m_Movement_Jump = m_Movement.FindAction("Jump", throwIfNotFound: true);
         m_Movement_Climb = m_Movement.FindAction("Climb", throwIfNotFound: true);
+        // Inventory
+        m_Inventory = asset.FindActionMap("Inventory", throwIfNotFound: true);
+        m_Inventory_InventoryUI = m_Inventory.FindAction("InventoryUI", throwIfNotFound: true);
+        m_Inventory_CollectItem = m_Inventory.FindAction("Collect Item", throwIfNotFound: true);
+        // UI
+        m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
+        m_UI_LeftMouseButtonClick = m_UI.FindAction("LeftMouseButtonClick", throwIfNotFound: true);
+        m_UI_RightMouseButtonClick = m_UI.FindAction("RightMouseButtonClick", throwIfNotFound: true);
     }
 
     ~@PlayerInput()
     {
         UnityEngine.Debug.Assert(!m_Movement.enabled, "This will cause a leak and performance issues, PlayerInput.Movement.Disable() has not been called.");
+        UnityEngine.Debug.Assert(!m_Inventory.enabled, "This will cause a leak and performance issues, PlayerInput.Inventory.Disable() has not been called.");
+        UnityEngine.Debug.Assert(!m_UI.enabled, "This will cause a leak and performance issues, PlayerInput.UI.Disable() has not been called.");
     }
 
     /// <summary>
@@ -1899,6 +1988,220 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
     /// Provides a new <see cref="MovementActions" /> instance referencing this action map.
     /// </summary>
     public MovementActions @Movement => new MovementActions(this);
+
+    // Inventory
+    private readonly InputActionMap m_Inventory;
+    private List<IInventoryActions> m_InventoryActionsCallbackInterfaces = new List<IInventoryActions>();
+    private readonly InputAction m_Inventory_InventoryUI;
+    private readonly InputAction m_Inventory_CollectItem;
+    /// <summary>
+    /// Provides access to input actions defined in input action map "Inventory".
+    /// </summary>
+    public struct InventoryActions
+    {
+        private @PlayerInput m_Wrapper;
+
+        /// <summary>
+        /// Construct a new instance of the input action map wrapper class.
+        /// </summary>
+        public InventoryActions(@PlayerInput wrapper) { m_Wrapper = wrapper; }
+        /// <summary>
+        /// Provides access to the underlying input action "Inventory/InventoryUI".
+        /// </summary>
+        public InputAction @InventoryUI => m_Wrapper.m_Inventory_InventoryUI;
+        /// <summary>
+        /// Provides access to the underlying input action "Inventory/CollectItem".
+        /// </summary>
+        public InputAction @CollectItem => m_Wrapper.m_Inventory_CollectItem;
+        /// <summary>
+        /// Provides access to the underlying input action map instance.
+        /// </summary>
+        public InputActionMap Get() { return m_Wrapper.m_Inventory; }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+        public void Enable() { Get().Enable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+        public void Disable() { Get().Disable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+        public bool enabled => Get().enabled;
+        /// <summary>
+        /// Implicitly converts an <see ref="InventoryActions" /> to an <see ref="InputActionMap" /> instance.
+        /// </summary>
+        public static implicit operator InputActionMap(InventoryActions set) { return set.Get(); }
+        /// <summary>
+        /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <param name="instance">Callback instance.</param>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+        /// </remarks>
+        /// <seealso cref="InventoryActions" />
+        public void AddCallbacks(IInventoryActions instance)
+        {
+            if (instance == null || m_Wrapper.m_InventoryActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_InventoryActionsCallbackInterfaces.Add(instance);
+            @InventoryUI.started += instance.OnInventoryUI;
+            @InventoryUI.performed += instance.OnInventoryUI;
+            @InventoryUI.canceled += instance.OnInventoryUI;
+            @CollectItem.started += instance.OnCollectItem;
+            @CollectItem.performed += instance.OnCollectItem;
+            @CollectItem.canceled += instance.OnCollectItem;
+        }
+
+        /// <summary>
+        /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <remarks>
+        /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+        /// </remarks>
+        /// <seealso cref="InventoryActions" />
+        private void UnregisterCallbacks(IInventoryActions instance)
+        {
+            @InventoryUI.started -= instance.OnInventoryUI;
+            @InventoryUI.performed -= instance.OnInventoryUI;
+            @InventoryUI.canceled -= instance.OnInventoryUI;
+            @CollectItem.started -= instance.OnCollectItem;
+            @CollectItem.performed -= instance.OnCollectItem;
+            @CollectItem.canceled -= instance.OnCollectItem;
+        }
+
+        /// <summary>
+        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="InventoryActions.UnregisterCallbacks(IInventoryActions)" />.
+        /// </summary>
+        /// <seealso cref="InventoryActions.UnregisterCallbacks(IInventoryActions)" />
+        public void RemoveCallbacks(IInventoryActions instance)
+        {
+            if (m_Wrapper.m_InventoryActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        /// <summary>
+        /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+        /// </summary>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+        /// </remarks>
+        /// <seealso cref="InventoryActions.AddCallbacks(IInventoryActions)" />
+        /// <seealso cref="InventoryActions.RemoveCallbacks(IInventoryActions)" />
+        /// <seealso cref="InventoryActions.UnregisterCallbacks(IInventoryActions)" />
+        public void SetCallbacks(IInventoryActions instance)
+        {
+            foreach (var item in m_Wrapper.m_InventoryActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_InventoryActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    /// <summary>
+    /// Provides a new <see cref="InventoryActions" /> instance referencing this action map.
+    /// </summary>
+    public InventoryActions @Inventory => new InventoryActions(this);
+
+    // UI
+    private readonly InputActionMap m_UI;
+    private List<IUIActions> m_UIActionsCallbackInterfaces = new List<IUIActions>();
+    private readonly InputAction m_UI_LeftMouseButtonClick;
+    private readonly InputAction m_UI_RightMouseButtonClick;
+    /// <summary>
+    /// Provides access to input actions defined in input action map "UI".
+    /// </summary>
+    public struct UIActions
+    {
+        private @PlayerInput m_Wrapper;
+
+        /// <summary>
+        /// Construct a new instance of the input action map wrapper class.
+        /// </summary>
+        public UIActions(@PlayerInput wrapper) { m_Wrapper = wrapper; }
+        /// <summary>
+        /// Provides access to the underlying input action "UI/LeftMouseButtonClick".
+        /// </summary>
+        public InputAction @LeftMouseButtonClick => m_Wrapper.m_UI_LeftMouseButtonClick;
+        /// <summary>
+        /// Provides access to the underlying input action "UI/RightMouseButtonClick".
+        /// </summary>
+        public InputAction @RightMouseButtonClick => m_Wrapper.m_UI_RightMouseButtonClick;
+        /// <summary>
+        /// Provides access to the underlying input action map instance.
+        /// </summary>
+        public InputActionMap Get() { return m_Wrapper.m_UI; }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+        public void Enable() { Get().Enable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+        public void Disable() { Get().Disable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+        public bool enabled => Get().enabled;
+        /// <summary>
+        /// Implicitly converts an <see ref="UIActions" /> to an <see ref="InputActionMap" /> instance.
+        /// </summary>
+        public static implicit operator InputActionMap(UIActions set) { return set.Get(); }
+        /// <summary>
+        /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <param name="instance">Callback instance.</param>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+        /// </remarks>
+        /// <seealso cref="UIActions" />
+        public void AddCallbacks(IUIActions instance)
+        {
+            if (instance == null || m_Wrapper.m_UIActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_UIActionsCallbackInterfaces.Add(instance);
+            @LeftMouseButtonClick.started += instance.OnLeftMouseButtonClick;
+            @LeftMouseButtonClick.performed += instance.OnLeftMouseButtonClick;
+            @LeftMouseButtonClick.canceled += instance.OnLeftMouseButtonClick;
+            @RightMouseButtonClick.started += instance.OnRightMouseButtonClick;
+            @RightMouseButtonClick.performed += instance.OnRightMouseButtonClick;
+            @RightMouseButtonClick.canceled += instance.OnRightMouseButtonClick;
+        }
+
+        /// <summary>
+        /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <remarks>
+        /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+        /// </remarks>
+        /// <seealso cref="UIActions" />
+        private void UnregisterCallbacks(IUIActions instance)
+        {
+            @LeftMouseButtonClick.started -= instance.OnLeftMouseButtonClick;
+            @LeftMouseButtonClick.performed -= instance.OnLeftMouseButtonClick;
+            @LeftMouseButtonClick.canceled -= instance.OnLeftMouseButtonClick;
+            @RightMouseButtonClick.started -= instance.OnRightMouseButtonClick;
+            @RightMouseButtonClick.performed -= instance.OnRightMouseButtonClick;
+            @RightMouseButtonClick.canceled -= instance.OnRightMouseButtonClick;
+        }
+
+        /// <summary>
+        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="UIActions.UnregisterCallbacks(IUIActions)" />.
+        /// </summary>
+        /// <seealso cref="UIActions.UnregisterCallbacks(IUIActions)" />
+        public void RemoveCallbacks(IUIActions instance)
+        {
+            if (m_Wrapper.m_UIActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        /// <summary>
+        /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+        /// </summary>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+        /// </remarks>
+        /// <seealso cref="UIActions.AddCallbacks(IUIActions)" />
+        /// <seealso cref="UIActions.RemoveCallbacks(IUIActions)" />
+        /// <seealso cref="UIActions.UnregisterCallbacks(IUIActions)" />
+        public void SetCallbacks(IUIActions instance)
+        {
+            foreach (var item in m_Wrapper.m_UIActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_UIActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    /// <summary>
+    /// Provides a new <see cref="UIActions" /> instance referencing this action map.
+    /// </summary>
+    public UIActions @UI => new UIActions(this);
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Movement" which allows adding and removing callbacks.
     /// </summary>
@@ -1928,6 +2231,50 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnClimb(InputAction.CallbackContext context);
     }
+    /// <summary>
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Inventory" which allows adding and removing callbacks.
+    /// </summary>
+    /// <seealso cref="InventoryActions.AddCallbacks(IInventoryActions)" />
+    /// <seealso cref="InventoryActions.RemoveCallbacks(IInventoryActions)" />
+    public interface IInventoryActions
+    {
+        /// <summary>
+        /// Method invoked when associated input action "InventoryUI" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnInventoryUI(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Collect Item" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnCollectItem(InputAction.CallbackContext context);
+    }
+    /// <summary>
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.
+    /// </summary>
+    /// <seealso cref="UIActions.AddCallbacks(IUIActions)" />
+    /// <seealso cref="UIActions.RemoveCallbacks(IUIActions)" />
+    public interface IUIActions
+    {
+        /// <summary>
+        /// Method invoked when associated input action "LeftMouseButtonClick" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnLeftMouseButtonClick(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "RightMouseButtonClick" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnRightMouseButtonClick(InputAction.CallbackContext context);
+    }
 }
 
 
@@ -1948,8 +2295,9 @@ namespace Code.Gameplay.Inventory
 {
     public class Inventory : NetworkBehaviour
     {
-        protected ObservableCollection<InventoryItem> inventoryItems = new();
+        [SerializeField] private Transform itemSpawnPoint;
         private IItemFactory itemFactory;
+        protected ObservableCollection<InventoryItem> inventoryItems = new();
 
         [Inject]
         public void Construct(IItemFactory itemFactory)
@@ -2027,7 +2375,7 @@ namespace Code.Gameplay.Inventory
 
         [ServerRpc(RequireOwnership = false)]
         private void SpawnItem(ItemPreset item) => 
-            itemFactory.SpawnItem(item, gameObject.transform.position + Vector3.forward * 2);
+            itemFactory.SpawnItem(item, itemSpawnPoint.position);
     }
 }
 
@@ -2127,10 +2475,8 @@ namespace Code.Gameplay.Inventory
 
         private void Awake()
         {
-            for (int i = 0; i < inventoryTiles.Length; i++)
-            {
+            for (int i = 0; i < inventoryTiles.Length; i++) 
                 inventoryTiles[i].Initialize(this, i);
-            }
         }
 
         public void RedrawEverything(InventoryItem[] inventoryItems)
@@ -2147,15 +2493,11 @@ namespace Code.Gameplay.Inventory
             }
         }
 
-        public void DropItem(int index)
-        {
+        public void DropItem(int index) => 
             inventory.DropItem(index, 1);
-        }
-        
-        public void Interact(int index)
-        {
+
+        public void Interact(int index) => 
             inventory.Interact(index);
-        }
 
         public int GetInventoryTilesLength() => 
             inventoryTiles.Length;
@@ -2328,11 +2670,12 @@ public class GroundChecker : NetworkBehaviour
 
 // ========== Assets\Code\Gameplay\Player\Player.cs ==========
 
+using Code.Infrastructure.Inputs;
 using FishNet.Object;
 using LiteNetLib;
 using UnityEngine;
+using Zenject;
 
-[RequireComponent(typeof(CharacterController))]
 public class Player : NetworkBehaviour
 {
     [SerializeField] private PlayerConfig config;
@@ -2340,10 +2683,7 @@ public class Player : NetworkBehaviour
     [SerializeField] private CameraController playerCamera;
     [SerializeField] private GroundChecker groundChecker;
     [SerializeField] private ClimbChecker climbChecker;
-    
-    private PlayerInput input;
-    private PlayerStateMachine stateMachine;
-    private CharacterController characterController;
+    [SerializeField] private CharacterController characterController;
     
     public PlayerInput Input => input;
     public CharacterController Controller => characterController;
@@ -2354,28 +2694,32 @@ public class Player : NetworkBehaviour
     
     public GroundChecker GroundChecker => groundChecker;
     public ClimbChecker ClimbChecker => climbChecker;
-    
 
-    private void Awake()
+    private IInputService inputService;
+    private PlayerInput input;
+    private PlayerStateMachine stateMachine;
+
+    [Inject]
+    public void Construct(IInputService inputService)
     {
-        view.Init();
-        playerCamera.Init();
-        characterController = GetComponent<CharacterController>();
-        input = new PlayerInput();
+        this.inputService = inputService;
+    }
+
+    public override void OnStartClient()
+    {
+        if (!IsOwner) return;
+        
+        input = inputService.Input;
         stateMachine = new PlayerStateMachine(this);
     }
 
     private void Update()
     {
-        if (IsOwner == false)
-            return;
+        if (!IsOwner) return;
         
         stateMachine.HandleInput();
         stateMachine.Update();
     }
-    
-    private void OnEnable() => input.Enable();
-    private void OnDisable() => input.Disable();
 }
 
 
@@ -2440,6 +2784,8 @@ using UnityEngine;
 [RequireComponent(typeof(Animator))]
 public class PlayerView : NetworkBehaviour
 {
+    [SerializeField] private Animator animator;
+    
     private const string IsMovement = "IsMovement";
 
     private const string IsGrounded = "IsGrounded";
@@ -2453,20 +2799,7 @@ public class PlayerView : NetworkBehaviour
     private const string IsClimbing = "IsClimbing";
     private const string IsClimbIdle = "IsClimbIdle";
     private const string IsClimbMoving = "IsClimbMoving";
-
-    private Animator animator;
-
-    public void Init()
-    {
-        animator = GetComponent<Animator>();
-    }
-
-    private void Update()
-    {
-        if (IsOwner == false)
-            return;
-    }
-
+    
     public void StartMovement() => animator.SetBool(IsMovement, true);
     public void StopMovement() => animator.SetBool(IsMovement, false);
 
@@ -2490,8 +2823,10 @@ public class PlayerView : NetworkBehaviour
     
     public void StartClimbing() => animator.SetBool(IsClimbing, true);
     public void StopClimbing() => animator.SetBool(IsClimbing, false);
+    
     public void StartClimbIdle() => animator.SetBool(IsClimbIdle, true);
     public void StopClimbIdle() => animator.SetBool(IsClimbIdle, false);
+    
     public void StartClimbMoving() => animator.SetBool(IsClimbMoving, true);
     public void StopClimbMoving() => animator.SetBool(IsClimbMoving, false);
 }
@@ -2668,22 +3003,18 @@ namespace Code.Infrastructure.Factories
 
 // ========== Assets\Code\Infrastructure\Inputs\IInputService.cs ==========
 
+using System;
 using UnityEngine;
 
 namespace Code.Infrastructure.Inputs
 {
     public interface IInputService
     {
-        float GetVerticalAxis();
-        float GetHorizontalAxis();
-        bool HasAxisInput();
-    
-        bool GetLeftMouseButtonDown();
-        Vector2 GetScreenMousePosition();
-        Vector2 GetWorldMousePosition();
-        bool GetLeftMouseButtonUp();
-        bool GetJumpButtonUp();
-        bool GetInventoryButton();
+        public PlayerInput Input { get; set; }
+        public event Action InventoryUIButtonDown;        
+        public event Action CollectItemButtonDown;
+        public event Action LeftMouseButtonDown;
+        public event Action RightMouseButtonDown;
     }
 }
 
@@ -2691,63 +3022,50 @@ namespace Code.Infrastructure.Inputs
 
 // ========== Assets\Code\Infrastructure\Inputs\StandaloneInputService.cs ==========
 
+using System;
 using UnityEngine;
-using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using Zenject;
 
 namespace Code.Infrastructure.Inputs
 {
-    public class StandaloneInputService : IInputService
+    public class StandaloneInputService : IInputService, IInitializable, IDisposable
     {
-        private Camera mainCamera;
-        private Vector3 screenPosition;
+        public PlayerInput Input { get; set; }
+        public event Action InventoryUIButtonDown;
+        public event Action CollectItemButtonDown;
+        public event Action LeftMouseButtonDown;
+        public event Action RightMouseButtonDown;
 
-        private Camera CameraMain
+        public void Initialize()
         {
-            get
-            {
-                if (mainCamera == null && Camera.main != null)
-                  mainCamera = Camera.main;
-                
-                return mainCamera;
-            }
+            Input = new PlayerInput();
+            Input.Inventory.InventoryUI.started += OnInventoryUIButtonDown;
+            Input.Inventory.CollectItem.started += OnCollectItemButtonDown;
+            Input.UI.LeftMouseButtonClick.started += OnLeftMouseButtonClick;
+            Input.UI.RightMouseButtonClick.started += OnRightMouseButtonClick;
+            Input.Enable();
         }
 
-        public Vector2 GetWorldMousePosition()
+        private void OnInventoryUIButtonDown(InputAction.CallbackContext obj) => 
+            InventoryUIButtonDown?.Invoke();
+
+        private void OnCollectItemButtonDown(InputAction.CallbackContext obj) => 
+            CollectItemButtonDown?.Invoke();
+
+        private void OnLeftMouseButtonClick(InputAction.CallbackContext obj) => 
+            LeftMouseButtonDown?.Invoke();
+
+        private void OnRightMouseButtonClick(InputAction.CallbackContext obj) => 
+            RightMouseButtonDown?.Invoke();
+
+        public void Dispose()
         {
-            if (CameraMain == null)
-                return Vector2.zero;
-            
-            screenPosition.x = Input.mousePosition.x;
-            screenPosition.y = Input.mousePosition.y;
-            return CameraMain.ScreenToWorldPoint(screenPosition);
+            Input.Inventory.InventoryUI.started -= OnInventoryUIButtonDown;
+            Input.Inventory.CollectItem.started -= OnCollectItemButtonDown;
+            Input.UI.LeftMouseButtonClick.started -= OnLeftMouseButtonClick;
+            Input.UI.RightMouseButtonClick.started -= OnRightMouseButtonClick;
         }
-
-        public Vector2 GetScreenMousePosition() => 
-            CameraMain ? (Vector2) Input.mousePosition : new Vector2();
-
-        public bool HasAxisInput() => 
-            GetHorizontalAxis() != 0 || GetVerticalAxis() != 0;
-        
-        public float GetVerticalAxis() => 
-            Input.GetAxis("Vertical");
-        
-        public float GetHorizontalAxis() => 
-            Input.GetAxis("Horizontal");
-
-        public bool GetJumpButtonUp() => 
-            Input.GetButtonDown("Jump");
-
-        public bool GetInventoryButton() =>
-            Input.GetButtonDown("Inventory");
-
-        public bool GetLeftMouseButton() => 
-          Input.GetMouseButton(0) && !EventSystem.current.IsPointerOverGameObject();
-
-        public bool GetLeftMouseButtonDown() =>
-          Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject();
-        
-        public bool GetLeftMouseButtonUp() => 
-          Input.GetMouseButtonUp(0) && !EventSystem.current.IsPointerOverGameObject();
     }
 }
 
@@ -2780,7 +3098,6 @@ namespace Code.Infrastructure.Installers
 {
     public class BootstrapInstaller : MonoInstaller, IInitializable
     {
-
         public override void InstallBindings()
         {
             BindGameFactories();
@@ -2920,8 +3237,7 @@ namespace Code.Infrastructure.Installers
         private void BindInputService()
         {
             Container
-                .Bind<IInputService>()
-                .To<StandaloneInputService>()
+                .BindInterfacesAndSelfTo<StandaloneInputService>()
                 .AsSingle();
         }
 
@@ -3211,9 +3527,12 @@ namespace Code.Infrastructure.StaticData
         private async UniTask LoadMeshSettings() => 
             MeshSettings = await assetProvider.LoadAsync<MeshSettings>(AssetPath.MeshSettings);
 
-        private async UniTask LoadTextureSettings() => 
+        private async UniTask LoadTextureSettings()
+        {
             TextureSettings = await assetProvider.LoadAsync<TextureSettings>(AssetPath.TextureSettings);
-        
+            TextureSettings.ApplyToMaterial();
+        }
+
         private async UniTask LoadNoiseSettings() => 
             NoiseSettings = await assetProvider.LoadAsync<NoiseSettings>(AssetPath.NoiseSettings);
     }
@@ -3257,7 +3576,6 @@ namespace Code.Network
 {
     public class LobbyService : NetworkBehaviour
     {
-        [SerializeField] private int seed;
         public event Action OnLobbyPlayerChanged;
         
         private readonly SyncDictionary<NetworkConnection, LobbyPlayer> players = new();
@@ -3280,16 +3598,20 @@ namespace Code.Network
         public override void OnStartServer() => 
             networkManager.SceneManager.OnClientLoadedStartScenes += OnClientLoadedStartScenes;
 
+        public override void OnStartClient() => 
+            players.OnChange += LobbyPlayerChange;
+
+        private void LobbyPlayerChange(SyncDictionaryOperation op, NetworkConnection key, LobbyPlayer value, bool asServer) => 
+            OnLobbyPlayerChanged?.Invoke();
+
         [ServerRpc(RequireOwnership = false)]
-        public void SetPlayerReady(NetworkConnection sender, bool isReady) //TODO: show in clients too
+        public void SetPlayerReady(NetworkConnection sender, bool isReady)
         {
             if (players.ContainsKey(sender))    
             {
                 var player = players[sender];
                 player.IsReady = isReady;
                 players[sender] = player;
-
-                OnLobbyPlayerChanged?.Invoke();
             }
         }
 
@@ -3298,8 +3620,11 @@ namespace Code.Network
         {
             bool allReady = players.Values.All(p => p.IsReady);
 
-            if (allReady) 
-                StartGameTransition();
+            if (allReady)
+            {
+                var seed = random.GetRandomSeed();
+                StartGameTransition(seed);
+            }
         }
 
         private void OnClientLoadedStartScenes(NetworkConnection connection, bool asServer)
@@ -3314,19 +3639,17 @@ namespace Code.Network
                 PlayerName = $"Player {connection.ClientId}",
                 IsServer = IsServerInitialized
             });
-                
-            OnLobbyPlayerChanged?.Invoke();
         }
 
         [ObserversRpc]
-        private void StartGameTransition()
+        private void StartGameTransition(int seed)
         {
             var args = new GameplayLoadingStateEnterArgs()
             {
                 AsServer = IsServerInitialized,
                 Players = new List<LobbyPlayer>(players.Values),
                 CurrentConnection = LocalConnection,
-                Seed = random.GetRandomSeed()
+                Seed = seed
             };
             
             stateMachine.Enter<GameplayLoadingState, GameplayLoadingStateEnterArgs>(args);
@@ -3750,6 +4073,7 @@ namespace Code.Gameplay.Player.Factory
     public interface IPlayerFactory
     {
         public UniTask<GameObject> SpawnPlayer(NetworkConnection connection);
+        public UniTask<GameObject> SpawnPlayerAtRandomPoint(NetworkConnection connection);
     }
 }
 
@@ -3759,6 +4083,7 @@ namespace Code.Gameplay.Player.Factory
 
 using Code.Gameplay.Levels;
 using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.StaticData;
 using Code.Utils;
 using Cysharp.Threading.Tasks;
 using FishNet.Connection;
@@ -3774,15 +4099,27 @@ namespace Code.Gameplay.Player.Factory
         private readonly IAssetProvider assets;
         private readonly ILevelDataProvider levelData;
         private readonly NetworkManager networkManager;
+        private readonly IStaticDataService staticData;
+        private readonly IRandomService random;
 
         public PlayerFactory(
             IAssetProvider assets,
             ILevelDataProvider levelData,
-            NetworkManager networkManager)
+            NetworkManager networkManager,
+            IStaticDataService staticData,
+            IRandomService random)
         {
             this.assets = assets;
             this.levelData = levelData;
             this.networkManager = networkManager;
+            this.staticData = staticData;
+            this.random = random;
+        }
+
+        public async UniTask<GameObject> SpawnPlayerAtRandomPoint(NetworkConnection connection)
+        {
+            Vector3 spawnPosition = GetRandomSpawnPosition();
+            return await SpawnPlayer(connection, spawnPosition);
         }
 
         public async UniTask<GameObject> SpawnPlayer(NetworkConnection connection)
@@ -3795,6 +4132,7 @@ namespace Code.Gameplay.Player.Factory
         {
             var playerObject = await CreatePlayer(position);
             var networkObject = playerObject.GetComponent<NetworkObject>();
+            
             networkManager.ServerManager.Spawn(networkObject, connection);
 
             return playerObject;
@@ -3804,12 +4142,35 @@ namespace Code.Gameplay.Player.Factory
         {
             var playerPrefab = await assets.LoadAsync(AssetPath.PlayerPath);
             var newPlayer = Object.Instantiate(playerPrefab, at, Quaternion.identity);
-            
+
             return newPlayer;
         }
 
-        private Vector3 GetSpawnPosition() => 
-            levelData.StartPoint;
+        private Vector3 GetRandomSpawnPosition()
+        {
+            var rayStart = new Vector3(
+                random.GetRandomFloatInRange(-staticData.MeshSettings.meshWorldSize / 2, staticData.MeshSettings.meshWorldSize / 2),
+                staticData.HeightMapSettings.heightMultiplier * 1.1f,
+                random.GetRandomFloatInRange(-staticData.MeshSettings.meshWorldSize / 2, staticData.MeshSettings.meshWorldSize / 2));
+
+            if (!Physics.Raycast(rayStart, Vector3.down, out var hit, staticData.HeightMapSettings.heightMultiplier * 1.1f))
+                Debug.LogError($"there's no spot under {rayStart}");
+
+            return new Vector3(hit.point.x, hit.point.y + 2, hit.point.z);
+        }
+
+        private Vector3 GetSpawnPosition()
+        {
+            var rayStart = new Vector3(
+                levelData.StartPoint.x,
+                staticData.HeightMapSettings.heightMultiplier * 1.1f,
+                levelData.StartPoint.z);
+            
+            if (!Physics.Raycast(rayStart, Vector3.down, out var hit, staticData.HeightMapSettings.heightMultiplier * 1.1f))
+                Debug.LogError($"there's no spot under {rayStart}");
+            
+            return new Vector3 (hit.point.x, hit.point.y + 2, hit.point.z);
+        }
     }
 }
 
@@ -3817,6 +4178,7 @@ namespace Code.Gameplay.Player.Factory
 
 // ========== Assets\Code\Gameplay\Player\Inventory\PlayerInventory.cs ==========
 
+using System;
 using System.Collections.Specialized;
 using System.Linq;
 using Code.Gameplay.Inventory;
@@ -3850,35 +4212,8 @@ namespace Code.Gameplay.Player.Inventory
 
         public override void OnStartClient()
         {
-            base.OnStartClient();
-            
-            if (!IsOwner)
-                return;
-            
+            if (!IsOwner) return;
             Initialize();
-        }
-
-        private void Update()
-        {
-            if (input.GetInventoryButton())
-            {
-                if (!isWindowOpened)
-                {
-                    windows.Open(WindowId.Inventory);
-                    isWindowOpened = true;
-                    
-                    Cursor.visible = true;
-                    Cursor.lockState = CursorLockMode.None;
-                }
-                else
-                {
-                    windows.Close(WindowId.Inventory);
-                    isWindowOpened = false;
-                    
-                    Cursor.visible = false;
-                    Cursor.lockState = CursorLockMode.Locked;
-                }
-            }
         }
 
         private void Initialize()
@@ -3893,16 +4228,40 @@ namespace Code.Gameplay.Player.Inventory
                 inventoryItems.Add(new InventoryItem());
                     
             inventoryItems.CollectionChanged += OnInventoryChanged;
+            input.InventoryUIButtonDown += OnInventoryButtonDown;
         }
-        
 
-        public override void Interact(int index)
+        private void OnInventoryButtonDown()
         {
-            Debug.Log($"Interact item with index: {index}");
+            if (!isWindowOpened)
+            {
+                windows.Open(WindowId.Inventory);
+                isWindowOpened = true;
+                
+                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.None;
+            }
+            else
+            {
+                windows.Close(WindowId.Inventory);
+                isWindowOpened = false;
+                
+                Cursor.visible = false;
+                Cursor.lockState = CursorLockMode.Locked;
+            }
         }
+
+        public override void Interact(int index) => 
+            Debug.Log($"Interact item with index: {index}");
 
         private void OnInventoryChanged(object sender, NotifyCollectionChangedEventArgs args) => 
             inventoryView.RedrawEverything(inventoryItems.ToArray());
+
+        private void OnDestroy()
+        {
+            if (!IsOwner) return;
+            input.InventoryUIButtonDown -= OnInventoryButtonDown;
+        }
     }
 }
 
@@ -3921,27 +4280,31 @@ namespace Code.Gameplay.Player.Inventory
     public class PlayerItemCollector : NetworkBehaviour
     {
         [SerializeField] private Gameplay.Inventory.Inventory inventory;
+        private Camera playerCamera; 
+            
         private IInputService input;
         private ILevelDataProvider levelData;
 
         [Inject]
-        public void Construct(IInputService input, ILevelDataProvider levelData)
+        public void Construct(
+            IInputService input, 
+            ILevelDataProvider levelData)
         {
             this.input = input;
             this.levelData = levelData;
         }
 
-        private void Update()
+        public override void OnStartClient()
         {
-            if (!IsOwner)
-                return;
-            
-            if (!input.GetLeftMouseButtonUp())
-                return;
+            if (!IsOwner) return;
+            playerCamera = levelData.Player.GetComponentInChildren<Camera>();
+            input.CollectItemButtonDown += OnCollectItemButtonDown;
+        }
 
-            if (!Physics.Raycast(levelData.Player.GetComponentInChildren<Camera>().ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f)), out var hit, 50)) 
+        private void OnCollectItemButtonDown()
+        {
+            if (!Physics.Raycast(playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f)), out var hit, 50)) 
                 return;
-            
             if (hit.collider.TryGetComponent(out Item.Item item) && inventory.TryAddItem(item.Preset, 1))
                 Despawn(item);
         }
@@ -3949,101 +4312,12 @@ namespace Code.Gameplay.Player.Inventory
         [ServerRpc(RequireOwnership = false)]
         private void Despawn(Item.Item item) => 
             Despawn(item.gameObject, DespawnType.Destroy);
-    }
-}
 
---------------------------------------------------------------------------------
-
-// ========== Assets\Code\Gameplay\Player\Movement\PlayerMove.cs ==========
-
-using Code.Infrastructure.Inputs;
-using FishNet.Object;
-using UnityEngine;
-using Zenject;
-
-namespace Code.Gameplay.Player.Movement
-{
-    public class PlayerMove : NetworkBehaviour
-    {
-        [SerializeField] private CharacterController characterController;
-        [SerializeField] private Camera playerCamera;
-        
-        [SerializeField] private float moveSpeed = 5f;
-        [SerializeField] private float sprintSpeed = 8f;
-        [SerializeField] private float jumpForce = 1f;
-        [SerializeField] private float gravity = -9.81f;
-        [SerializeField] private float groundCheckDistance = 0.2f;
-        [SerializeField] private float lookSensitivity = 2f;
-        [SerializeField] private float maxLookAngle = 80f;
-    
-        private Vector3 velocity;
-        private float verticalRotation;
-        private IInputService input;
-
-        [Inject]
-        public void Construct(IInputService input)
+        private void OnDestroy()
         {
-            this.input = input;
+            if (!IsOwner) return;
+            input.CollectItemButtonDown -= OnCollectItemButtonDown;
         }
-        
-        public override void OnStartClient()
-        {
-            if (!IsOwner)
-            {
-                Destroy(playerCamera.gameObject);
-                enabled = false;
-            }
-            else
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
-        }
-
-        private void Update()
-        {
-            if (!characterController.enabled)
-                return;
-            HandleMovement();
-            HandleRotation();
-        }
-
-        private void HandleMovement()
-        {
-            bool isGrounded = true;//IsGrounded();
-            if (isGrounded && velocity.y < 0) 
-                velocity.y = -2f;
-
-            float horizontal = Input.GetAxisRaw("Horizontal");
-            float vertical = Input.GetAxisRaw("Vertical");
-
-            Vector3 moveDirection = transform.right * horizontal + transform.forward * vertical;
-            moveDirection = Vector3.ClampMagnitude(moveDirection, 1f);
-
-            float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
-            characterController.Move(moveDirection * (currentSpeed * Time.deltaTime));
-
-            if (input.GetJumpButtonUp() && isGrounded) 
-                velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
-
-            velocity.y += gravity * Time.deltaTime;
-            characterController.Move(velocity * Time.deltaTime);
-        }
-
-        private void HandleRotation()
-        {
-            float mouseX = Input.GetAxis("Mouse X") * lookSensitivity;
-            float mouseY = Input.GetAxis("Mouse Y") * lookSensitivity;
-
-            verticalRotation -= mouseY;
-            verticalRotation = Mathf.Clamp(verticalRotation, -maxLookAngle, maxLookAngle);
-            playerCamera.transform.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
-
-            transform.Rotate(Vector3.up * mouseX);
-        }
-
-        private bool IsGrounded() => 
-            Physics.Raycast(transform.position + Vector3.up * 0.03f, Vector3.down, groundCheckDistance);
     }
 }
 
@@ -4250,63 +4524,6 @@ namespace Code.Gameplay.TerrainGeneration.Debug
 
 --------------------------------------------------------------------------------
 
-// ========== Assets\Code\Gameplay\TerrainGeneration\Debug\TerrainGeneratorEditor.cs ==========
-
-using UnityEditor;
-using UnityEngine;
-
-namespace Code.Gameplay.TerrainGeneration.Debug
-{
-    [CustomEditor(typeof(TerrainGeneratorDebug))]
-    public class TerrainGeneratorEditor : Editor
-    {
-        private bool showMesh;
-        private bool showNoise;
-        private bool showTexture;
-        private bool showHeight;
-
-        public override void OnInspectorGUI()
-        {
-            TerrainGeneratorDebug t = (TerrainGeneratorDebug)target;
-
-            DrawDefaultInspector();
-
-            EditorGUILayout.Space();
-
-            DrawSOSection("Mesh Settings", t.meshSettings, ref showMesh);
-            DrawSOSection("Noise Settings", t.noiseSetting, ref showNoise);
-            DrawSOSection("Texture Settings", t.textureSettings, ref showTexture);
-            DrawSOSection("Height Map Settings", t.heightMapSettings, ref showHeight);
-
-            EditorGUILayout.Space();
-
-            if (GUILayout.Button("Generate"))
-                t.Generate();
-        }
-
-        private void DrawSOSection(string title, ScriptableObject so, ref bool foldout)
-        {
-            if (so == null)
-            {
-                EditorGUILayout.HelpBox($"{title} is NULL", MessageType.Info);
-                return;
-            }
-
-            foldout = EditorGUILayout.Foldout(foldout, title, true);
-
-            if (foldout)
-            {
-                EditorGUI.indentLevel++;
-                Editor editor = CreateEditor(so);
-                editor.OnInspectorGUI();
-                EditorGUI.indentLevel--;
-            }
-        }
-    }
-}
-
---------------------------------------------------------------------------------
-
 // ========== Assets\Code\Gameplay\TerrainGeneration\Generators\ColliderGenerator.cs ==========
 
 using System.Collections.Generic;
@@ -4320,7 +4537,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
 {
     public class ColliderGenerator
     {
-        public async void GenerateCollider(List<TerrainChunk> chunksToBakeMesh)
+        public async UniTask GenerateCollider(List<TerrainChunk> chunksToBakeMesh)
         {
             var meshIds = new NativeList<int>(Allocator.Persistent);
 
@@ -4529,20 +4746,11 @@ namespace Code.Gameplay.TerrainGeneration.Generators
 
             terrainChunks = new TerrainChunk[staticData.MeshSettings.terrainSizeX * staticData.MeshSettings.terrainSizeY];
             await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
-            
-            if (characterController == null) 
-                characterController = viewer.GetComponent<CharacterController>();
-            
-            characterController.enabled = false;
-            UpdateChunks();
-            characterController.enabled = true;
-            viewer.position += Vector3.up * 5;
+            await UpdateChunks(new Vector3(0, 0, 0));
         }
 
-        public async UniTask GenerateTerrain()
-        {
+        public async UniTask GenerateTerrain() => 
             await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
-        }
 
         private async UniTask GenerateChunks(int width, int height)
         {
@@ -4576,24 +4784,25 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             }
         }
 
-        private void UpdateChunks()
+        private async UniTask UpdateChunks(Vector3 updatePoint)
         {
             var chunkToBakeMesh = new List<TerrainChunk>();
             
             foreach (var chunk in terrainChunks)
             {
-                if (chunk.UpdateTerrainChunk(viewer)) 
+                if (chunk.UpdateTerrainChunk(updatePoint)) 
                     chunkToBakeMesh.Add(chunk);
             }
-            colliderGenerator.GenerateCollider(chunkToBakeMesh);
+            await colliderGenerator.GenerateCollider(chunkToBakeMesh);
         }
 
-        public void InitializeChunks(Transform player)
+        public async UniTask InitializeChunks(Vector3 updatePoint) => 
+            await UpdateChunks(updatePoint);
+
+        public async UniTask InitializeViewer(Transform viewer)
         {
-            viewer = player;
-            var position = viewer.position;
-            var viewerPosition = new Vector2(position.x, position.z);
-            UpdateChunks();
+            this.viewer = viewer;
+            await UpdateChunks(viewer.position);
         }
         
         public void FixedTick()
@@ -4606,7 +4815,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             if ((viewerPositionOld - viewerPosition).sqrMagnitude > SqrViewerMoveThresholdForChunkUpdate) 
             {
                 viewerPositionOld = viewerPosition;
-                UpdateChunks();
+                UpdateChunks(position).Forget();
             }
         }
     }
@@ -5194,9 +5403,9 @@ namespace Code.Gameplay.TerrainGeneration.Structures
         /// </summary>
         /// <param name="viewer"></param>
         /// <returns></returns>
-        public bool UpdateTerrainChunk(Transform viewer)
+        public bool UpdateTerrainChunk(Vector3 viewerPosition)
         {
-            var viewerDstFromNearestEdge = Mathf.Sqrt(bounds.SqrDistance(new Vector3(viewer.position.x, viewer.position.z)));
+            var viewerDstFromNearestEdge = Mathf.Sqrt(bounds.SqrDistance(new Vector3(viewerPosition.x, viewerPosition.z)));
             
             int newLodIndex = 0;
             for (var i = 0; i < staticData.MeshSettings.detailLevels.Length - 1; i++)
@@ -5417,7 +5626,7 @@ namespace Code.Infrastructure.States.GameStates
             await GenerateTerrain(args.Seed);
             LoadItemDataBase();
             await SpawnPlayers(args);
-            InitializeChunks();
+            await InitializeChunks();
             
             await stateMachine.Enter<GameplayLoopState>();
             loadingCurtain.Hide();
@@ -5451,7 +5660,7 @@ namespace Code.Infrastructure.States.GameStates
             if (args.AsServer)
             {
                 foreach (var lobbyPlayer in args.Players) 
-                    await playerFactory.SpawnPlayer(lobbyPlayer.Connection);
+                    await playerFactory.SpawnPlayerAtRandomPoint(lobbyPlayer.Connection);
             }
 
             while (levelData.Player == null)
@@ -5462,10 +5671,11 @@ namespace Code.Infrastructure.States.GameStates
         {
             staticData.NoiseSettings.seed = seed;
             await terrainGenerator.GenerateTerrain();
+            await terrainGenerator.InitializeChunks(levelData.StartPoint);
         }
 
-        private void InitializeChunks() => 
-            terrainGenerator.InitializeChunks(levelData.Player.transform);
+        private async UniTask InitializeChunks() => 
+            await terrainGenerator.InitializeViewer(levelData.Player.transform);
 
         public UniTask Exit() => 
             default;
@@ -6677,9 +6887,11 @@ public class RunningStateConfig
 {
     [SerializeField, Range(0, 100)] private float speed;
     [SerializeField, Range(0, 100)] private float rotationSpeed;
+    [SerializeField, Range(-50, 0)] private float gravityForceOnGround;
     
     public float Speed => speed;
     public float RotationSpeed => rotationSpeed;
+    public float GravityForceOnGround => gravityForceOnGround;
 }
 
 
@@ -6687,16 +6899,18 @@ public class RunningStateConfig
 
 // ========== Assets\Code\Gameplay\Player\StateMachine\States\GroundMovement\GroundedPlayerState.cs ==========
 
-using UnityEngine;
 using UnityEngine.InputSystem;
 
 public abstract class GroundedPlayerState : MovementPlayerState
 {
     private readonly GroundChecker groundChecker;
+
+    private RunningStateConfig config;
     
     public GroundedPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) : base(stateSwitcher, data, player)
     {
         groundChecker = player.GroundChecker;
+        config = player.Config.RunningStateConfig;
     }
 
     public override void Enter()
@@ -6722,6 +6936,8 @@ public abstract class GroundedPlayerState : MovementPlayerState
     {
         base.Update();
 
+        Data.YVelocity = config.GravityForceOnGround;
+        
         if (groundChecker.IsTouches == false)
             StateSwitcher.SwitchState<FallingPlayerState>();
     }
@@ -6901,7 +7117,7 @@ public class StandartMovementDirection : IMovementDirectionHandler
         Vector3 moveDirection = cameraTransform.forward * input.y;
         moveDirection += cameraTransform.right * input.x;
         moveDirection.Normalize();
-        moveDirection.y = -1f;
+        moveDirection.y = 0;
         
         return moveDirection;
     }
