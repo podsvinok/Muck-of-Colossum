@@ -1,4 +1,6 @@
-﻿using FishNet.Managing;
+﻿using FishNet.Component.Ownership;
+using FishNet.Component.Transforming;
+using FishNet.Managing;
 using FishNet.Object;
 using UnityEngine;
 
@@ -13,36 +15,30 @@ namespace Code.Gameplay.Item.Factory
             this.networkManager = networkManager;
         }
 
-        public Item SpawnItem(ItemPreset itemPreset, Vector3 at)
+        public NetworkObject SpawnItem(Item item, Vector3 at)
         {
-            var itemGameObject = CreateItem(itemPreset, at);
+            var itemGameObject = CreateItem(item.gameObject, at);
+            var networkObject = itemGameObject.GetComponent<NetworkObject>();
+            networkManager.ServerManager.Spawn(networkObject);
+            
+            return networkObject;
+        }
+
+        public NetworkObject SpawnItemWithParent(Item item, NetworkObject parent)
+        {
+            var itemGameObject = CreateItemWithParent(item.gameObject, parent.transform);
             var networkObject = itemGameObject.GetComponent<NetworkObject>();
             
             networkManager.ServerManager.Spawn(networkObject);
-
-            return itemGameObject;
-        }
-
-        public Item SpawnItem(ItemPreset itemPreset, Vector3 at, Transform parent)
-        {
-            var itemGameObject = CreateItem(itemPreset, at, parent);
-            var networkObject = itemGameObject.GetComponent<NetworkObject>();
+            networkObject.SetParent(parent);
             
-            networkManager.ServerManager.Spawn(networkObject);
-
-            return itemGameObject;
+            return networkObject;
         }
 
-        private Item CreateItem(ItemPreset itemPreset, Vector3 at)
-        {
-            var item = Object.Instantiate(itemPreset.prefab, at, Quaternion.identity);
-            return item;
-        }
-        
-        private Item CreateItem(ItemPreset itemPreset, Vector3 at, Transform parent)
-        {
-            var item = Object.Instantiate(itemPreset.prefab, at, Quaternion.identity, parent);
-            return item;
-        }
+        private GameObject CreateItem(GameObject prefab, Vector3 at) => 
+            Object.Instantiate(prefab, at, Quaternion.identity);
+
+        private GameObject CreateItemWithParent(GameObject prefab, Transform parent) => 
+            Object.Instantiate(prefab, parent);
     }
 }

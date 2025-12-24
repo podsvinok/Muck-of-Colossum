@@ -15,4 +15,5 @@ MonoBehaviour:
   uid: 3cb58faf798a3c747924d763ef857fad
   itemName: 123
   prefab: {fileID: -832524690188264435, guid: 32fbcaee04b7ff6499db3084240e903a, type: 3}
+  visualPrefab: {fileID: -832524690188264435, guid: 119d814c8ffb964449fd22af4ad7dfff, type: 3}
   icon: {fileID: 10915, guid: 0000000000000000f000000000000000, type: 0}

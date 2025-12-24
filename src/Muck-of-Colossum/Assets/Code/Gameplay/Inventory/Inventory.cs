@@ -92,6 +92,6 @@ namespace Code.Gameplay.Inventory
 
         [ServerRpc(RequireOwnership = false)]
         private void SpawnItem(ItemPreset item) => 
-            itemFactory.SpawnItem(item, itemSpawnPoint.position);
+            itemFactory.SpawnItem(item.prefab, itemSpawnPoint.position);
     }
 }

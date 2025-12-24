@@ -12,7 +12,7 @@ namespace Code.Infrastructure.Inputs
         public event Action CollectItemButtonDown;
         public event Action LeftMouseButtonDown;
         public event Action RightMouseButtonDown;
-        public event Action<float> ChangeActiveSlotButtonDown; 
+        public event Action<int> ChangeActiveSlotButtonDown; 
 
         public void Initialize()
         {
@@ -26,7 +26,7 @@ namespace Code.Infrastructure.Inputs
         }
 
         private void OnChangeActiveSlotButtonDown(InputAction.CallbackContext obj) => 
-            ChangeActiveSlotButtonDown?.Invoke(obj.ReadValue<float>());
+            ChangeActiveSlotButtonDown?.Invoke((int)obj.ReadValue<float>());
 
         private void OnInventoryUIButtonDown(InputAction.CallbackContext obj) => 
             InventoryUIButtonDown?.Invoke();

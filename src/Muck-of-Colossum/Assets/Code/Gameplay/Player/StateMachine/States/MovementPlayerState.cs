@@ -36,7 +36,7 @@ public abstract class MovementPlayerState : IPlayerState
     public virtual void Enter()
     {
         View.StartMovement();
-        Debug.Log(GetType());
+        //Debug.Log(GetType());
         
         CharacterController.detectCollisions = false;
 

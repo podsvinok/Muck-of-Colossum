@@ -12,25 +12,28 @@ using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
 using Zenject;
+using Object = UnityEngine.Object;
 
 namespace Code.Gameplay.Player.Inventory
 {
     public class PlayerInventory : Gameplay.Inventory.Inventory
     {
-        [SerializeField] private Transform itemHolder;
+        [SerializeField] private NetworkObject itemHolder;
         
         private InventoryView inventoryView;
         private ActionInventoryView actionInventoryView;
-        private IInputService input;
         private WindowBase inventoryActiveSlotsWindow;
         private WindowBase inventoryWindow;
+        
+        private IInputService input;
         private IWindowService windows;
 
         private InventoryItem currentActiveSlot;
-        private Item.Item holdingItem;
+        private GameObject holdingItem;
         private bool isWindowOpened;
         private bool isHoldingActiveSlot;
         
+        private readonly SyncVar<int> activeSlotId = new(-1);
 
         [Inject]
         public void Construct(
@@ -44,6 +47,8 @@ namespace Code.Gameplay.Player.Inventory
 
         public override void OnStartClient()
         {
+            if (IsServerInitialized || IsOwner)
+                activeSlotId.OnChange += OnActiveSlotChanged;
             if (!IsOwner) return;
             Initialize();
         }
@@ -116,53 +121,51 @@ namespace Code.Gameplay.Player.Inventory
             }
         }
 
-        private void OnActiveSlotButtonDown(float newActiveSlot)
-        {
-            actionInventoryView.SetActiveSlot((int)newActiveSlot - 1);
-            currentActiveSlot = inventoryItems[(int)newActiveSlot - 1];
-            DespawnInactiveItem();
-            TrySpawnActiveItem();
-        }
-
         private void OnInventoryChanged(object sender, NotifyCollectionChangedEventArgs args)
         {
             RedrawInventoryViews();
-            
-            TryDespawnInactiveItem();
-            TrySpawnActiveItem();
+            currentActiveSlot = inventoryItems[activeSlotId.Value];
+            RequestChangeItemRPC(activeSlotId.Value, currentActiveSlot.preset);
         }
 
-        private void TrySpawnActiveItem()
+        private void OnActiveSlotChanged(int prev, int next, bool asServer)
         {
-            if (!holdingItem && currentActiveSlot.preset && currentActiveSlot.quantity > 0)
-                SpawnItemInHolder(currentActiveSlot.preset);
+            if (IsOwner) 
+                actionInventoryView.SetActiveSlot(next);
         }
 
-        private void TryDespawnInactiveItem()
+        private void OnActiveSlotButtonDown(int slotIndex)
         {
-            if (!currentActiveSlot.preset || currentActiveSlot.quantity <= 0)
-                DespawnInactiveItem();
-        }
-
-        private void DespawnInactiveItem()
-        {
-            if (holdingItem)
-                Despawn(holdingItem);
+            int index = slotIndex - 1;
+            if (index == activeSlotId.Value) return;
+            InventoryItem selectedItem = inventoryItems[index];
+            RequestChangeItemRPC(index, selectedItem.preset);
         }
 
         public override void Interact(int index) => 
             Debug.Log($"Interact item with index: {index}");
 
-        [ServerRpc(RequireOwnership = false)]
-        private void Despawn(GameObject item) => 
-            Despawn(item, DespawnType.Destroy);
-        
-        [ServerRpc(RequireOwnership = false)]
-        private void SpawnItemInHolder(ItemPreset item) => 
-            itemFactory.SpawnItem(item, itemHolder.position, itemHolder);
+        [ServerRpc]
+        private void RequestChangeItemRPC(int newIndex, ItemPreset preset)
+        {
+            activeSlotId.Value = newIndex;
+
+            if (holdingItem != null)
+            {
+                ServerManager.Despawn(holdingItem);
+                holdingItem = null;
+            }
+
+            if (preset != null) 
+                holdingItem = itemFactory
+                    .SpawnItemWithParent(preset.visualPrefab, itemHolder)
+                    .gameObject;
+        }
 
         private void OnDestroy()
         {
+            if (IsServerOnlyInitialized || IsOwner)
+                activeSlotId.OnChange -= OnActiveSlotChanged;
             if (!IsOwner) return;
             inventoryItems.CollectionChanged -= OnInventoryChanged;
             input.InventoryUIButtonDown -= OnInventoryButtonDown;

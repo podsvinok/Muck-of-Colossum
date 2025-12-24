@@ -1,4 +1,5 @@
-﻿using Code.Network;
+﻿using System.Text.RegularExpressions;
+using Code.Network;
 using FishNet.Managing;
 using UnityEngine;
 using UnityEngine.UI;
@@ -111,7 +112,7 @@ namespace Code.UI.HUD
 
         private void StartAsClient()
         { 
-            if (serverIP.text != "")
+            if (Regex.IsMatch(serverIP.text, @"^(((?!25?[6-9])[12]\d|[1-9])?\d\.?\b){4}$"))
                 networkManager.TransportManager.Transport.SetClientAddress(serverIP.text);
             networkManager.ClientManager.StartConnection();
             

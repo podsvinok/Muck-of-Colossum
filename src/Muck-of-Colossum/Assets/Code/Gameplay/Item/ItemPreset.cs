@@ -11,6 +11,7 @@ namespace Code.Gameplay.Item
         [ReadOnly] public string uid;
         public string itemName;
         public Item prefab;
+        public Item visualPrefab;
         public Sprite icon;
         
 #if UNITY_EDITOR
