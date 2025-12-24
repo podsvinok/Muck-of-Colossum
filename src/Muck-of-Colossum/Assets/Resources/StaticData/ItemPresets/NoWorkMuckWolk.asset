@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ac4ecdc674334bd7986a3d7700a7d93b, type: 3}
-  m_Name: ItemPreset1
+  m_Name: NoWorkMuckWolk
   m_EditorClassIdentifier: 
-  uid: 3cb58faf798a3c747924d763ef857fad
-  itemName: 123
-  prefab: {fileID: -832524690188264435, guid: 32fbcaee04b7ff6499db3084240e903a, type: 3}
-  visualPrefab: {fileID: -832524690188264435, guid: 119d814c8ffb964449fd22af4ad7dfff, type: 3}
-  icon: {fileID: 10915, guid: 0000000000000000f000000000000000, type: 0}
+  uid: 229d0f291f30af0458e23332b7f43f54
+  itemName: NoWorkMuckWolk
+  prefab: {fileID: 3870835987714010637, guid: 022be3b5c9e11a444b523d45d7aa2c3a, type: 3}
+  visualPrefab: {fileID: 5754019462845297571, guid: f3324780e1078a44e9cad4ba02fdb24a, type: 3}
+  icon: {fileID: 21300000, guid: 3ae205103debe66408545096e23a3780, type: 3}
