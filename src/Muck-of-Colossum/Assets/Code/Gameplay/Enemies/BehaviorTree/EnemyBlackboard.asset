@@ -1,0 +1,167 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2dd922ae02c94c87a66e46a10a7319b9, type: 3}
+  m_Name: EnemyBlackboard
+  m_EditorClassIdentifier: 
+  AssetID:
+    m_Value0: 6102370637670069369
+    m_Value1: 16232657674822826698
+  m_Variables:
+  - rid: 731616621038665846
+  - rid: 731616648646885455
+  - rid: 731616621038665853
+  - rid: 731616715262656967
+  - rid: 731616621038665897
+  - rid: 731616621038665906
+  m_VersionTimestamp: 639022956511431347
+  m_CommandBuffer:
+    m_Commands: []
+  m_RuntimeBlackboardAsset: {fileID: 3931523678856521723}
+  references:
+    version: 2
+    RefIds:
+    - rid: 731616621038665846
+      type: {class: 'TypedVariableModel`1[[Enemy, Assembly-CSharp]]', ns: Unity.Behavior.GraphFramework, asm: Unity.Behavior.GraphFramework}
+      data:
+        ID:
+          m_Value0: 12993273124147184172
+          m_Value1: 7623161417473583494
+        Name: Enemy
+        IsExposed: 1
+        m_IsShared: 0
+        m_Value: {fileID: 0}
+    - rid: 731616621038665853
+      type: {class: 'TypedVariableModel`1[[UnityEngine.Transform, UnityEngine.CoreModule]]', ns: Unity.Behavior.GraphFramework, asm: Unity.Behavior.GraphFramework}
+      data:
+        ID:
+          m_Value0: 15648836036143362693
+          m_Value1: 9498380072773654778
+        Name: CurrentTarget
+        IsExposed: 1
+        m_IsShared: 0
+        m_Value: {fileID: 0}
+    - rid: 731616621038665897
+      type: {class: 'TypedVariableModel`1[[System.Boolean, mscorlib]]', ns: Unity.Behavior.GraphFramework, asm: Unity.Behavior.GraphFramework}
+      data:
+        ID:
+          m_Value0: 15473774412435668866
+          m_Value1: 6761163366718821142
+        Name: IsAttacking
+        IsExposed: 1
+        m_IsShared: 0
+        m_Value: 0
+    - rid: 731616621038665906
+      type: {class: 'TypedVariableModel`1[[System.Int32, mscorlib]]', ns: Unity.Behavior.GraphFramework, asm: Unity.Behavior.GraphFramework}
+      data:
+        ID:
+          m_Value0: 9475171354730750046
+          m_Value1: 9962270596010638966
+        Name: AttackComboCount
+        IsExposed: 1
+        m_IsShared: 0
+        m_Value: 0
+    - rid: 731616648646885455
+      type: {class: 'TypedVariableModel`1[[EnemyView, Assembly-CSharp]]', ns: Unity.Behavior.GraphFramework, asm: Unity.Behavior.GraphFramework}
+      data:
+        ID:
+          m_Value0: 3149763366308161913
+          m_Value1: 14286396482713048703
+        Name: EnemyView
+        IsExposed: 1
+        m_IsShared: 0
+        m_Value: {fileID: 0}
+    - rid: 731616715262656967
+      type: {class: 'TypedVariableModel`1[[System.Single, mscorlib]]', ns: Unity.Behavior.GraphFramework, asm: Unity.Behavior.GraphFramework}
+      data:
+        ID:
+          m_Value0: 14243604074628177180
+          m_Value1: 812758850527264485
+        Name: MoveSpeed
+        IsExposed: 1
+        m_IsShared: 0
+        m_Value: 5
+--- !u!114 &3931523678856521723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c02bb70996b49eba31d0c206e28da24, type: 3}
+  m_Name: EnemyBlackboard
+  m_EditorClassIdentifier: 
+  VersionTimestamp: 639022956511431347
+  AssetID:
+    m_Value0: 6102370637670069369
+    m_Value1: 16232657674822826698
+  m_Blackboard:
+    m_Variables:
+    - rid: 731616621038665847
+    - rid: 731616648646885456
+    - rid: 731616621038665854
+    - rid: 731616715262656968
+    - rid: 731616621038665898
+    - rid: 731616621038665907
+  m_SharedBlackboardVariableGuids: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 731616621038665847
+      type: {class: 'BlackboardVariable`1[[Enemy, Assembly-CSharp]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 12993273124147184172
+          m_Value1: 7623161417473583494
+        Name: Enemy
+        m_Value: {fileID: 0}
+    - rid: 731616621038665854
+      type: {class: 'BlackboardVariable`1[[UnityEngine.Transform, UnityEngine.CoreModule]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 15648836036143362693
+          m_Value1: 9498380072773654778
+        Name: CurrentTarget
+        m_Value: {fileID: 0}
+    - rid: 731616621038665898
+      type: {class: 'BlackboardVariable`1[[System.Boolean, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 15473774412435668866
+          m_Value1: 6761163366718821142
+        Name: IsAttacking
+        m_Value: 0
+    - rid: 731616621038665907
+      type: {class: 'BlackboardVariable`1[[System.Int32, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 9475171354730750046
+          m_Value1: 9962270596010638966
+        Name: AttackComboCount
+        m_Value: 0
+    - rid: 731616648646885456
+      type: {class: 'BlackboardVariable`1[[EnemyView, Assembly-CSharp]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 3149763366308161913
+          m_Value1: 14286396482713048703
+        Name: EnemyView
+        m_Value: {fileID: 0}
+    - rid: 731616715262656968
+      type: {class: 'BlackboardVariable`1[[System.Single, mscorlib]]', ns: Unity.Behavior, asm: Unity.Behavior}
+      data:
+        GUID:
+          m_Value0: 14243604074628177180
+          m_Value1: 812758850527264485
+        Name: MoveSpeed
+        m_Value: 5

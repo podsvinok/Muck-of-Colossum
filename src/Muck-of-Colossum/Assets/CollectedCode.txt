@@ -1,5 +1,5 @@
-﻿// Собрано файлов: 128
-// Дата: 18.12.2025 14:33:27
+﻿// Собрано файлов: 152
+// Дата: 26.12.2025 22:37:15
 ================================================================================
 
 // ========== Assets\Code\Random\IRandomService.cs ==========
@@ -1476,6 +1476,212 @@ public class TriangleMeshHelper
 
 --------------------------------------------------------------------------------
 
+// ========== Assets\Code\Gameplay\Combat\HitCollider.cs ==========
+
+using System.Collections.Generic;
+using UnityEngine;
+
+public abstract class HitCollider : MonoBehaviour
+{
+    public bool IsAttacking;
+    
+    [SerializeField] protected LayerMask targetLayer;
+    protected List<Collider> hitTargets = new List<Collider>();
+    
+    public List<Collider> HitTargets => hitTargets;
+
+    public abstract void Init();
+    
+    public void ResetHits() => hitTargets.Clear();
+    
+    protected bool AlreadyHit(Collider target) 
+        => hitTargets.Contains(target);
+    
+    public abstract void CheckHits();
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Combat\RaycastHitCollider.cs ==========
+
+using System.Collections.Generic;
+using UnityEngine;
+
+public class RaycastHitCollider : HitCollider
+{
+    [SerializeField] private List<Transform> weaponColliderPoints;
+    [SerializeField] private float radius;
+
+    private List<Vector3> previousColliderPoints = new List<Vector3>();
+
+    public override void Init()
+    {
+        foreach (var weaponPoint in weaponColliderPoints)
+        {
+            previousColliderPoints.Add(weaponPoint.position);
+        }
+    }
+
+    public override void CheckHits()
+    {
+        for (int i = 0; i < weaponColliderPoints.Count; i++)
+        {
+            Vector3 previousPoint = previousColliderPoints[i];
+            Vector3 actualPoint = weaponColliderPoints[i].position;
+            float distance = Vector3.Distance(previousPoint, actualPoint);
+            Vector3 direction = actualPoint - previousPoint;
+            direction.Normalize();
+
+            if (Physics.SphereCast(previousPoint, radius, direction,
+                    out RaycastHit hit, distance, targetLayer))
+            {
+                if (AlreadyHit(hit.collider))
+                    continue;
+                
+                hitTargets.Add(hit.collider);
+            }
+            
+            previousColliderPoints[i] = actualPoint;
+        }
+       
+    }
+
+    private void FixedUpdate()
+    {
+        if (IsAttacking)
+        {
+            CheckHits();
+        }
+    }
+    
+#if UNITY_EDITOR
+    private void OnDrawGizmos()
+    {
+        if (weaponColliderPoints == null || weaponColliderPoints.Count == 0)
+            return;
+    
+        Gizmos.color = IsAttacking ? Color.red : Color.green;
+    
+        foreach (var point in weaponColliderPoints)
+        {
+            if (point != null)
+            {
+                Gizmos.DrawWireSphere(point.position, radius);
+            }
+        }
+    
+        // Визуализация raycast между точками
+        if (Application.isPlaying && previousColliderPoints != null)
+        {
+            Gizmos.color = Color.yellow;
+            for (int i = 0; i < weaponColliderPoints.Count && i < previousColliderPoints.Count; i++)
+            {
+                if (weaponColliderPoints[i] != null)
+                {
+                    Gizmos.DrawLine(previousColliderPoints[i], weaponColliderPoints[i].position);
+                    Gizmos.DrawWireSphere(previousColliderPoints[i], radius * 0.5f);
+                }
+            }
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        
+        if (weaponColliderPoints == null) return;
+    
+        UnityEditor.Handles.color = new Color(1, 0, 0, 0.1f);
+        foreach (var point in weaponColliderPoints)
+        {
+            if (point != null)
+            {
+                UnityEditor.Handles.SphereHandleCap(0, point.position, Quaternion.identity, radius * 2, EventType.Repaint);
+            }
+        }
+    }
+#endif
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\CompontentsInterfaces\IAttack.cs ==========
+
+
+public interface IAttack 
+{
+    void Attack()
+    {
+        
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\CompontentsInterfaces\IEnemyClimbingDetector.cs ==========
+
+using UnityEngine;
+using System;
+
+public interface IEnemyClimbingDetector
+{
+    bool HasPlayerOnBack { get; }
+    Transform ClimbingPlayer { get; }
+    event Action<Transform> OnPlayerStartClimbing;
+    event Action<Transform> OnPlayerStopClimbing;
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\CompontentsInterfaces\IEnemyMovement.cs ==========
+
+using UnityEngine;
+
+public interface IEnemyMovement 
+{
+    void MoveTo(Vector3 targetPosition);
+    void Stop();
+    bool IsMoving { get; }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\CompontentsInterfaces\IHealth.cs ==========
+
+using UnityEngine;
+using System;
+
+public interface IHealth 
+{
+    float CurrentHealth { get; }
+    float MaxHealth { get; }
+    bool IsDead { get; }
+    event Action OnDeath;
+    event Action<float> OnDamaged;
+    void TakeDamage(float damage, Vector3 hitPoint = default);
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\CompontentsInterfaces\ITargetDetector.cs ==========
+
+using UnityEngine;
+
+public interface ITargetDetector 
+{
+    Transform CurrentTarget { get; }
+    bool HasTarget { get; }
+    void DetectTargets();
+}
+
+
+--------------------------------------------------------------------------------
+
 // ========== Assets\Code\Gameplay\Input\PlayerInput.cs ==========
 
 //------------------------------------------------------------------------------
@@ -2729,7 +2935,7 @@ public class Player : NetworkBehaviour
 
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "CharacterConfig", menuName = "Ritual Grounds/Configs/CharacterConfig")]
+[CreateAssetMenu(fileName = "PlayerConfig", menuName = "Ritual Grounds/Configs/PlayerConfig")]
 public class PlayerConfig : ScriptableObject
 {
     [SerializeField] private RunningStateConfig runningStateConfig;
@@ -3118,8 +3324,22 @@ namespace Code.Infrastructure.Installers
             BindUIFactory();
             BindWindowService();
             BindRandomService();
+            BindEnemySpawner();
         }
 
+
+        private void BindEnemySpawner()
+        {
+            Container
+                .Bind<IEnemyFactory>()
+                .To<MeleeGoblinFactory>()
+                .AsSingle();
+            Container
+                .Bind<IEnemySpawner>()
+                .To<PointEnemySpawner>()
+                .AsSingle();
+        }
+        
         private void BindRandomService()
         {
             Container
@@ -4010,6 +4230,388 @@ namespace Code.UI.Windows
 
 --------------------------------------------------------------------------------
 
+// ========== Assets\Code\Gameplay\Enemies\Base\Enemy.cs ==========
+
+using System;
+using FishNet.Object;
+using Unity.Behavior;
+using UnityEngine;
+using UnityEngine.AI;
+
+public abstract class Enemy : NetworkBehaviour
+{
+    [SerializeField] protected BehaviorGraphAgent behaviorAgent;
+    [SerializeField] protected EnemyConfig config;
+    [SerializeField] protected EnemyView view;
+    
+    public BehaviorGraphAgent BehaviorAgent => behaviorAgent;
+    public EnemyConfig Config => config;
+    public EnemyView View => view;
+    public NavMeshAgent agent { get; protected set; }
+    
+    public IHealth Health { get; protected set; }
+    public ITargetDetector TargetDetector { get; protected set; }
+    public IEnemyMovement EnemyMovement { get; protected set; }
+
+    private void Start()
+    {
+        Init();
+    }
+
+    public virtual void Init()
+    {
+        agent = GetComponent<NavMeshAgent>();
+        Health = GetComponent<IHealth>();
+        TargetDetector = GetComponent<ITargetDetector>();
+        EnemyMovement = GetComponent<IEnemyMovement>();
+        
+        behaviorAgent.SetVariableValue("Enemy", this);
+        behaviorAgent.SetVariableValue("EnemyView", view);
+        behaviorAgent.SetVariableValue("MoveSpeed", config.moveSpeed);
+        
+        
+        
+        behaviorAgent.GetVariable("MoveSpeed", out var speed);
+        
+        Debug.Log(speed);
+        
+        InitializeComponents();
+    }
+    
+    protected abstract void InitializeComponents();
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Base\EnemyConfig.cs ==========
+
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "Enemy", menuName = "Ritual Grounds/Configs/EnemyConfig")]
+public class EnemyConfig : ScriptableObject
+{
+    public EnemyType enemyType;
+    public float health;
+    public float moveSpeed;
+    public float detectionRadius;
+    public float attackRange;
+    public float attackDamage;
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Base\EnemyType.cs ==========
+
+
+public enum EnemyType
+{
+    Basic,      
+    Large,      
+    Boss        
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Base\EnemyView.cs ==========
+
+using FishNet.Object;
+using UnityEngine;
+
+public class EnemyView : NetworkBehaviour
+{
+    
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Components\EnemyClimbingDetector.cs ==========
+
+using UnityEngine;
+using System;
+
+public class EnemyClimbingDetector : MonoBehaviour, IEnemyClimbingDetector
+{
+    [SerializeField] private LayerMask playerMask;
+    [SerializeField] private float detectionRadius = 2f;
+    
+    public bool HasPlayerOnBack { get; private set; }
+    public Transform ClimbingPlayer { get; private set; }
+    
+    public event Action<Transform> OnPlayerStartClimbing;
+    public event Action<Transform> OnPlayerStopClimbing;
+    
+    private void CheckForClimbingPlayer()
+    {
+        var colliders = Physics.OverlapSphere(transform.position, detectionRadius, playerMask);
+        
+        if (colliders.Length > 0 && !HasPlayerOnBack)
+        {
+            HasPlayerOnBack = true;
+            ClimbingPlayer = colliders[0].transform;
+            OnPlayerStartClimbing?.Invoke(ClimbingPlayer);
+        }
+        else if (colliders.Length == 0 && HasPlayerOnBack)
+        {
+            HasPlayerOnBack = false;
+            var prevPlayer = ClimbingPlayer;
+            ClimbingPlayer = null;
+            OnPlayerStopClimbing?.Invoke(prevPlayer);
+        }
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Components\EnemyHealth.cs ==========
+
+using FishNet.Object;
+using FishNet.Object.Synchronizing;
+using UnityEngine;
+using System;
+using FishNet.CodeGenerating;
+
+public class EnemyHealth : NetworkBehaviour, IHealth
+{
+    [AllowMutableSyncType]
+    private readonly SyncVar<float> currentHealth = new SyncVar<float>(0f);
+    private float maxHealth;
+    
+    public float CurrentHealth => currentHealth.Value;
+    public float MaxHealth => maxHealth;
+    public bool IsDead => currentHealth.Value <= 0;
+    
+    public event Action OnDeath;
+    public event Action<float> OnDamaged;
+    
+    public void Initialize(float health)
+    {
+        maxHealth = health;
+        currentHealth.Value = health;
+    }
+    
+    [ServerRpc(RequireOwnership = false)]
+    public void TakeDamage(float damage, Vector3 hitPoint = default)
+    {
+        if (IsDead) return;
+        
+        currentHealth.Value -= damage;
+        OnDamaged?.Invoke(damage);
+        
+        if (IsDead)
+        {
+            OnDeath?.Invoke();
+        }
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Components\EnemyMovement.cs ==========
+
+using UnityEngine;
+using UnityEngine.AI;
+
+public class EnemyMovement : MonoBehaviour, IEnemyMovement
+{
+    private NavMeshAgent agent;
+    private float moveSpeed;
+    
+    public bool IsMoving { get; private set; }
+    
+    public void Initialize(NavMeshAgent agent, float speed)
+    {
+        this.agent = agent;
+        this.moveSpeed = speed;
+    }
+    
+    public void MoveTo(Vector3 targetPosition)
+    {
+        Vector3 direction = (targetPosition - transform.position).normalized;
+        agent.destination = targetPosition;
+        IsMoving = true;
+    }
+    
+    public void Stop()
+    {
+        IsMoving = false;
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Components\PlayerTargetDetector.cs ==========
+
+using UnityEngine;
+
+
+public class PlayerTargetDetector : MonoBehaviour, ITargetDetector
+
+{
+    [SerializeField] private float detectionRadius;
+    [SerializeField] private LayerMask playerMask;
+
+    public Transform CurrentTarget { get; private set; }
+    public bool HasTarget => CurrentTarget != null;
+
+    public void DetectTargets()
+    {
+        var colliders = Physics.OverlapSphere(transform.position, detectionRadius, playerMask);
+        CurrentTarget = colliders.Length > 0 ? colliders[0].transform : null;
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Components\WeakPoint.cs ==========
+
+using UnityEngine;
+
+public class WeakPoint : MonoBehaviour
+{
+    [SerializeField] private float damageMultiplier = 2f;
+    private IHealth enemyHealth;
+
+    public void Initialize(IHealth health)
+    {
+        enemyHealth = health;
+    }
+
+    public void OnHit(float baseDamage)
+    {
+        enemyHealth?.TakeDamage(baseDamage * damageMultiplier, transform.position);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Factory\IEnemyFactory.cs ==========
+
+
+using UnityEngine;
+
+public interface IEnemyFactory
+{
+    public Enemy CreateEnemy(Transform position);
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Factory\MeleeGoblinFactory.cs ==========
+
+using FishNet.Managing;
+using FishNet.Object;
+using UnityEngine;
+
+public class MeleeGoblinFactory: IEnemyFactory
+{
+    private NetworkManager networkManager;
+    
+    public MeleeGoblinFactory(NetworkManager networkManager)
+    {
+        this.networkManager = networkManager;
+    }
+    public Enemy CreateEnemy(Transform position)
+    {
+        var prefab = Resources.Load<GameObject>("Characters/Enemies/MeleeGoblinEnemy");
+        var gameObject = Object.Instantiate(prefab, position.position, Quaternion.identity);
+        
+        var enemyComponent = gameObject.GetComponent<Enemy>();
+        enemyComponent.Init();
+
+        var networkObject = gameObject.GetComponent<NetworkObject>();
+        networkManager.ServerManager.Spawn(networkObject);
+        return enemyComponent;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Spawner\EnemySpawnerController.cs ==========
+
+using UnityEngine;
+using Zenject;
+
+public class EnemySpawnerController : MonoBehaviour
+{
+    [SerializeField] private Transform spawnPoint;
+
+    private IEnemySpawner spawner;
+
+    [Inject]
+    public void Construct(IEnemySpawner spawner)
+    {
+        this.spawner = spawner;
+    }
+
+    [ContextMenu("Spawn")]
+    public void Spawn() => spawner.StartSpawning(spawnPoint);
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Spawner\IEnemySpawner.cs ==========
+
+using UnityEngine;
+
+public interface IEnemySpawner
+{
+    public void StartSpawning(Transform spawnPosition);
+    public void StopSpawning();
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Spawner\PointEnemySpawner.cs ==========
+
+using UnityEngine;
+
+public class PointEnemySpawner : IEnemySpawner
+{
+    private IEnemyFactory factory;
+
+    public PointEnemySpawner(IEnemyFactory factory)
+    {
+        this.factory = factory;
+        
+    }
+    
+    public void StartSpawning(Transform spawnPostion)
+    {
+        factory.CreateEnemy(spawnPostion);
+    }
+
+    public void StopSpawning()
+    {
+        
+    }
+}
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\Types\BasicEnemy.cs ==========
+
+using UnityEngine;
+
+public class BasicEnemy : Enemy
+{
+    protected override void InitializeComponents()
+    {
+        ((EnemyHealth)Health).Initialize(config.health);
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
 // ========== Assets\Code\Gameplay\Item\Factory\IItemFactory.cs ==========
 
 using UnityEngine;
@@ -4118,13 +4720,13 @@ namespace Code.Gameplay.Player.Factory
 
         public async UniTask<GameObject> SpawnPlayerAtRandomPoint(NetworkConnection connection)
         {
-            Vector3 spawnPosition = GetRandomSpawnPosition();
+            Vector3 spawnPosition = levelData.StartPoint;
             return await SpawnPlayer(connection, spawnPosition);
         }
 
         public async UniTask<GameObject> SpawnPlayer(NetworkConnection connection)
         {
-            Vector3 spawnPosition = GetSpawnPosition();
+            Vector3 spawnPosition = levelData.StartPoint;
             return await SpawnPlayer(connection, spawnPosition);
         }
 
@@ -6123,6 +6725,91 @@ namespace Code.UI.Windows.StaticData
 
 --------------------------------------------------------------------------------
 
+// ========== Assets\Code\Gameplay\Enemies\BehaviorTree\Actions\DetectPlayerAction.cs ==========
+
+using System;
+using Unity.Behavior;
+using UnityEngine;
+using Action = Unity.Behavior.Action;
+using Unity.Properties;
+
+[Serializable, GeneratePropertyBag]
+[NodeDescription(name: "DetectPlayer", story: "[Enemy] try detects [target]", category: "Action", id: "12f956b96946b6eb8e124cb08da591cc")]
+public partial class DetectPlayerAction : Action
+{
+    [SerializeReference] public BlackboardVariable<Enemy> Enemy;
+    [SerializeReference] public BlackboardVariable<Transform> Target;
+
+    protected override Status OnStart()
+    {
+        Debug.Log(Enemy.Value == null);
+        
+        return Status.Running;
+    }
+
+    protected override Status OnUpdate()
+    {
+        Enemy.Value.TargetDetector.DetectTargets();
+        Debug.Log(Enemy.Value.TargetDetector.GetType());
+        Debug.Log($"HasTarget: {Enemy.Value.TargetDetector.HasTarget}");
+        Debug.Log($"CurrentTarget: {Enemy.Value.TargetDetector.CurrentTarget}");
+        if (Enemy.Value.TargetDetector.HasTarget)
+        {
+            Target.Value = Enemy.Value.TargetDetector.CurrentTarget;
+            return Status.Success;
+        }
+        
+        return Status.Failure;
+    }
+
+    protected override void OnEnd()
+    {
+
+    }
+}
+
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Enemies\BehaviorTree\Actions\MoveToTarget.cs ==========
+
+using Unity.Behavior;
+using UnityEngine;
+
+public class MoveToTarget : Action
+{
+    [SerializeField] private Blackboard blackboard;
+    [SerializeField] private float stoppingDistance = 1.5f;
+
+    protected override Status OnStart()
+    {
+        return base.OnStart();
+        
+        
+    }
+
+    // protected override Status OnUpdate()
+    // {
+    //     if (blackboard.currentTarget == null)
+    //         return Status.Failure;
+    //     
+    //     float distance = Vector3.Distance(blackboard.enemy.transform.position, blackboard.currentTarget.position);
+    //     
+    //     if (distance <= stoppingDistance)
+    //     {
+    //         blackboard.enemy.Movement.Stop();
+    //         return Status.Success;
+    //     }
+    //     
+    //     blackboard.enemy.Movement.MoveTo(blackboard.currentTarget.position);
+    //     return Status.Running;
+    // }
+}
+
+
+--------------------------------------------------------------------------------
+
 // ========== Assets\Code\Gameplay\Player\StateMachine\States\IPlayerState.cs ==========
 
 
@@ -6177,7 +6864,7 @@ public abstract class MovementPlayerState : IPlayerState
     public virtual void Enter()
     {
         View.StartMovement();
-        Debug.Log(GetType());
+        //Debug.Log(GetType());
         
         CharacterController.detectCollisions = false;
 

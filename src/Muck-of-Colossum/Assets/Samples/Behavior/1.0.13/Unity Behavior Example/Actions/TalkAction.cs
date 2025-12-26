@@ -10,7 +10,7 @@ namespace Unity.Behavior.Example
     [NodeDescription(
         name: "Talk",
         description: "Show text in world-space above the Agent with the Sentence for a specified Duration.",
-        story: "[Agent] says [Sentence]",
+        story: "[Agent] says [Sentence] with [Duration]",
         id: "c70ad05265db4a5a8623561f705aefab")]
     public partial class TalkAction : Action
     {
@@ -20,8 +20,8 @@ namespace Unity.Behavior.Example
         [Tooltip("The text to show over the GameObject.")]
         [SerializeReference] public BlackboardVariable<string> Sentence;
 
-        [Tooltip("The time in seconds for the text to show.")]
-        [SerializeReference] public BlackboardVariable<float> Duration = new BlackboardVariable<float>(2.0f);
+        [Tooltip("The time in seconds for the text to show.")] 
+        [SerializeReference] public BlackboardVariable<float> Duration;
 
         private float m_WaitTimer;
         private Animator m_Animator;

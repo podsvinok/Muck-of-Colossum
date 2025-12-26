@@ -43,8 +43,22 @@ namespace Code.Infrastructure.Installers
             BindUIFactory();
             BindWindowService();
             BindRandomService();
+            BindEnemySpawner();
         }
 
+
+        private void BindEnemySpawner()
+        {
+            Container
+                .Bind<IEnemyFactory>()
+                .To<MeleeGoblinFactory>()
+                .AsSingle();
+            Container
+                .Bind<IEnemySpawner>()
+                .To<PointEnemySpawner>()
+                .AsSingle();
+        }
+        
         private void BindRandomService()
         {
             Container

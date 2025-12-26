@@ -35,13 +35,13 @@ namespace Code.Gameplay.Player.Factory
 
         public async UniTask<GameObject> SpawnPlayerAtRandomPoint(NetworkConnection connection)
         {
-            Vector3 spawnPosition = GetRandomSpawnPosition();
+            Vector3 spawnPosition = levelData.StartPoint;
             return await SpawnPlayer(connection, spawnPosition);
         }
 
         public async UniTask<GameObject> SpawnPlayer(NetworkConnection connection)
         {
-            Vector3 spawnPosition = GetSpawnPosition();
+            Vector3 spawnPosition = levelData.StartPoint;
             return await SpawnPlayer(connection, spawnPosition);
         }
 

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "CharacterConfig", menuName = "Ritual Grounds/Configs/CharacterConfig")]
+[CreateAssetMenu(fileName = "PlayerConfig", menuName = "Ritual Grounds/Configs/PlayerConfig")]
 public class PlayerConfig : ScriptableObject
 {
     [SerializeField] private RunningStateConfig runningStateConfig;
