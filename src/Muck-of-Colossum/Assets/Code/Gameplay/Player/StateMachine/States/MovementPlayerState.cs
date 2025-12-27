@@ -38,7 +38,7 @@ public abstract class MovementPlayerState : IPlayerState
         View.StartMovement();
         //Debug.Log(GetType());
         
-        CharacterController.detectCollisions = false;
+        
 
         AddInputActionsCallbacks();
         rotationContext.CharacterTransform = _player.transform;

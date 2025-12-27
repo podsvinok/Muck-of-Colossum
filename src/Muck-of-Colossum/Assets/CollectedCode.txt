@@ -1,5 +1,5 @@
 ﻿// Собрано файлов: 152
-// Дата: 26.12.2025 22:37:15
+// Дата: 28.12.2025 0:14:17
 ================================================================================
 
 // ========== Assets\Code\Random\IRandomService.cs ==========
@@ -4524,10 +4524,11 @@ public class MeleeGoblinFactory: IEnemyFactory
         var gameObject = Object.Instantiate(prefab, position.position, Quaternion.identity);
         
         var enemyComponent = gameObject.GetComponent<Enemy>();
-        enemyComponent.Init();
+        
 
         var networkObject = gameObject.GetComponent<NetworkObject>();
         networkManager.ServerManager.Spawn(networkObject);
+        enemyComponent.Init();
         return enemyComponent;
     }
 }
@@ -4536,10 +4537,11 @@ public class MeleeGoblinFactory: IEnemyFactory
 
 // ========== Assets\Code\Gameplay\Enemies\Spawner\EnemySpawnerController.cs ==========
 
+using FishNet.Object;
 using UnityEngine;
 using Zenject;
 
-public class EnemySpawnerController : MonoBehaviour
+public class EnemySpawnerController : NetworkBehaviour
 {
     [SerializeField] private Transform spawnPoint;
 
@@ -6742,8 +6744,6 @@ public partial class DetectPlayerAction : Action
 
     protected override Status OnStart()
     {
-        Debug.Log(Enemy.Value == null);
-        
         return Status.Running;
     }
 
@@ -6764,6 +6764,7 @@ public partial class DetectPlayerAction : Action
 
     protected override void OnEnd()
     {
+        Debug.Log(Enemy.Value == null);
 
     }
 }

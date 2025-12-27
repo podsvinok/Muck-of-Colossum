@@ -1,7 +1,8 @@
+using FishNet.Object;
 using UnityEngine;
 using Zenject;
 
-public class EnemySpawnerController : MonoBehaviour
+public class EnemySpawnerController : NetworkBehaviour
 {
     [SerializeField] private Transform spawnPoint;
 

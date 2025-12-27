@@ -13,8 +13,6 @@ public partial class DetectPlayerAction : Action
 
     protected override Status OnStart()
     {
-        Debug.Log(Enemy.Value == null);
-        
         return Status.Running;
     }
 
@@ -35,6 +33,7 @@ public partial class DetectPlayerAction : Action
 
     protected override void OnEnd()
     {
+        Debug.Log(Enemy.Value == null);
 
     }
 }
