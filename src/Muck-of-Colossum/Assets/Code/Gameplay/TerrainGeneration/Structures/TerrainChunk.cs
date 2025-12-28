@@ -1,6 +1,9 @@
 ﻿using Code.Gameplay.TerrainGeneration.Generators;
 using UnityEngine;
 using Code.Infrastructure.StaticData;
+using Cysharp.Threading.Tasks;
+using Unity.AI.Navigation;
+using UnityEngine.AI;
 
 namespace Code.Gameplay.TerrainGeneration.Structures
 {
@@ -10,6 +13,7 @@ namespace Code.Gameplay.TerrainGeneration.Structures
         private MeshRenderer meshRenderer;
         private MeshFilter meshFilter;
         private MeshCollider meshCollider;
+        private NavMeshSurface navMeshSurface;
         private int lodIndex = -1;
         private Bounds bounds;
 
@@ -46,16 +50,10 @@ namespace Code.Gameplay.TerrainGeneration.Structures
                 var mesh = meshGenerator.GenerateMesh(staticData.MeshSettings.detailLevels[i].lod, heightMap);
                 lodMeshes[i] = mesh;
             }
-
             heightMap.Dispose();
         }
         
-        /// <summary>
-        /// return true if collider needed and false if not
-        /// </summary>
-        /// <param name="viewer"></param>
-        /// <returns></returns>
-        public bool UpdateTerrainChunk(Vector3 viewerPosition)
+        public void Update(Vector3 viewerPosition)
         {
             var viewerDstFromNearestEdge = Mathf.Sqrt(bounds.SqrDistance(new Vector3(viewerPosition.x, viewerPosition.z)));
             
@@ -71,25 +69,21 @@ namespace Code.Gameplay.TerrainGeneration.Structures
             if (newLodIndex != lodIndex)
             {
                 meshFilter.sharedMesh = lodMeshes[newLodIndex];
-                if (lodIndex == staticData.MeshSettings.detailLevels[0].lod)
+                if (lodIndex == 0)
                     meshCollider.sharedMesh = null;
                 lodIndex = newLodIndex;
-                if (lodIndex == staticData.MeshSettings.detailLevels[0].lod)
-                    return true;
             }
-
-            return false;
         }
-
+ 
         public Mesh GetMeshForBaking()
         {
-            return lodMeshes[lodIndex];
+            return lodMeshes[0];
         }
 
         public void SetBakedCollider()
         {
             meshCollider.cookingOptions = MeshColliderCookingOptions.None;
-            meshCollider.sharedMesh = lodMeshes[lodIndex];
+            meshCollider.sharedMesh = lodMeshes[0];
         }
     }
 }

@@ -67,7 +67,7 @@ namespace Code.Infrastructure.States.GameStates
             await GenerateTerrain(args.Seed);
             LoadItemDataBase();
             await SpawnPlayers(args);
-            await InitializeChunks();
+            InitializeChunks();
             
             await stateMachine.Enter<GameplayLoopState>();
             loadingCurtain.Hide();
@@ -95,7 +95,7 @@ namespace Code.Infrastructure.States.GameStates
         {
             staticData.NoiseSettings.seed = seed;
             await terrainGenerator.GenerateTerrain();
-            await terrainGenerator.InitializeChunks(levelData.StartPoint);
+            await terrainGenerator.InitializeChunks();
         }
 
         private void LoadItemDataBase() => 
@@ -113,8 +113,8 @@ namespace Code.Infrastructure.States.GameStates
                 await UniTask.Yield();
         }
 
-        private async UniTask InitializeChunks() => 
-            await terrainGenerator.InitializeViewer(levelData.Player.transform);
+        private void InitializeChunks() => 
+            terrainGenerator.InitializeViewer(levelData.Player.transform);
 
         public UniTask Exit() => 
             default;

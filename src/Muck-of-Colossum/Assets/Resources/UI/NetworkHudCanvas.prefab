@@ -1788,7 +1788,7 @@ MonoBehaviour:
   readyButtonText: {fileID: 2638607635071990971}
   playerListContainer: {fileID: 8795174710212263163}
   playerListItemPrefab: {fileID: 1254513132782113802, guid: 6eb2598efc5e90b4fb60af3decb9a7a2, type: 3}
-  serverIP: {fileID: 8417410786761252629}
+  serverIP: {fileID: 6297462910802801622}
 --- !u!1 &8169999863934624388
 GameObject:
   m_ObjectHideFlags: 0

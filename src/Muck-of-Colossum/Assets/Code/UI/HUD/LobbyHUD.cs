@@ -22,7 +22,7 @@ namespace Code.UI.HUD
         [SerializeField] private TextMeshProUGUI readyButtonText;
         [SerializeField] private Transform playerListContainer;
         [SerializeField] private GameObject playerListItemPrefab;
-        [SerializeField] private TMP_Text serverIP;
+        [SerializeField] private TMP_InputField serverIP;
         
         private NetworkManager networkManager;
         private LobbyService lobbyService;

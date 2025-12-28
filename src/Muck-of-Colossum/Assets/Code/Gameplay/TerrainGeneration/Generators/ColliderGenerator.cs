@@ -13,10 +13,8 @@ namespace Code.Gameplay.TerrainGeneration.Generators
         {
             var meshIds = new NativeList<int>(Allocator.Persistent);
 
-            foreach (var chunk in chunksToBakeMesh)
-            {
+            foreach (var chunk in chunksToBakeMesh) 
                 meshIds.Add(chunk.GetMeshForBaking().GetInstanceID());
-            }
             
             var colliderJob = new GenerateColliderJob
             {
@@ -29,7 +27,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             colliderHandle.Complete();
 
             foreach (var chunk in chunksToBakeMesh) 
-                chunk.SetBakedCollider();
+                chunk.SetBakedCollider(); 
             
             meshIds.Dispose();
         }

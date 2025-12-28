@@ -12,5 +12,6 @@
         public const string MeshSettings = "StaticData/TerrainSettings/Mesh Settings";
         public const string TextureSettings = "StaticData/TerrainSettings/Texture Settings";
         public const string NoiseSettings = "StaticData/TerrainSettings/Noise Settings";
+        public const string NavMeshSettings = "StaticData/TerrainSettings/NavMesh Settings";
     }
 }

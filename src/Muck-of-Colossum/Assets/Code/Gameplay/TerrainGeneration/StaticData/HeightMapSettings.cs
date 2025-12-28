@@ -6,10 +6,7 @@ namespace Code.Gameplay.TerrainGeneration.StaticData
     public class HeightMapSettings : UpdatableData
     {
         public NoiseSettings noiseSettings;
-        public bool useFalloff;
         public float heightMultiplier;
-        public int falloffX;
-        public int falloffY;
         public AnimationCurve heightCurve;
         public float MinHeight =>
             heightMultiplier * heightCurve.Evaluate(0);

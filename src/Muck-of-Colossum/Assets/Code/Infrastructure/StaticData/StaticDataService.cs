@@ -16,6 +16,7 @@ namespace Code.Infrastructure.StaticData
         public MeshSettings MeshSettings { get; set; }
         public TextureSettings TextureSettings { get; set; }
         public NoiseSettings NoiseSettings { get; set; }
+        public NavMeshSettings NavMeshSettings { get; set; }
 
         private readonly IAssetProvider assetProvider;
         private Dictionary<WindowId, WindowConfig> windowConfigs;
@@ -40,7 +41,13 @@ namespace Code.Infrastructure.StaticData
                 LoadHeightMapSettings(),
                 LoadMeshSettings(),
                 LoadTextureSettings(),
-                LoadNoiseSettings());
+                LoadNoiseSettings(),
+                LoadNavMeshSettings());
+        }
+
+        private async UniTask LoadNavMeshSettings()
+        {
+            NavMeshSettings = await assetProvider.LoadAsync<NavMeshSettings>(AssetPath.NavMeshSettings);
         }
 
         private async UniTask LoadWindowConfigs()

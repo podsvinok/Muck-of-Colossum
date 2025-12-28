@@ -4,6 +4,7 @@ using Code.Gameplay.TerrainGeneration.Structures;
 using Code.Infrastructure.StaticData;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 using Zenject;
 using Object = UnityEngine.Object;
 
@@ -24,6 +25,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
         private HeightMapGenerator heightMapGenerator;
         private MeshGenerator meshGenerator;
         private ColliderGenerator colliderGenerator;
+        private NavMeshGenerator navMeshGenerator;
         private CharacterController characterController;
 
         public TerrainGenerator(
@@ -31,13 +33,15 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             MeshGenerator meshGenerator,
             ColliderGenerator colliderGenerator,
             IStaticDataService staticData,
-            ILevelDataProvider levelData)
+            ILevelDataProvider levelData,
+            NavMeshGenerator navMeshGenerator)
         {
             this.heightMapGenerator = heightMapGenerator;
             this.meshGenerator = meshGenerator;
             this.colliderGenerator = colliderGenerator;
             this.staticData = staticData;
             this.levelData = levelData;
+            this.navMeshGenerator = navMeshGenerator;
         }
 
         public async UniTask RegenerateTerrain()
@@ -47,7 +51,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
 
             terrainChunks = new TerrainChunk[staticData.MeshSettings.terrainSizeX * staticData.MeshSettings.terrainSizeY];
             await GenerateChunks(staticData.MeshSettings.terrainSizeX, staticData.MeshSettings.terrainSizeY);
-            await UpdateChunks(new Vector3(0, 0, 0));
+            UpdateChunks(new Vector3(0, 0, 0));
         }
 
         public async UniTask GenerateTerrain() => 
@@ -85,25 +89,29 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             }
         }
 
-        private async UniTask UpdateChunks(Vector3 updatePoint)
+        private void UpdateChunks(Vector3 updatePoint)
         {
-            var chunkToBakeMesh = new List<TerrainChunk>();
-            
-            foreach (var chunk in terrainChunks)
-            {
-                if (chunk.UpdateTerrainChunk(updatePoint)) 
-                    chunkToBakeMesh.Add(chunk);
-            }
-            await colliderGenerator.GenerateCollider(chunkToBakeMesh);
+            foreach (var chunk in terrainChunks) 
+                chunk.Update(updatePoint);
         }
 
-        public async UniTask InitializeChunks(Vector3 updatePoint) => 
-            await UpdateChunks(updatePoint);
+        public async UniTask InitializeChunks() 
+        {
+            UpdateChunks(levelData.StartPoint);
+            
+            var chunksToBakeMesh = new List<TerrainChunk>();
+            
+            foreach (var chunk in terrainChunks) 
+                chunksToBakeMesh.Add(chunk);
+            
+            await colliderGenerator.GenerateCollider(chunksToBakeMesh);
+            navMeshGenerator.GenerateNavMesh(levelData.TerrainParent);
+        }
 
-        public async UniTask InitializeViewer(Transform viewer)
+        public void InitializeViewer(Transform viewer)
         {
             this.viewer = viewer;
-            await UpdateChunks(viewer.position);
+            UpdateChunks(viewer.position);
         }
         
         public void FixedTick()
@@ -116,7 +124,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             if ((viewerPositionOld - viewerPosition).sqrMagnitude > SqrViewerMoveThresholdForChunkUpdate) 
             {
                 viewerPositionOld = viewerPosition;
-                UpdateChunks(position).Forget();
+                UpdateChunks(position);
             }
         }
     }

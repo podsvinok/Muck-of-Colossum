@@ -17,6 +17,7 @@ using Code.UI.Services.Windows;
 using Cysharp.Threading.Tasks;
 using FishNet;
 using FishNet.Managing;
+using Unity.AI.Navigation;
 using Zenject;
 
 namespace Code.Infrastructure.Installers
@@ -108,6 +109,10 @@ namespace Code.Infrastructure.Installers
             
             Container
                 .BindInterfacesAndSelfTo<TerrainGenerator>()
+                .AsSingle();
+
+            Container
+                .BindInterfacesAndSelfTo<NavMeshGenerator>()
                 .AsSingle();
         }
 
