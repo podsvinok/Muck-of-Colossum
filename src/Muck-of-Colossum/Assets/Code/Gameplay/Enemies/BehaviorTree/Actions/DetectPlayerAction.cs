@@ -19,9 +19,6 @@ public partial class DetectPlayerAction : Action
     protected override Status OnUpdate()
     {
         Enemy.Value.TargetDetector.DetectTargets();
-        Debug.Log(Enemy.Value.TargetDetector.GetType());
-        Debug.Log($"HasTarget: {Enemy.Value.TargetDetector.HasTarget}");
-        Debug.Log($"CurrentTarget: {Enemy.Value.TargetDetector.CurrentTarget}");
         if (Enemy.Value.TargetDetector.HasTarget)
         {
             Target.Value = Enemy.Value.TargetDetector.CurrentTarget;

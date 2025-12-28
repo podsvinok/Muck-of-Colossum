@@ -13,14 +13,15 @@ public class MeleeGoblinFactory: IEnemyFactory
     public Enemy CreateEnemy(Transform position)
     {
         var prefab = Resources.Load<GameObject>("Characters/Enemies/MeleeGoblinEnemy");
-        var gameObject = Object.Instantiate(prefab, position.position, Quaternion.identity);
+        var gameObject = GameObject.Instantiate(prefab, position.position, Quaternion.identity);
         
         var enemyComponent = gameObject.GetComponent<Enemy>();
-        
 
         var networkObject = gameObject.GetComponent<NetworkObject>();
         networkManager.ServerManager.Spawn(networkObject);
+        
         enemyComponent.Init();
+
         return enemyComponent;
     }
 }

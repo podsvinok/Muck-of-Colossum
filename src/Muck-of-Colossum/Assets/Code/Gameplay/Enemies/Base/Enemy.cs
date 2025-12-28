@@ -17,31 +17,32 @@ public abstract class Enemy : NetworkBehaviour
     
     public IHealth Health { get; protected set; }
     public ITargetDetector TargetDetector { get; protected set; }
-    public IEnemyMovement EnemyMovement { get; protected set; }
-
-    private void Start()
-    {
-        Init();
-    }
 
     public virtual void Init()
     {
         agent = GetComponent<NavMeshAgent>();
         Health = GetComponent<IHealth>();
         TargetDetector = GetComponent<ITargetDetector>();
-        EnemyMovement = GetComponent<IEnemyMovement>();
         
-        behaviorAgent.SetVariableValue("Enemy", this);
-        behaviorAgent.SetVariableValue("EnemyView", view);
-        behaviorAgent.SetVariableValue("MoveSpeed", config.moveSpeed);
+        if (IsServerInitialized)
+        {
+            behaviorAgent.enabled = true;
+            agent.enabled = true;
+            
+            behaviorAgent.SetVariableValue("Enemy", this);
+            behaviorAgent.SetVariableValue("EnemyView", view);
+            behaviorAgent.SetVariableValue("MoveSpeed", config.moveSpeed);
+            
+            InitializeComponents();
+
+        }
+        else
+        {
+            behaviorAgent.enabled = false;
+            agent.enabled = false;
+        }
         
         
-        
-        behaviorAgent.GetVariable("MoveSpeed", out var speed);
-        
-        Debug.Log(speed);
-        
-        InitializeComponents();
     }
     
     protected abstract void InitializeComponents();

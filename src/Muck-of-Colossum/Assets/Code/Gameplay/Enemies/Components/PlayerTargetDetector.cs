@@ -1,7 +1,8 @@
-﻿using UnityEngine;
+﻿using FishNet.Object;
+using UnityEngine;
 
 
-public class PlayerTargetDetector : MonoBehaviour, ITargetDetector
+public class PlayerTargetDetector : NetworkBehaviour, ITargetDetector
 
 {
     [SerializeField] private float detectionRadius;
@@ -12,6 +13,9 @@ public class PlayerTargetDetector : MonoBehaviour, ITargetDetector
 
     public void DetectTargets()
     {
+        if (!IsServerInitialized)
+            return;
+        
         var colliders = Physics.OverlapSphere(transform.position, detectionRadius, playerMask);
         CurrentTarget = colliders.Length > 0 ? colliders[0].transform : null;
     }

@@ -1,5 +1,5 @@
-﻿// Собрано файлов: 152
-// Дата: 28.12.2025 0:14:17
+﻿// Собрано файлов: 151
+// Дата: 28.12.2025 18:50:08
 ================================================================================
 
 // ========== Assets\Code\Random\IRandomService.cs ==========
@@ -4251,29 +4251,28 @@ public abstract class Enemy : NetworkBehaviour
     
     public IHealth Health { get; protected set; }
     public ITargetDetector TargetDetector { get; protected set; }
-    public IEnemyMovement EnemyMovement { get; protected set; }
-
-    private void Start()
-    {
-        Init();
-    }
 
     public virtual void Init()
     {
         agent = GetComponent<NavMeshAgent>();
         Health = GetComponent<IHealth>();
         TargetDetector = GetComponent<ITargetDetector>();
-        EnemyMovement = GetComponent<IEnemyMovement>();
         
-        behaviorAgent.SetVariableValue("Enemy", this);
-        behaviorAgent.SetVariableValue("EnemyView", view);
-        behaviorAgent.SetVariableValue("MoveSpeed", config.moveSpeed);
+        if (IsServerInitialized)
+        {
+            behaviorAgent.enabled = true;
+            agent.enabled = true;
+            
+            behaviorAgent.SetVariableValue("Enemy", this);
+            behaviorAgent.SetVariableValue("EnemyView", view);
+            behaviorAgent.SetVariableValue("MoveSpeed", config.moveSpeed);
+        }
+        else
+        {
+            behaviorAgent.enabled = false;
+            agent.enabled = false;
+        }
         
-        
-        
-        behaviorAgent.GetVariable("MoveSpeed", out var speed);
-        
-        Debug.Log(speed);
         
         InitializeComponents();
     }
@@ -4411,46 +4410,13 @@ public class EnemyHealth : NetworkBehaviour, IHealth
 
 --------------------------------------------------------------------------------
 
-// ========== Assets\Code\Gameplay\Enemies\Components\EnemyMovement.cs ==========
-
-using UnityEngine;
-using UnityEngine.AI;
-
-public class EnemyMovement : MonoBehaviour, IEnemyMovement
-{
-    private NavMeshAgent agent;
-    private float moveSpeed;
-    
-    public bool IsMoving { get; private set; }
-    
-    public void Initialize(NavMeshAgent agent, float speed)
-    {
-        this.agent = agent;
-        this.moveSpeed = speed;
-    }
-    
-    public void MoveTo(Vector3 targetPosition)
-    {
-        Vector3 direction = (targetPosition - transform.position).normalized;
-        agent.destination = targetPosition;
-        IsMoving = true;
-    }
-    
-    public void Stop()
-    {
-        IsMoving = false;
-    }
-}
-
-
---------------------------------------------------------------------------------
-
 // ========== Assets\Code\Gameplay\Enemies\Components\PlayerTargetDetector.cs ==========
 
+using FishNet.Object;
 using UnityEngine;
 
 
-public class PlayerTargetDetector : MonoBehaviour, ITargetDetector
+public class PlayerTargetDetector : NetworkBehaviour, ITargetDetector
 
 {
     [SerializeField] private float detectionRadius;
@@ -4461,6 +4427,9 @@ public class PlayerTargetDetector : MonoBehaviour, ITargetDetector
 
     public void DetectTargets()
     {
+        if (!IsServerInitialized)
+            return;
+        
         var colliders = Physics.OverlapSphere(transform.position, detectionRadius, playerMask);
         CurrentTarget = colliders.Length > 0 ? colliders[0].transform : null;
     }
@@ -6750,9 +6719,6 @@ public partial class DetectPlayerAction : Action
     protected override Status OnUpdate()
     {
         Enemy.Value.TargetDetector.DetectTargets();
-        Debug.Log(Enemy.Value.TargetDetector.GetType());
-        Debug.Log($"HasTarget: {Enemy.Value.TargetDetector.HasTarget}");
-        Debug.Log($"CurrentTarget: {Enemy.Value.TargetDetector.CurrentTarget}");
         if (Enemy.Value.TargetDetector.HasTarget)
         {
             Target.Value = Enemy.Value.TargetDetector.CurrentTarget;
@@ -6867,7 +6833,7 @@ public abstract class MovementPlayerState : IPlayerState
         View.StartMovement();
         //Debug.Log(GetType());
         
-        CharacterController.detectCollisions = false;
+        
 
         AddInputActionsCallbacks();
         rotationContext.CharacterTransform = _player.transform;
