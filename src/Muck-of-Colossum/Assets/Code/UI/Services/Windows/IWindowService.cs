@@ -6,5 +6,6 @@ namespace Code.UI.Services.Windows
     {
         public WindowBase Open(WindowId windowId);
         public void Close(WindowId windowId);
+        public void CloseAll();
     }
 }

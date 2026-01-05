@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Code.Gameplay.Item;
+using Code.Gameplay.Items;
 using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
+using Code.Gameplay.Recipe;
 using Code.Gameplay.TerrainGeneration.Generators;
 using Code.Infrastructure.SceneManagement;
 using Code.Infrastructure.States.StateMachine;
 using Code.Infrastructure.StaticData;
 using Code.Network;
+using Code.Network.Lobby;
 using Code.UI.LoadingCurtain;
 using Code.UI.Services.Factory;
 using Code.Utils;
@@ -33,6 +35,7 @@ namespace Code.Infrastructure.States.GameStates
         private readonly IPlayerFactory playerFactory;
         private readonly NetworkManager networkManager;
         private readonly ItemDatabase itemDatabase;
+        private readonly RecipeDatabase recipeDatabase;
 
         public GameplayLoadingState(
             ISceneLoader sceneLoader,
@@ -44,7 +47,8 @@ namespace Code.Infrastructure.States.GameStates
             IUIFactory uiFactory,
             NetworkManager networkManager,
             IPlayerFactory playerFactory,
-            ItemDatabase itemDatabase)
+            ItemDatabase itemDatabase, 
+            RecipeDatabase recipeDatabase)
         {
             this.sceneLoader = sceneLoader;
             this.loadingCurtain = loadingCurtain;
@@ -56,21 +60,25 @@ namespace Code.Infrastructure.States.GameStates
             this.networkManager = networkManager;
             this.playerFactory = playerFactory;
             this.itemDatabase = itemDatabase;
+            this.recipeDatabase = recipeDatabase;
         }
         
         public async UniTask Enter(GameplayLoadingStateEnterArgs args)
         {
             loadingCurtain.Show();
             
-            await LoadScene(args);
-            await CreateUIRoot();
-            await GenerateTerrain(args.Seed);
-            LoadItemDataBase();
+            var sceneTask = LoadScene(args);
+            LoadItemDatabase();
+            LoadRecipeDatabase();
+            await sceneTask;
+            var terrainTask = GenerateTerrain(args.Seed);
+            var uiTask = CreateUIRoot();
+            await terrainTask;
             await SpawnPlayers(args);
             InitializeChunks();
+            await uiTask;
             
             await stateMachine.Enter<GameplayLoopState>();
-            loadingCurtain.Hide();
         }
 
         private async UniTask LoadScene(GameplayLoadingStateEnterArgs args)
@@ -98,7 +106,10 @@ namespace Code.Infrastructure.States.GameStates
             await terrainGenerator.InitializeChunks();
         }
 
-        private void LoadItemDataBase() => 
+        private void LoadRecipeDatabase() => 
+            recipeDatabase.LoadRecipes();
+
+        private void LoadItemDatabase() => 
             itemDatabase.LoadItems();
 
         private async UniTask SpawnPlayers(GameplayLoadingStateEnterArgs args)
@@ -116,8 +127,11 @@ namespace Code.Infrastructure.States.GameStates
         private void InitializeChunks() => 
             terrainGenerator.InitializeViewer(levelData.Player.transform);
 
-        public UniTask Exit() => 
-            default;
+        public UniTask Exit()
+        {
+            loadingCurtain.Hide();
+            return default;
+        }
     }
     
     public class GameplayLoadingStateEnterArgs

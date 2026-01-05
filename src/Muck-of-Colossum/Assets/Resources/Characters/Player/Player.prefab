@@ -621,6 +621,7 @@ GameObject:
   - component: {fileID: 2746221678720264443}
   - component: {fileID: 856928740483910048}
   - component: {fileID: 2690182709647916323}
+  - component: {fileID: 6837635177602851716}
   m_Layer: 7
   m_Name: Player
   m_TagString: Untagged
@@ -750,7 +751,7 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 2
+  <PrefabId>k__BackingField: 3
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 4908546027843408308
   <SceneId>k__BackingField: 0
@@ -882,6 +883,22 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: -1925983978342147385}
   _networkObjectCache: {fileID: -1925983978342147385}
   inventory: {fileID: 856928740483910048}
+--- !u!114 &6837635177602851716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 918569533170771185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f0823bdc038443ca3c67de2b99f3969, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: -1925983978342147385}
+  _networkObjectCache: {fileID: 0}
+  playerInventory: {fileID: 856928740483910048}
 --- !u!1 &927805198853641906
 GameObject:
   m_ObjectHideFlags: 0

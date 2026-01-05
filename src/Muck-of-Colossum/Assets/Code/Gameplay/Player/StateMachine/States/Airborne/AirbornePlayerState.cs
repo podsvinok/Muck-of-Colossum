@@ -1,40 +1,45 @@
+using Code.Gameplay.Player.StateMachine.States.Configs;
+using Code.Gameplay.Player.StateMachine.States.MovementHandler;
+using Code.Gameplay.Player.StateMachine.States.RotationLogic;
 using UnityEngine;
-using UnityEngine.Rendering;
 
-public abstract class AirbornePlayerState : MovementPlayerState
+namespace Code.Gameplay.Player.StateMachine.States.Airborne
 {
-    private readonly AirborneStateConfig airborneStateConfig;
-    public AirbornePlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player)
-        : base(stateSwitcher, data, player)
+    public abstract class AirbornePlayerState : MovementPlayerState
     {
-        airborneStateConfig = player.Config.AirborneStateConfig;
-    }
+        private readonly AirborneStateConfig airborneStateConfig;
+        public AirbornePlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player)
+            : base(stateSwitcher, data, player)
+        {
+            airborneStateConfig = player.Config.AirborneStateConfig;
+        }
 
-    public override void Enter()
-    {
-        base.Enter();
+        public override void Enter()
+        {
+            base.Enter();
         
-        View.StartAirborne();
+            View.StartAirborne();
         
-        movementDirectionHandler = new StandartMovementDirection();
-        rotationStrategy = new StandartRotationStrategy();
+            movementDirectionHandler = new StandartMovementDirection();
+            rotationStrategy = new StandartRotationStrategy();
         
-        Data.Speed = airborneStateConfig.Speed;
-    }
+            Data.Speed = airborneStateConfig.Speed;
+        }
 
-    public override void Exit()
-    {
-        base.Exit();
+        public override void Exit()
+        {
+            base.Exit();
         
-        View.StopAirborne();
-    }
+            View.StopAirborne();
+        }
 
-    public override void Update()
-    {
-        base.Update();
+        public override void Update()
+        {
+            base.Update();
         
-        Data.YVelocity -= airborneStateConfig.BaseGravity * Time.deltaTime;
-    }
+            Data.YVelocity -= airborneStateConfig.BaseGravity * Time.deltaTime;
+        }
 
-    protected virtual float GetGravityMultiplier() => airborneStateConfig.BaseGravity;
+        protected virtual float GetGravityMultiplier() => airborneStateConfig.BaseGravity;
+    }
 }

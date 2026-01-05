@@ -1,10 +1,8 @@
-﻿using System;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace Code.Gameplay.Inventory
+namespace Code.Gameplay.InventorySystem
 {
     public class ActionInventoryTile : MonoBehaviour
     {

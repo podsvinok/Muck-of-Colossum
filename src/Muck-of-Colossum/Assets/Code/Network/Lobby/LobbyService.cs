@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using Code.Infrastructure.States.GameStates;
 using Code.Infrastructure.States.StateMachine;
+using Code.Random;
 using FishNet.Connection;
 using FishNet.Managing;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
-using Unity.Cinemachine;
-using UnityEngine;
 using Zenject;
 
-namespace Code.Network
+namespace Code.Network.Lobby
 {
     public class LobbyService : NetworkBehaviour
     {

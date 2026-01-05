@@ -1,36 +1,39 @@
-using UnityEngine;
+using Code.Gameplay.Player.StateMachine.States.Configs;
 
-public class JumpingPlayerState : AirbornePlayerState
+namespace Code.Gameplay.Player.StateMachine.States.Airborne
 {
-    private JumpingStateConfig config;
+    public class JumpingPlayerState : AirbornePlayerState
+    {
+        private JumpingStateConfig config;
     
-    public JumpingPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) 
-        : base(stateSwitcher, data, player)
-    {
-        config = player.Config.AirborneStateConfig.JumpingStateConfig;
-    }
+        public JumpingPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) 
+            : base(stateSwitcher, data, player)
+        {
+            config = player.Config.AirborneStateConfig.JumpingStateConfig;
+        }
 
-    public override void Enter()
-    {
-        base.Enter();
+        public override void Enter()
+        {
+            base.Enter();
         
-        View.StartJumping();
+            View.StartJumping();
 
-        Data.YVelocity = config.StartYVelocity;
-    }
+            Data.YVelocity = config.StartYVelocity;
+        }
 
-    public override void Exit()
-    {
-        base.Exit();
+        public override void Exit()
+        {
+            base.Exit();
         
-        View.StopJumping();
-    }
+            View.StopJumping();
+        }
 
-    public override void Update()
-    {
-        base.Update();
+        public override void Update()
+        {
+            base.Update();
         
-        if(Data.YVelocity <= 0)
-            StateSwitcher.SwitchState<FallingPlayerState>();
+            if(Data.YVelocity <= 0)
+                StateSwitcher.SwitchState<FallingPlayerState>();
+        }
     }
 }

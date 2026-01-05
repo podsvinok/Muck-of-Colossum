@@ -1,5 +1,8 @@
-﻿public interface IRandomService
+﻿namespace Code.Random
 {
-    public int GetRandomSeed();
-    float GetRandomFloatInRange(float minValue, float maxValue);
+    public interface IRandomService
+    {
+        public int GetRandomSeed();
+        float GetRandomFloatInRange(float minValue, float maxValue);
+    }
 }

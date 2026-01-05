@@ -1,10 +1,13 @@
 
 using UnityEngine;
 
-public class MovementDirectionContext
+namespace Code.Gameplay.Player.StateMachine.States.MovementHandler
 {
-    public Vector2 Input;
-    public Player Player;
-    public Transform CameraTransform;
+    public class MovementDirectionContext
+    {
+        public Vector2 Input;
+        public Player Player;
+        public Transform CameraTransform;
     
+    }
 }

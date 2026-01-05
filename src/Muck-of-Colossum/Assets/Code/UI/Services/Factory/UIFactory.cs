@@ -1,4 +1,5 @@
-﻿using Code.Infrastructure.AssetManagement;
+﻿using Code.Gameplay.Recipe;
+using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.StaticData;
 using Code.UI.Services.Windows;
 using Code.UI.Windows;
@@ -23,24 +24,24 @@ namespace Code.UI.Services.Factory
             this.assetProvider = assetProvider;
         }
 
-        public WindowBase CreateInventoryActiveSlots()
+        public WindowBase CreateWindow(WindowId windowId)
         {
-            var windowConfig = staticData.ForWindow(WindowId.InventoryActiveSlots);
+            var windowConfig = staticData.ForWindow(windowId);
             var inventoryActiveSlots = Object.Instantiate(windowConfig.Prefab, uiRoot);
             return inventoryActiveSlots;
-        }
-        
-        public WindowBase CreateInventory()
-        {
-            var windowConfig = staticData.ForWindow(WindowId.Inventory);
-            var inventory = Object.Instantiate(windowConfig.Prefab, uiRoot);
-            return inventory;
         }
 
         public async UniTask CreateUIRoot()
         {
             var instantiate = await assetProvider.LoadAsync(AssetPath.UIRoot);
             uiRoot = Object.Instantiate(instantiate).transform;
+        }
+
+        public async UniTask<RecipeTile> CreateRecipeTile(Transform transform)
+        {
+            var tilePrefab = await assetProvider.LoadAsync<RecipeTile>(AssetPath.RecipeTile);
+            var recipeTile = Object.Instantiate(tilePrefab, transform);
+            return recipeTile;
         }
     }
 }

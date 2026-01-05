@@ -1,22 +1,25 @@
 using UnityEngine;
 
-public class StandartRotationStrategy : IRotationStrategy
+namespace Code.Gameplay.Player.StateMachine.States.RotationLogic
 {
-    public Quaternion GetTargetRotation(RotationContext context)
+    public class StandartRotationStrategy : IRotationStrategy
     {
-        Vector3 moveDirection = context.MoveDirection;
-        Transform characterTransform = context.CharacterTransform;
-        
-        Vector3 targetRotationDirection = moveDirection;
-        targetRotationDirection.y = 0;
-        
-        if (targetRotationDirection == Vector3.zero)
+        public Quaternion GetTargetRotation(RotationContext context)
         {
-            targetRotationDirection = characterTransform.forward;
-        }
-
-        Quaternion newRotation = Quaternion.LookRotation(targetRotationDirection);
+            Vector3 moveDirection = context.MoveDirection;
+            Transform characterTransform = context.CharacterTransform;
         
-        return newRotation;
+            Vector3 targetRotationDirection = moveDirection;
+            targetRotationDirection.y = 0;
+        
+            if (targetRotationDirection == Vector3.zero)
+            {
+                targetRotationDirection = characterTransform.forward;
+            }
+
+            Quaternion newRotation = Quaternion.LookRotation(targetRotationDirection);
+        
+            return newRotation;
+        }
     }
 }

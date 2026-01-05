@@ -1,7 +1,8 @@
-﻿using Code.Gameplay.Item;
-using Code.Gameplay.Item.Factory;
+﻿using Code.Gameplay.Items;
+using Code.Gameplay.Items.Factory;
 using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
+using Code.Gameplay.Recipe;
 using Code.Gameplay.TerrainGeneration.Generators;
 using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.Extensions;
@@ -11,13 +12,13 @@ using Code.Infrastructure.States.Factory;
 using Code.Infrastructure.States.GameStates;
 using Code.Infrastructure.States.StateMachine;
 using Code.Infrastructure.StaticData;
+using Code.Random;
 using Code.UI.LoadingCurtain;
 using Code.UI.Services.Factory;
 using Code.UI.Services.Windows;
 using Cysharp.Threading.Tasks;
 using FishNet;
 using FishNet.Managing;
-using Unity.AI.Navigation;
 using Zenject;
 
 namespace Code.Infrastructure.Installers
@@ -26,24 +27,29 @@ namespace Code.Infrastructure.Installers
     {
         public override void InstallBindings()
         {
-            BindGameFactories();
-            BindGameStateMachine();
-            BindStates();
-            BindStateFactory();
             BindGameplayServices();
-            BindInfrastructureServices();
             BindNetworkServices();
-            BindLoadingCurtain();
             BindInputService();
-            BindAssetProvider();
-            BindStaticDataService();
-            BindTerrainGenerators();
-            BindExtensionsServiceProvider();
-            BindItemDatabase();
-            BindItemFactory();
-            BindUIFactory();
             BindWindowService();
             BindRandomService();
+            BindStaticDataService();
+            BindInfrastructureServices();
+            
+            BindAssetProvider();
+            BindExtensionsServiceProvider();
+            
+            BindStateFactory();
+            BindGameFactories();
+            BindUIFactory();
+            BindItemFactory();
+            
+            BindStates();
+            BindGameStateMachine();
+            
+            BindLoadingCurtain();
+            BindTerrainGenerators();
+            
+            BindDatabases();
         }
 
         private void BindRandomService()
@@ -78,10 +84,14 @@ namespace Code.Infrastructure.Installers
                 .AsSingle();
         }
 
-        private void BindItemDatabase()
+        private void BindDatabases()
         {
             Container
                 .BindInterfacesAndSelfTo<ItemDatabase>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<RecipeDatabase>()
                 .AsSingle();
         }
 

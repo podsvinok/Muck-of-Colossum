@@ -1,6 +1,9 @@
 using UnityEngine;
 
-public interface IRotationStrategy
+namespace Code.Gameplay.Player.StateMachine.States.RotationLogic
 {
-    Quaternion GetTargetRotation(RotationContext context);
+    public interface IRotationStrategy
+    {
+        Quaternion GetTargetRotation(RotationContext context);
+    }
 }

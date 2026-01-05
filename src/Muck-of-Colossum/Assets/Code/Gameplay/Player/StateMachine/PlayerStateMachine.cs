@@ -1,41 +1,48 @@
 using System.Collections.Generic;
 using System.Linq;
+using Code.Gameplay.Player.StateMachine.States;
+using Code.Gameplay.Player.StateMachine.States.Airborne;
+using Code.Gameplay.Player.StateMachine.States.ClimbMovement;
+using Code.Gameplay.Player.StateMachine.States.GroundMovement;
 
-public class PlayerStateMachine : IStateSwitcher
+namespace Code.Gameplay.Player.StateMachine
 {
-    private List<IPlayerState> states;
-    private IPlayerState _currentPlayerState;
-
-    public PlayerStateMachine(Player player)
+    public class PlayerStateMachine : IStateSwitcher
     {
-        PlayerStateMachineData data = new PlayerStateMachineData();
-        data.CameraController = player.PlayerCamera;
-        
-        states = new List<IPlayerState>()
+        private List<IPlayerState> states;
+        private IPlayerState _currentPlayerState;
+
+        public PlayerStateMachine(Player player)
         {
-            new GroundIdlePlayerState(this, data, player),
-            new RunningPlayerState(this, data, player),
-            new JumpingPlayerState(this, data, player),
-            new FallingPlayerState(this, data, player),
-            new ClimbPlayerIdleState(this, data, player),
-            new ClimbPlayerMoveState(this, data, player),
-        };
+            PlayerStateMachineData data = new PlayerStateMachineData();
+            data.CameraController = player.PlayerCamera;
+        
+            states = new List<IPlayerState>()
+            {
+                new GroundIdlePlayerState(this, data, player),
+                new RunningPlayerState(this, data, player),
+                new JumpingPlayerState(this, data, player),
+                new FallingPlayerState(this, data, player),
+                new ClimbPlayerIdleState(this, data, player),
+                new ClimbPlayerMoveState(this, data, player),
+            };
         
         
-        _currentPlayerState = states[0];
-        _currentPlayerState.Enter();
-    }
+            _currentPlayerState = states[0];
+            _currentPlayerState.Enter();
+        }
 
-    public void SwitchState<T>() where T : IPlayerState
-    {
-        IPlayerState playerState = states.FirstOrDefault(state => state is T);
+        public void SwitchState<T>() where T : IPlayerState
+        {
+            IPlayerState playerState = states.FirstOrDefault(state => state is T);
         
-        _currentPlayerState.Exit();
-        _currentPlayerState = playerState;
-        _currentPlayerState.Enter();
+            _currentPlayerState.Exit();
+            _currentPlayerState = playerState;
+            _currentPlayerState.Enter();
+        }
+    
+        public void HandleInput() => _currentPlayerState.HandleInput();
+    
+        public void Update() => _currentPlayerState.Update();
     }
-    
-    public void HandleInput() => _currentPlayerState.HandleInput();
-    
-    public void Update() => _currentPlayerState.Update();
 }

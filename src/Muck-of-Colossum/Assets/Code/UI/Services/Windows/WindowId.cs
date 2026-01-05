@@ -3,6 +3,7 @@
     public enum WindowId
     {
         Inventory = 0,
-        InventoryActiveSlots = 1
+        InventoryActiveSlots = 1,
+        Crafting = 2
     }
 }

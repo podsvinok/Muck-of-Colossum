@@ -1,19 +1,21 @@
-
 using FishNet.Object;
 using UnityEngine;
 
-public class GroundChecker : NetworkBehaviour
+namespace Code.Gameplay.Player
 {
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField, Range(0.01f, 1f)] private float groundCheckRadius;
-
-    public bool IsTouches { get; private set; }
-    
-    private void Update()
+    public class GroundChecker : NetworkBehaviour
     {
-        if (IsOwner == false)
-            return;
+        [SerializeField] private LayerMask groundLayer;
+        [SerializeField, Range(0.01f, 1f)] private float groundCheckRadius;
+
+        public bool IsTouches { get; private set; }
+    
+        private void Update()
+        {
+            if (IsOwner == false)
+                return;
         
-        IsTouches = Physics.CheckSphere(transform.position, groundCheckRadius, groundLayer);
+            IsTouches = Physics.CheckSphere(transform.position, groundCheckRadius, groundLayer);
+        }
     }
 }

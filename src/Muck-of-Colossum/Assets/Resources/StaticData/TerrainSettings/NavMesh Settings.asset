@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: NavMesh Settings
   m_EditorClassIdentifier: 
   autoUpdate: 1
-  geometry: 0
-  voxelSize: 1
+  geometry: 1
+  voxelSize: 0.5
   tileSize: 64

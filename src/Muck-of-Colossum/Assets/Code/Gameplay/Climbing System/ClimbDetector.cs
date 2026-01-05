@@ -1,252 +1,254 @@
-using System.Collections.Generic;
+using Code.Gameplay.Player.StateMachine.States.RotationLogic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
-[RequireComponent(typeof(CharacterController))]
-public class ClimbDetector : MonoBehaviour
+namespace Code.Gameplay.Climbing_System
 {
-    [SerializeField] private Camera ClimbCamera;
-    
-    [Header("Detection")]
-    [SerializeField] private float rayDistance = 2f;
-    [SerializeField] private LayerMask climbableMask;
-    [SerializeField] private float moveSpeed = 0.5f;
-    [SerializeField] private float rotationSpeed = 10f;
-
-    private MeshCollider targetCollider;
-    private Mesh targetMesh;
-    private int triangleIndex = -1;
-    private Vector3 baryCoords;
-    private bool attached = false;
-    private IRotationStrategy rotationStrategy;
-
-    private Vector3 rotationDirection;
-
-    private SurfaceNavigator navigator;
-
-    private void Start()
+    [RequireComponent(typeof(CharacterController))]
+    public class ClimbDetector : MonoBehaviour
     {
-        rotationStrategy = new ClimbRotation();
-        TryAttach();
-    }
+        [SerializeField] private Camera ClimbCamera;
     
-    void Update()
-    {
-        
-        if (!attached)
+        [Header("Detection")]
+        [SerializeField] private float rayDistance = 2f;
+        [SerializeField] private LayerMask climbableMask;
+        [SerializeField] private float moveSpeed = 0.5f;
+        [SerializeField] private float rotationSpeed = 10f;
+
+        private MeshCollider targetCollider;
+        private Mesh targetMesh;
+        private int triangleIndex = -1;
+        private Vector3 baryCoords;
+        private bool attached = false;
+        private IRotationStrategy rotationStrategy;
+
+        private Vector3 rotationDirection;
+
+        private SurfaceNavigator navigator;
+
+        private void Start()
         {
-            if (Input.GetKeyDown(KeyCode.X))
+            rotationStrategy = new ClimbRotation();
+            TryAttach();
+        }
+    
+        void Update()
+        {
+        
+            if (!attached)
             {
-                TryAttach();
+                if (Input.GetKeyDown(KeyCode.X))
+                {
+                    TryAttach();
+                }
+            }
+            else
+            {
+                HandleMovement();
             }
         }
-        else
+
+        // ---- Публичный API ----
+        public void Detach()
         {
-            HandleMovement();
+            attached = false;
+            targetCollider = null;
+            targetMesh = null;
+            triangleIndex = -1;
+            navigator = null;
         }
-    }
 
-    // ---- Публичный API ----
-    public void Detach()
-    {
-        attached = false;
-        targetCollider = null;
-        targetMesh = null;
-        triangleIndex = -1;
-        navigator = null;
-    }
+        // ---- Вспомогательные методы ----
 
-    // ---- Вспомогательные методы ----
-
-    private void TryAttach()
-    {
-        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, rayDistance, climbableMask))
+        private void TryAttach()
         {
-            if (ValidateHit(hit))
+            if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, rayDistance, climbableMask))
             {
-                AttachToHit(hit);
+                if (ValidateHit(hit))
+                {
+                    AttachToHit(hit);
+                }
             }
+        
         }
-        
-    }
 
-    private bool ValidateHit(RaycastHit hit)
-    {
-        return hit.collider is MeshCollider mc && mc.sharedMesh != null;
-    }
-
-    private void AttachToHit(RaycastHit hit)
-    {
-        targetCollider = hit.collider as MeshCollider;
-        targetMesh = targetCollider.sharedMesh;
-        triangleIndex = hit.triangleIndex;
-        baryCoords = hit.barycentricCoordinate;
-        attached = true;
-        
-        targetCollider.GetComponent<BakeMesh>()?.ForceUpdateCollider();
-        
-        // Берём TriangleAdjacency с поверхности
-        TriangleAdjacency adjacency = targetCollider.GetComponentInChildren<TriangleAdjacency>();
-        if (adjacency != null)
+        private bool ValidateHit(RaycastHit hit)
         {
-            adjacency.RebuildFromMesh(targetCollider.sharedMesh, 1e-6f);
+            return hit.collider is MeshCollider mc && mc.sharedMesh != null;
+        }
+
+        private void AttachToHit(RaycastHit hit)
+        {
+            targetCollider = hit.collider as MeshCollider;
+            targetMesh = targetCollider.sharedMesh;
+            triangleIndex = hit.triangleIndex;
+            baryCoords = hit.barycentricCoordinate;
+            attached = true;
+        
+            targetCollider.GetComponent<BakeMesh>()?.ForceUpdateCollider();
+        
+            // Берём TriangleAdjacency с поверхности
+            TriangleAdjacency adjacency = targetCollider.GetComponentInChildren<TriangleAdjacency>();
+            if (adjacency != null)
+            {
+                adjacency.RebuildFromMesh(targetCollider.sharedMesh, 1e-6f);
             
-            navigator = new SurfaceNavigator( targetCollider, 
-                targetCollider.transform, 
-                adjacency.Neighbors, 
-                adjacency.VertexToTriangles,
-                adjacency.Remap, moveSpeed);
+                navigator = new SurfaceNavigator( targetCollider, 
+                    targetCollider.transform, 
+                    adjacency.Neighbors, 
+                    adjacency.VertexToTriangles,
+                    adjacency.Remap, moveSpeed);
             
-            if (navigator != null)
-            {
-                if (adjacency.Remap == null || adjacency.Remap.Length == 0)
-                    Debug.LogError("Remap пустой");
+                if (navigator != null)
+                {
+                    if (adjacency.Remap == null || adjacency.Remap.Length == 0)
+                        Debug.LogError("Remap пустой");
 
-                if (adjacency.Remap.Length < targetMesh.vertexCount)
-                    Debug.LogWarning($"Remap.Length ({adjacency.Remap.Length}) < baked vertex count ({targetMesh.vertexCount})");
+                    if (adjacency.Remap.Length < targetMesh.vertexCount)
+                        Debug.LogWarning($"Remap.Length ({adjacency.Remap.Length}) < baked vertex count ({targetMesh.vertexCount})");
+                }
+            }
+            else
+            {
+                Debug.LogError("На целевом меше нет TriangleAdjacency!");
+                Debug.Log(hit.collider.name);
             }
         }
-        else
+
+        private void HandleMovement()
         {
-            Debug.LogError("На целевом меше нет TriangleAdjacency!");
-            Debug.Log(hit.collider.name);
-        }
-    }
+            if (navigator == null || triangleIndex < 0) return;
 
-    private void HandleMovement()
-    {
-        if (navigator == null || triangleIndex < 0) return;
-
-        Vector3 moveDir = Vector3.zero;
+            Vector3 moveDir = Vector3.zero;
         
-        if (Input.GetKey(KeyCode.W)) moveDir += transform.forward;
-        if (Input.GetKey(KeyCode.S)) moveDir -= transform.forward;
+            if (Input.GetKey(KeyCode.W)) moveDir += transform.forward;
+            if (Input.GetKey(KeyCode.S)) moveDir -= transform.forward;
 
-        moveDir.Normalize();
+            moveDir.Normalize();
 
-        int _nextTri = triangleIndex;
-        int _oldTri = triangleIndex;
+            int _nextTri = triangleIndex;
+            int _oldTri = triangleIndex;
         
-        // Делаем шаг по поверхности
-        if (moveDir != Vector3.zero)
-        {
-            if (navigator.StepForward(triangleIndex, GetWorldPointOnTriangle(), moveDir,
-                    out int nextTri, out Vector3 nextPos))
+            // Делаем шаг по поверхности
+            if (moveDir != Vector3.zero)
             {
-                _nextTri = nextTri;
-                triangleIndex = nextTri;
-                baryCoords = WorldToBarycentric(nextTri, nextPos);
+                if (navigator.StepForward(triangleIndex, GetWorldPointOnTriangle(), moveDir,
+                        out int nextTri, out Vector3 nextPos))
+                {
+                    _nextTri = nextTri;
+                    triangleIndex = nextTri;
+                    baryCoords = WorldToBarycentric(nextTri, nextPos);
+                }
             }
+            Vector3 surfaceNormal = GetTriangleNormal(triangleIndex);
+            Vector3 surfaceRight = GetSurfaceRight(surfaceNormal);
+
+            if (Input.GetKey(KeyCode.D)) rotationDirection += transform.right;
+            if (Input.GetKey(KeyCode.A)) rotationDirection -= transform.right;
+        
+        
+            HandleUpdateAttachRotation(_oldTri, _nextTri, rotationDirection);
+
+            // Обновляем мировую позицию через барицентрики
+            Vector3 worldPoint = GetWorldPointOnTriangle();
+            transform.position = worldPoint;
         }
-        Vector3 surfaceNormal = GetTriangleNormal(triangleIndex);
-        Vector3 surfaceRight = GetSurfaceRight(surfaceNormal);
 
-        if (Input.GetKey(KeyCode.D)) rotationDirection += transform.right;
-        if (Input.GetKey(KeyCode.A)) rotationDirection -= transform.right;
-        
-        
-        HandleUpdateAttachRotation(_oldTri, _nextTri, rotationDirection);
+        private void HandleUpdateAttachRotation(int _oldTri, int _nextTri, Vector3 rotaionDirection)
+        {
+            Vector3 oldNormal = GetTriangleNormal(_oldTri);
+            Vector3 newNormal = GetTriangleNormal(_nextTri);
 
-        // Обновляем мировую позицию через барицентрики
-        Vector3 worldPoint = GetWorldPointOnTriangle();
-        transform.position = worldPoint;
-    }
+            // 1. Определяем forward: если игрок нажимает AD (накопилось), берем его
+            Vector3 desiredForward = rotationDirection.normalized != Vector3.zero 
+                ? rotationDirection.normalized 
+                : transform.forward;
 
-    private void HandleUpdateAttachRotation(int _oldTri, int _nextTri, Vector3 rotaionDirection)
-    {
-        Vector3 oldNormal = GetTriangleNormal(_oldTri);
-        Vector3 newNormal = GetTriangleNormal(_nextTri);
+            // 2. Проецируем forward на поверхность, чтобы forward не улетал в воздух
+            Vector3 forwardOnSurface = Vector3.ProjectOnPlane(desiredForward, newNormal).normalized;
 
-        // 1. Определяем forward: если игрок нажимает AD (накопилось), берем его
-        Vector3 desiredForward = rotationDirection.normalized != Vector3.zero 
-            ? rotationDirection.normalized 
-            : transform.forward;
+            // Если forward совпал с нормалью (редкий случай), берем крест к up
+            if (forwardOnSurface == Vector3.zero)
+                forwardOnSurface = Vector3.ProjectOnPlane(transform.up, newNormal).normalized;
 
-        // 2. Проецируем forward на поверхность, чтобы forward не улетал в воздух
-        Vector3 forwardOnSurface = Vector3.ProjectOnPlane(desiredForward, newNormal).normalized;
+            // 3. Создаем ориентацию: направление туда, куда хочет игрок, и вверх по нормали поверхности
+            Quaternion targetRot = Quaternion.LookRotation(forwardOnSurface, newNormal);
 
-        // Если forward совпал с нормалью (редкий случай), берем крест к up
-        if (forwardOnSurface == Vector3.zero)
-            forwardOnSurface = Vector3.ProjectOnPlane(transform.up, newNormal).normalized;
+            // 4. Плавно применяем
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * rotationSpeed);
 
-        // 3. Создаем ориентацию: направление туда, куда хочет игрок, и вверх по нормали поверхности
-        Quaternion targetRot = Quaternion.LookRotation(forwardOnSurface, newNormal);
+            // 5. Сбрасываем направление вращения каждый кадр, чтобы оно накапливалось только по кнопкам
+            this.rotationDirection = Vector3.zero;
+        }
 
-        // 4. Плавно применяем
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * rotationSpeed);
+        // ---- Работа с треугольниками ----
 
-        // 5. Сбрасываем направление вращения каждый кадр, чтобы оно накапливалось только по кнопкам
-        this.rotationDirection = Vector3.zero;
-    }
+        private Vector3 GetWorldPointOnTriangle()
+        {
+            GetTriangleVertices(triangleIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
 
-    // ---- Работа с треугольниками ----
+            // barycentric интерполяция
+            Vector3 localPoint = v0 * baryCoords.x + v1 * baryCoords.y + v2 * baryCoords.z;
+            return targetCollider.transform.TransformPoint(localPoint);
+        }
 
-    private Vector3 GetWorldPointOnTriangle()
-    {
-        GetTriangleVertices(triangleIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
+        private Vector3 WorldToBarycentric(int triIndex, Vector3 worldPos)
+        {
+            GetTriangleVertices(triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
 
-        // barycentric интерполяция
-        Vector3 localPoint = v0 * baryCoords.x + v1 * baryCoords.y + v2 * baryCoords.z;
-        return targetCollider.transform.TransformPoint(localPoint);
-    }
+            // Переводим в мировые
+            v0 = targetCollider.transform.TransformPoint(v0);
+            v1 = targetCollider.transform.TransformPoint(v1);
+            v2 = targetCollider.transform.TransformPoint(v2);
 
-    private Vector3 WorldToBarycentric(int triIndex, Vector3 worldPos)
-    {
-        GetTriangleVertices(triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
+            // Плоскость и векторы
+            Vector3 v0v1 = v1 - v0;
+            Vector3 v0v2 = v2 - v0;
+            Vector3 v0p = worldPos - v0;
 
-        // Переводим в мировые
-        v0 = targetCollider.transform.TransformPoint(v0);
-        v1 = targetCollider.transform.TransformPoint(v1);
-        v2 = targetCollider.transform.TransformPoint(v2);
+            float d00 = Vector3.Dot(v0v1, v0v1);
+            float d01 = Vector3.Dot(v0v1, v0v2);
+            float d11 = Vector3.Dot(v0v2, v0v2);
+            float d20 = Vector3.Dot(v0p, v0v1);
+            float d21 = Vector3.Dot(v0p, v0v2);
 
-        // Плоскость и векторы
-        Vector3 v0v1 = v1 - v0;
-        Vector3 v0v2 = v2 - v0;
-        Vector3 v0p = worldPos - v0;
+            float denom = d00 * d11 - d01 * d01;
+            float v = (d11 * d20 - d01 * d21) / denom;
+            float w = (d00 * d21 - d01 * d20) / denom;
+            float u = 1.0f - v - w;
 
-        float d00 = Vector3.Dot(v0v1, v0v1);
-        float d01 = Vector3.Dot(v0v1, v0v2);
-        float d11 = Vector3.Dot(v0v2, v0v2);
-        float d20 = Vector3.Dot(v0p, v0v1);
-        float d21 = Vector3.Dot(v0p, v0v2);
+            return new Vector3(u, v, w);
+        }
 
-        float denom = d00 * d11 - d01 * d01;
-        float v = (d11 * d20 - d01 * d21) / denom;
-        float w = (d00 * d21 - d01 * d20) / denom;
-        float u = 1.0f - v - w;
+        private void GetTriangleVertices(int triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2)
+        {
+            int i0 = targetMesh.triangles[triIndex * 3 + 0];
+            int i1 = targetMesh.triangles[triIndex * 3 + 1];
+            int i2 = targetMesh.triangles[triIndex * 3 + 2];
 
-        return new Vector3(u, v, w);
-    }
-
-    private void GetTriangleVertices(int triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2)
-    {
-        int i0 = targetMesh.triangles[triIndex * 3 + 0];
-        int i1 = targetMesh.triangles[triIndex * 3 + 1];
-        int i2 = targetMesh.triangles[triIndex * 3 + 2];
-
-        v0 = targetMesh.vertices[i0];
-        v1 = targetMesh.vertices[i1];
-        v2 = targetMesh.vertices[i2];
-    }
+            v0 = targetMesh.vertices[i0];
+            v1 = targetMesh.vertices[i1];
+            v2 = targetMesh.vertices[i2];
+        }
     
-    private Vector3 GetTriangleNormal(int triIndex)
-    {
-        GetTriangleVertices(triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
+        private Vector3 GetTriangleNormal(int triIndex)
+        {
+            GetTriangleVertices(triIndex, out Vector3 v0, out Vector3 v1, out Vector3 v2);
 
-        v0 = targetCollider.transform.TransformPoint(v0);
-        v1 = targetCollider.transform.TransformPoint(v1);
-        v2 = targetCollider.transform.TransformPoint(v2);
+            v0 = targetCollider.transform.TransformPoint(v0);
+            v1 = targetCollider.transform.TransformPoint(v1);
+            v2 = targetCollider.transform.TransformPoint(v2);
 
-        return Vector3.Cross(v1 - v0, v2 - v0).normalized;
-    }
+            return Vector3.Cross(v1 - v0, v2 - v0).normalized;
+        }
     
-    private Vector3 GetSurfaceRight(Vector3 surfaceNormal)
-    {
-        // Берём текущий forward персонажа и делаем его ортогональным к поверхности
-        Vector3 forwardOnSurface = Vector3.ProjectOnPlane(transform.forward, surfaceNormal).normalized;
+        private Vector3 GetSurfaceRight(Vector3 surfaceNormal)
+        {
+            // Берём текущий forward персонажа и делаем его ортогональным к поверхности
+            Vector3 forwardOnSurface = Vector3.ProjectOnPlane(transform.forward, surfaceNormal).normalized;
 
-        // Перпендикуляр к forward и normal даст вправо вдоль поверхности
-        return Vector3.Cross(surfaceNormal, forwardOnSurface).normalized;
-    }
+            // Перпендикуляр к forward и normal даст вправо вдоль поверхности
+            return Vector3.Cross(surfaceNormal, forwardOnSurface).normalized;
+        }
     
+    }
 }

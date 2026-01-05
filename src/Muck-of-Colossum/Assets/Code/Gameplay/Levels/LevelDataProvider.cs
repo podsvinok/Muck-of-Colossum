@@ -1,4 +1,4 @@
-﻿using Code.Gameplay.Inventory;
+﻿using Code.Gameplay.InventorySystem;
 using UnityEngine;
 
 namespace Code.Gameplay.Levels

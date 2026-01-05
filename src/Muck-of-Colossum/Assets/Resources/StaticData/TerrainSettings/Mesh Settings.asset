@@ -15,15 +15,13 @@ MonoBehaviour:
   autoUpdate: 1
   meshScale: 1
   useFlatShading: 0
-  chunkSizeIndex: 6
-  flatshadedChunkSizeIndex: 2
-  terrainSizeX: 5
-  terrainSizeY: 5
+  chunkSizeIndex: 8
+  flatshadedChunkSizeIndex: 0
+  terrainSizeX: 3
+  terrainSizeY: 3
   colliderLODIndex: 0
   detailLevels:
   - lod: 0
     visibleDstThreshold: 200
-  - lod: 1
-    visibleDstThreshold: 600
   - lod: 3
-    visibleDstThreshold: 1000
+    visibleDstThreshold: 600

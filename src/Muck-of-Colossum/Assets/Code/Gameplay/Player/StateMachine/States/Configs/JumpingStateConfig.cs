@@ -1,13 +1,16 @@
 using System;
 using UnityEngine;
 
-[Serializable]
-public class JumpingStateConfig
+namespace Code.Gameplay.Player.StateMachine.States.Configs
 {
-    [SerializeField, Range(0, 20)] private float maxJumpHeight;
-    [SerializeField, Range(0, 20)] private float timeToReachMaxHeight;
+    [Serializable]
+    public class JumpingStateConfig
+    {
+        [SerializeField, Range(0, 20)] private float maxJumpHeight;
+        [SerializeField, Range(0, 20)] private float timeToReachMaxHeight;
     
-    public float StartYVelocity => 2 * maxJumpHeight / timeToReachMaxHeight;
-    public float MaxJumpHeight => maxJumpHeight;
-    public float TimeToReachMaxHeight => timeToReachMaxHeight;
+        public float StartYVelocity => 2 * maxJumpHeight / timeToReachMaxHeight;
+        public float MaxJumpHeight => maxJumpHeight;
+        public float TimeToReachMaxHeight => timeToReachMaxHeight;
+    }
 }

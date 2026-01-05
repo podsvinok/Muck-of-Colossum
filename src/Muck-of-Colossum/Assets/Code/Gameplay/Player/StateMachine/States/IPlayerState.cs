@@ -1,8 +1,11 @@
 
-public interface IPlayerState
+namespace Code.Gameplay.Player.StateMachine.States
 {
-   void Enter();
-   void Exit();
-   void HandleInput();
-   void Update();
+   public interface IPlayerState
+   {
+      void Enter();
+      void Exit();
+      void HandleInput();
+      void Update();
+   }
 }

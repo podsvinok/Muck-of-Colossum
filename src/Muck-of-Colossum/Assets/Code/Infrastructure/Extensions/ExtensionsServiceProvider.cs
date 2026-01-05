@@ -1,4 +1,5 @@
-﻿using Code.Gameplay.Item;
+﻿using Code.Gameplay.Items;
+using Code.Gameplay.Recipe;
 using Code.Utils;
 using Zenject;
 
@@ -6,11 +7,15 @@ namespace Code.Infrastructure.Extensions
 {
     public class ExtensionsServiceProvider : IExtensionsServiceProvider, IInitializable
     {
-        private readonly ItemDatabase database;
+        private readonly ItemDatabase itemDatabase;
+        private readonly RecipeDatabase recipeDatabase;
 
-        public ExtensionsServiceProvider(ItemDatabase database)
+        public ExtensionsServiceProvider(
+            ItemDatabase itemDatabase,
+            RecipeDatabase recipeDatabase)
         {
-            this.database = database;
+            this.itemDatabase = itemDatabase;
+            this.recipeDatabase = recipeDatabase;
         }
 
         public void Initialize()
@@ -20,7 +25,8 @@ namespace Code.Infrastructure.Extensions
 
         public void ProvideServices()
         {
-            InventoryDataUtils.Initialize(database);
+            InventoryDataUtils.Initialize(itemDatabase);
+            CraftingDataUtils.Initialize(recipeDatabase);
         }
     }
 }

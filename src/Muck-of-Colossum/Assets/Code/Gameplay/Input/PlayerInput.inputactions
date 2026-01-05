@@ -317,6 +317,34 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "Interactions",
+            "id": "262152c1-6670-477f-9b07-50256fd55c95",
+            "actions": [
+                {
+                    "name": "Crafting",
+                    "type": "Button",
+                    "id": "1d7dd3ef-71d1-491f-8acf-df748a5fc122",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "ab14036e-90ab-40f3-9455-3ac6c37fe1c2",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Crafting",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": []

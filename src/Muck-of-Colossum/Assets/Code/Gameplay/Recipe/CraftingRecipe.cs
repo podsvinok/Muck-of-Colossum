@@ -1,19 +1,20 @@
-﻿using Code.Utils;
+﻿using Code.Gameplay.InventorySystem;
+using Code.Gameplay.Items;
+using Code.Utils;
 using FishNet.CodeGenerating;
 using UnityEngine;
 
-namespace Code.Gameplay.Item
+namespace Code.Gameplay.Recipe
 {
-    [CreateAssetMenu(fileName = "ItemPreset", menuName = "ScriptableObjects/ItemAsset")]
     [UseGlobalCustomSerializer]
-    public class ItemPreset : ScriptableObject
+    [CreateAssetMenu(fileName = "CraftingRecipe", menuName = "ScriptableObjects/CraftingRecipe")]
+    public class CraftingRecipe : ScriptableObject
     {
         [ReadOnly] public string uid;
-        public string itemName;
-        public Item prefab;
-        public Item visualPrefab;
-        public Sprite icon;
-        
+        public string recipeName;
+        public InventoryItem[] ingredients;
+        public InventoryItem result;
+
 #if UNITY_EDITOR
         private void OnValidate()
         {

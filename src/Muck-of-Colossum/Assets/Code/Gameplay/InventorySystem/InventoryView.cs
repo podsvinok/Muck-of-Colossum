@@ -1,7 +1,6 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace Code.Gameplay.Inventory
+namespace Code.Gameplay.InventorySystem
 {
     public class InventoryView : MonoBehaviour
     {

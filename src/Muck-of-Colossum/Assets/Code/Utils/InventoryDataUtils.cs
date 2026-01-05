@@ -1,4 +1,4 @@
-﻿using Code.Gameplay.Item;
+﻿using Code.Gameplay.Items;
 using FishNet.Serializing;
 
 namespace Code.Utils

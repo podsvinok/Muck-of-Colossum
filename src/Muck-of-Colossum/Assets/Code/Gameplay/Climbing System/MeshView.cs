@@ -1,6 +1,9 @@
 using UnityEngine;
 
-public class MeshView : MonoBehaviour
+namespace Code.Gameplay.Climbing_System
 {
-    [SerializeField] public BakeMesh BakeMesh;
+    public class MeshView : MonoBehaviour
+    {
+        [SerializeField] public BakeMesh BakeMesh;
+    }
 }

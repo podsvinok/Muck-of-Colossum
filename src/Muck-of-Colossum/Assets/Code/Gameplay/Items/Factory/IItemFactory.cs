@@ -1,7 +1,7 @@
 ﻿using FishNet.Object;
 using UnityEngine;
 
-namespace Code.Gameplay.Item.Factory
+namespace Code.Gameplay.Items.Factory
 {
     public interface IItemFactory
     {

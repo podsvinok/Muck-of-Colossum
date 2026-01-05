@@ -1,8 +1,6 @@
-﻿using Code.UI.Windows;
-using UnityEngine;
-using UnityEngine.Serialization;
+﻿using Code.Gameplay.InventorySystem;
 
-namespace Code.Gameplay.Inventory
+namespace Code.UI.Windows
 {
     public class ActionInventoryWindow : WindowBase
     {

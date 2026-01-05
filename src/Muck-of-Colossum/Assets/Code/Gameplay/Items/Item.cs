@@ -1,7 +1,7 @@
 ﻿using FishNet.Object;
 using UnityEngine;
 
-namespace Code.Gameplay.Item
+namespace Code.Gameplay.Items
 {
     public class Item : NetworkBehaviour
     {

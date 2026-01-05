@@ -1,23 +1,23 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Linq;
-using Code.Gameplay.Inventory;
-using Code.Gameplay.Item;
+using Code.Gameplay.InventorySystem;
+using Code.Gameplay.Items;
 using Code.Infrastructure.Inputs;
 using Code.UI.Services.Factory;
 using Code.UI.Services.Windows;
 using Code.UI.Windows;
-using Cysharp.Threading.Tasks;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
 using Zenject;
-using Object = UnityEngine.Object;
 
-namespace Code.Gameplay.Player.Inventory
+namespace Code.Gameplay.Player.InventorySystem
 {
-    public class PlayerInventory : Gameplay.Inventory.Inventory
+    public class PlayerInventory : Inventory
     {
+        public Action InventoryChanged;
+        
         [SerializeField] private NetworkObject itemHolder;
         
         private InventoryView inventoryView;
@@ -103,8 +103,8 @@ namespace Code.Gameplay.Player.Inventory
         {
             if (!isWindowOpened)
             {
+                windows.CloseAll();
                 windows.Open(WindowId.Inventory);
-                windows.Close(WindowId.InventoryActiveSlots);
                 isWindowOpened = true;
                 
                 Cursor.visible = true;
@@ -126,6 +126,7 @@ namespace Code.Gameplay.Player.Inventory
             RedrawInventoryViews();
             currentActiveSlot = inventoryItems[activeSlotId.Value];
             RequestChangeItemRPC(activeSlotId.Value, currentActiveSlot.preset);
+            InventoryChanged?.Invoke();
         }
 
         private void OnActiveSlotChanged(int prev, int next, bool asServer)

@@ -4,7 +4,7 @@ using Code.Utils;
 using FishNet.Managing;
 using UnityEngine;
 
-namespace Code.Gameplay.Item
+namespace Code.Gameplay.Items
 {
     public class ItemDatabase
     {
@@ -37,7 +37,6 @@ namespace Code.Gameplay.Item
                 preset = null;
                 return false;
             }
-
             return itemPresets.TryGetValue(uid, out preset);
         }
     }

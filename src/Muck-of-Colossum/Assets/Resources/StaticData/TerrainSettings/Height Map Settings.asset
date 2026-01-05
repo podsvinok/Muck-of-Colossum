@@ -14,18 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoUpdate: 1
   noiseSettings: {fileID: 11400000, guid: b8388fdd110fa6847aaeb4c70987d1f5, type: 2}
-  useFalloff: 0
-  heightMultiplier: 20
-  falloffX: 0
-  falloffY: 0
+  heightMultiplier: 15
   heightCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 2
-      outSlope: 2
+      inSlope: 0
+      outSlope: 0
       tangentMode: 0
       weightedMode: 0
       inWeight: 0

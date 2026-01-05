@@ -69,8 +69,6 @@ namespace Code.Gameplay.TerrainGeneration.Structures
             if (newLodIndex != lodIndex)
             {
                 meshFilter.sharedMesh = lodMeshes[newLodIndex];
-                if (lodIndex == 0)
-                    meshCollider.sharedMesh = null;
                 lodIndex = newLodIndex;
             }
         }

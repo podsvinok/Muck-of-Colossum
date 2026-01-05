@@ -1,10 +1,8 @@
-﻿using FishNet.Component.Ownership;
-using FishNet.Component.Transforming;
-using FishNet.Managing;
+﻿using FishNet.Managing;
 using FishNet.Object;
 using UnityEngine;
 
-namespace Code.Gameplay.Item.Factory
+namespace Code.Gameplay.Items.Factory
 {
     public class ItemFactory : IItemFactory
     {

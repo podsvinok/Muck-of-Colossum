@@ -1,6 +1,9 @@
 using UnityEngine;
 
-public interface IMovementDirectionHandler
+namespace Code.Gameplay.Player.StateMachine.States.MovementHandler
 {
-    public Vector3 GetConvertedVelocity(MovementDirectionContext context);
+    public interface IMovementDirectionHandler
+    {
+        public Vector3 GetConvertedVelocity(MovementDirectionContext context);
+    }
 }

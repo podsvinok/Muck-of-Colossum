@@ -1,33 +1,34 @@
-using UnityEngine;
-
-public class GroundIdlePlayerState : GroundedPlayerState
+namespace Code.Gameplay.Player.StateMachine.States.GroundMovement
 {
-    public GroundIdlePlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) :
-        base(stateSwitcher, data, player)
+    public class GroundIdlePlayerState : GroundedPlayerState
     {
+        public GroundIdlePlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) :
+            base(stateSwitcher, data, player)
+        {
         
-    }
+        }
 
-    public override void Enter()
-    {
-        base.Enter();
+        public override void Enter()
+        {
+            base.Enter();
         
-        View.StartIdle();
-    }
+            View.StartIdle();
+        }
 
-    public override void Exit()
-    {
-        base.Exit();
+        public override void Exit()
+        {
+            base.Exit();
         
-        View.StopIdle();
-    }
+            View.StopIdle();
+        }
 
-    public override void Update()
-    {
-        base.Update();
-        if (IsInputZero())
-            return;
+        public override void Update()
+        {
+            base.Update();
+            if (IsInputZero())
+                return;
         
-        StateSwitcher.SwitchState<RunningPlayerState>();
+            StateSwitcher.SwitchState<RunningPlayerState>();
+        }
     }
 }

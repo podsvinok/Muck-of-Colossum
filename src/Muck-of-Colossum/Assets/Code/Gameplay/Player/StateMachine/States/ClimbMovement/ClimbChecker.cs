@@ -1,52 +1,56 @@
+using Code.Gameplay.Climbing_System;
 using FishNet.Object;
 using UnityEngine;
 
-public class ClimbChecker : NetworkBehaviour
+namespace Code.Gameplay.Player.StateMachine.States.ClimbMovement
 {
-    [SerializeField, Range(0f, 2f)] private float checkDistance;
-    [SerializeField] private LayerMask checkLayer;
-    [SerializeField] private LayerMask climbLayer;
-        
-    public bool IsClimbable { get; private set; }
-
-    private RaycastHit hitInfo;
-
-    public void CheckClimb()
+    public class ClimbChecker : NetworkBehaviour
     {
-        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hitCheck, checkDistance, checkLayer))
+        [SerializeField, Range(0f, 2f)] private float checkDistance;
+        [SerializeField] private LayerMask checkLayer;
+        [SerializeField] private LayerMask climbLayer;
+        
+        public bool IsClimbable { get; private set; }
+
+        private RaycastHit hitInfo;
+
+        public void CheckClimb()
         {
-            BakeMesh bakeMesh = hitCheck.collider.GetComponentInParent<MeshView>().BakeMesh;
-            bakeMesh.ForceUpdateCollider();
-            
-            if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, checkDistance, climbLayer))
+            if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hitCheck, checkDistance, checkLayer))
             {
-                IsClimbable = ValidateHit(hit);
-                hitInfo = hit;
+                BakeMesh bakeMesh = hitCheck.collider.GetComponentInParent<MeshView>().BakeMesh;
+                bakeMesh.ForceUpdateCollider();
+            
+                if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, checkDistance, climbLayer))
+                {
+                    IsClimbable = ValidateHit(hit);
+                    hitInfo = hit;
+                }
             }
+            else IsClimbable = false;
         }
-        else IsClimbable = false;
-    }
 
-    public bool TryGetHitInfo(out RaycastHit hitInfo)
-    {
-        hitInfo = this.hitInfo;
-        if (IsClimbable)
+        public bool TryGetHitInfo(out RaycastHit hitInfo)
         {
-            return true;
-        }
-        else 
-            return false;
+            hitInfo = this.hitInfo;
+            if (IsClimbable)
+            {
+                return true;
+            }
+            else 
+                return false;
 
-    }
+        }
     
-    private bool ValidateHit(RaycastHit hit)
-    {
-        MeshCollider targetCollider = hit.collider as MeshCollider;
-        TriangleAdjacency adjacency = targetCollider.GetComponentInChildren<TriangleAdjacency>();
+        private bool ValidateHit(RaycastHit hit)
+        {
+            MeshCollider targetCollider = hit.collider as MeshCollider;
+            TriangleAdjacency adjacency = targetCollider.GetComponentInChildren<TriangleAdjacency>();
         
-        if (adjacency == null)
-            return false;
+            if (adjacency == null)
+                return false;
         
-        return hit.collider is MeshCollider mc && mc.sharedMesh != null;
+            return hit.collider is MeshCollider mc && mc.sharedMesh != null;
+        }
     }
 }

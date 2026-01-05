@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MeshClimbSystem
+namespace Code.Gameplay.Climbing_System
 {
     [RequireComponent(typeof(CharacterController))]
     public class MeshClimber : MonoBehaviour

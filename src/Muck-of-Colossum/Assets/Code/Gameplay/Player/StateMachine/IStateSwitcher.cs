@@ -1,5 +1,10 @@
 
-public  interface IStateSwitcher 
+using Code.Gameplay.Player.StateMachine.States;
+
+namespace Code.Gameplay.Player.StateMachine
 {
-    void SwitchState<T>() where T : IPlayerState;
+    public  interface IStateSwitcher 
+    {
+        void SwitchState<T>() where T : IPlayerState;
+    }
 }

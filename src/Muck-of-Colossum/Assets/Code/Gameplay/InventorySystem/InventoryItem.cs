@@ -1,7 +1,8 @@
-﻿using Code.Gameplay.Item;
+﻿using Code.Gameplay.Items;
 
-namespace Code.Gameplay.Inventory
+namespace Code.Gameplay.InventorySystem
 {
+    [System.Serializable]
     public struct InventoryItem
     {
         public ItemPreset preset;

@@ -1,36 +1,39 @@
-using UnityEngine;
+using Code.Gameplay.Player.StateMachine.States.Configs;
 
-public class RunningPlayerState : GroundedPlayerState
+namespace Code.Gameplay.Player.StateMachine.States.GroundMovement
 {
-    private RunningStateConfig config;
-    public RunningPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) :
-        base(stateSwitcher, data,  player)
+    public class RunningPlayerState : GroundedPlayerState
     {
-        config = player.Config.RunningStateConfig;
-    }
+        private RunningStateConfig config;
+        public RunningPlayerState(IStateSwitcher stateSwitcher, PlayerStateMachineData data, Player player) :
+            base(stateSwitcher, data,  player)
+        {
+            config = player.Config.RunningStateConfig;
+        }
 
-    public override void Enter()
-    {
-        base.Enter();
+        public override void Enter()
+        {
+            base.Enter();
         
-        View.StartRunning();
+            View.StartRunning();
 
-        Data.Speed = config.Speed;
-        Data.RotationSpeed = config.RotationSpeed;
-    }
+            Data.Speed = config.Speed;
+            Data.RotationSpeed = config.RotationSpeed;
+        }
 
-    public override void Exit()
-    {
-        base.Exit();
+        public override void Exit()
+        {
+            base.Exit();
         
-        View.StopRunning();
-    }
+            View.StopRunning();
+        }
 
-    public override void Update()
-    {
-        base.Update();
+        public override void Update()
+        {
+            base.Update();
         
-        if(IsInputZero())
-            StateSwitcher.SwitchState<GroundIdlePlayerState>();
+            if(IsInputZero())
+                StateSwitcher.SwitchState<GroundIdlePlayerState>();
+        }
     }
 }
