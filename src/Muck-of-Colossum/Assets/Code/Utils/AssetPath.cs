@@ -2,7 +2,7 @@
 {
     public static class AssetPath
     {
-        public const string InventoryActiveSlots = "UI/ActiveInventorySlots";
+        public const string InventoryActiveSlots = "UI/Inventory/ActiveInventorySlots";
         public const string WindowStaticData = "StaticData/UI/WindowsStaticData";
         public const string UIRoot = "UI/UIRoot";
         public const string ItemPresets = "StaticData/ItemPresets";
@@ -14,6 +14,6 @@
         public const string NoiseSettings = "StaticData/TerrainSettings/Noise Settings";
         public const string NavMeshSettings = "StaticData/TerrainSettings/NavMesh Settings";
         public const string CraftingRecipes = "StaticData/Recipes";
-        public const string RecipeTile = "UI/RecipeTile";
+        public const string RecipeTile = "UI/Crafting/RecipeTile";
     }
 }

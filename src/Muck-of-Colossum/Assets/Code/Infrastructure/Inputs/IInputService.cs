@@ -12,5 +12,6 @@ namespace Code.Infrastructure.Inputs
         public event Action LeftMouseButtonDown;
         public event Action RightMouseButtonDown;
         public event Action<int> ChangeActiveSlotButtonDown; 
+        public event Action<float> ChangeActiveSlotScroll;
     }
 }

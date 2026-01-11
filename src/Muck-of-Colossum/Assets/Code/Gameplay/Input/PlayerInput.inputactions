@@ -144,6 +144,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "Change Active Slot Wheel",
+                    "type": "PassThrough",
+                    "id": "c6bfac09-3294-45a7-a81e-6919e0b40278",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -267,6 +276,39 @@
                     "action": "Change Active Slot",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "efc0464e-1ca5-4c0a-8cd4-04bc443eb1a2",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Change Active Slot Wheel",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "Positive",
+                    "id": "b3044122-ae43-4547-b16a-61a4ad1fd745",
+                    "path": "<Mouse>/scroll/down",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Change Active Slot Wheel",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Negative",
+                    "id": "480e2789-e409-4c2d-8a72-9ee1129215d2",
+                    "path": "<Mouse>/scroll/up",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Change Active Slot Wheel",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 }
             ]
         },

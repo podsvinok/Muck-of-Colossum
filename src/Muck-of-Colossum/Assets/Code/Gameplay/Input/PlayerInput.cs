@@ -230,6 +230,15 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Change Active Slot Wheel"",
+                    ""type"": ""PassThrough"",
+                    ""id"": ""c6bfac09-3294-45a7-a81e-6919e0b40278"",
+                    ""expectedControlType"": ""Axis"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -353,6 +362,39 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""action"": ""Change Active Slot"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""1D Axis"",
+                    ""id"": ""efc0464e-1ca5-4c0a-8cd4-04bc443eb1a2"",
+                    ""path"": ""1DAxis"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot Wheel"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""Positive"",
+                    ""id"": ""b3044122-ae43-4547-b16a-61a4ad1fd745"",
+                    ""path"": ""<Mouse>/scroll/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot Wheel"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""Negative"",
+                    ""id"": ""480e2789-e409-4c2d-8a72-9ee1129215d2"",
+                    ""path"": ""<Mouse>/scroll/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Change Active Slot Wheel"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         },
@@ -445,6 +487,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         m_Inventory_InventoryUI = m_Inventory.FindAction("InventoryUI", throwIfNotFound: true);
         m_Inventory_CollectItem = m_Inventory.FindAction("Collect Item", throwIfNotFound: true);
         m_Inventory_ChangeActiveSlot = m_Inventory.FindAction("Change Active Slot", throwIfNotFound: true);
+        m_Inventory_ChangeActiveSlotWheel = m_Inventory.FindAction("Change Active Slot Wheel", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_LeftMouseButtonClick = m_UI.FindAction("LeftMouseButtonClick", throwIfNotFound: true);
@@ -656,6 +699,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Inventory_InventoryUI;
     private readonly InputAction m_Inventory_CollectItem;
     private readonly InputAction m_Inventory_ChangeActiveSlot;
+    private readonly InputAction m_Inventory_ChangeActiveSlotWheel;
     /// <summary>
     /// Provides access to input actions defined in input action map "Inventory".
     /// </summary>
@@ -679,6 +723,10 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Inventory/ChangeActiveSlot".
         /// </summary>
         public InputAction @ChangeActiveSlot => m_Wrapper.m_Inventory_ChangeActiveSlot;
+        /// <summary>
+        /// Provides access to the underlying input action "Inventory/ChangeActiveSlotWheel".
+        /// </summary>
+        public InputAction @ChangeActiveSlotWheel => m_Wrapper.m_Inventory_ChangeActiveSlotWheel;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -714,6 +762,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @ChangeActiveSlot.started += instance.OnChangeActiveSlot;
             @ChangeActiveSlot.performed += instance.OnChangeActiveSlot;
             @ChangeActiveSlot.canceled += instance.OnChangeActiveSlot;
+            @ChangeActiveSlotWheel.started += instance.OnChangeActiveSlotWheel;
+            @ChangeActiveSlotWheel.performed += instance.OnChangeActiveSlotWheel;
+            @ChangeActiveSlotWheel.canceled += instance.OnChangeActiveSlotWheel;
         }
 
         /// <summary>
@@ -734,6 +785,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @ChangeActiveSlot.started -= instance.OnChangeActiveSlot;
             @ChangeActiveSlot.performed -= instance.OnChangeActiveSlot;
             @ChangeActiveSlot.canceled -= instance.OnChangeActiveSlot;
+            @ChangeActiveSlotWheel.started -= instance.OnChangeActiveSlotWheel;
+            @ChangeActiveSlotWheel.performed -= instance.OnChangeActiveSlotWheel;
+            @ChangeActiveSlotWheel.canceled -= instance.OnChangeActiveSlotWheel;
         }
 
         /// <summary>
@@ -1027,6 +1081,13 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnChangeActiveSlot(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Change Active Slot Wheel" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnChangeActiveSlotWheel(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

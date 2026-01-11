@@ -13,7 +13,8 @@ namespace Code.Infrastructure.Inputs
         public event Action CollectItemButtonDown;
         public event Action LeftMouseButtonDown;
         public event Action RightMouseButtonDown;
-        public event Action<int> ChangeActiveSlotButtonDown; 
+        public event Action<int> ChangeActiveSlotButtonDown;
+        public event Action<float> ChangeActiveSlotScroll;
 
         public void Initialize()
         {
@@ -24,8 +25,12 @@ namespace Code.Infrastructure.Inputs
             Input.UI.LeftMouseButtonClick.performed += OnLeftMouseButtonClick;
             Input.UI.RightMouseButtonClick.performed += OnRightMouseButtonClick;
             Input.Inventory.ChangeActiveSlot.performed += OnChangeActiveSlotButtonDown;
+            Input.Inventory.ChangeActiveSlotWheel.performed += OnChangeActiveSlotWheel;
             Input.Enable();
         }
+
+        private void OnChangeActiveSlotWheel(InputAction.CallbackContext obj) => 
+            ChangeActiveSlotScroll?.Invoke(obj.ReadValue<float>());
 
         private void OnCraftingButtonDown(InputAction.CallbackContext obj) => 
             CraftingUIButtonDown?.Invoke();

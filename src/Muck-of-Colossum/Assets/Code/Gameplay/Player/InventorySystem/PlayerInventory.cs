@@ -27,11 +27,13 @@ namespace Code.Gameplay.Player.InventorySystem
         
         private IInputService input;
         private IWindowService windows;
+        private ItemDatabase database;
 
         private InventoryItem currentActiveSlot;
+        private InventoryItem draggedItem; 
         private GameObject holdingItem;
-        private bool isWindowOpened;
         private bool isHoldingActiveSlot;
+        private bool isDragging;
         
         private readonly SyncVar<int> activeSlotId = new(-1);
 
@@ -39,10 +41,11 @@ namespace Code.Gameplay.Player.InventorySystem
         public void Construct(
             IInputService input,
             IWindowService windows,
-            IUIFactory uiFactory)
+            ItemDatabase database)
         {
             this.input = input;
             this.windows = windows;
+            this.database = database;
         }
 
         public override void OnStartClient()
@@ -59,6 +62,8 @@ namespace Code.Gameplay.Player.InventorySystem
             InitializeActionInventoryView();
 
             SetInventoryItems();
+            TryAddItem(database.TryGetItemPresetByName("1488"), 10);
+            TryAddItem(database.TryGetItemPresetByName("NoWorkMuckWolk"), 10);
             RedrawInventoryViews();
             OnActiveSlotButtonDown(1);
             
@@ -88,10 +93,16 @@ namespace Code.Gameplay.Player.InventorySystem
 
         private void SubscribeToEvents()
         {
+            inventoryView.SlotPointerDown += OnSlotPointerDown;
+            inventoryView.SlotPointerEnter += OnSlotPointerEnter;
+            inventoryView.SlotPointerExit += OnSlotPointerExit;
             inventoryItems.CollectionChanged += OnInventoryChanged;
             input.InventoryUIButtonDown += OnInventoryButtonDown;
             input.ChangeActiveSlotButtonDown += OnActiveSlotButtonDown;
+            input.ChangeActiveSlotScroll += OnActiveSlotScroll;
         }
+
+       
 
         private void RedrawInventoryViews()
         {
@@ -101,20 +112,18 @@ namespace Code.Gameplay.Player.InventorySystem
 
         private void OnInventoryButtonDown()
         {
-            if (!isWindowOpened)
+            if (windows.IsOpened(WindowId.Inventory))
             {
                 windows.CloseAll();
                 windows.Open(WindowId.Inventory);
-                isWindowOpened = true;
                 
                 Cursor.visible = true;
                 Cursor.lockState = CursorLockMode.None;
             }
             else
             {
-                windows.Close(WindowId.Inventory);
+                windows.CloseAll();
                 windows.Open(WindowId.InventoryActiveSlots);
-                isWindowOpened = false;
                 
                 Cursor.visible = false;
                 Cursor.lockState = CursorLockMode.Locked;
@@ -135,6 +144,18 @@ namespace Code.Gameplay.Player.InventorySystem
                 actionInventoryView.SetActiveSlot(next);
         }
 
+        private void OnActiveSlotScroll(float value)
+        {
+            int index = activeSlotId.Value + (int)value;
+            if (index == activeSlotId.Value) return;
+            
+            if (index > actionInventoryView.GetActiveSlotsCount() - 1) index = 0;
+            if (index < 0) index = actionInventoryView.GetActiveSlotsCount() - 1;
+            
+            InventoryItem selectedItem = inventoryItems[index];
+            RequestChangeItemRPC(index, selectedItem.preset);
+        }
+
         private void OnActiveSlotButtonDown(int slotIndex)
         {
             int index = slotIndex - 1;
@@ -143,9 +164,68 @@ namespace Code.Gameplay.Player.InventorySystem
             RequestChangeItemRPC(index, selectedItem.preset);
         }
 
-        public override void Interact(int index) => 
-            Debug.Log($"Interact item with index: {index}");
+        private void OnSlotPointerEnter(int index, InventoryCursor inventoryCursor) => 
+            inventoryCursor.SetItemName(inventoryItems[index]);
 
+        private void OnSlotPointerExit(int index, InventoryCursor inventoryCursor) => 
+            inventoryCursor.ClearItemNameVisual();
+
+        private void OnSlotPointerDown(int index, InventoryCursor inventoryCursor)
+        {
+            if (!isDragging)
+            {
+                var itemInSlot = inventoryItems[index];
+                
+                if (itemInSlot.preset == null) 
+                    return;
+
+                draggedItem = itemInSlot;
+                isDragging = true;
+                inventoryItems[index] = new InventoryItem();
+                
+                if (inventoryCursor != null)
+                    inventoryCursor.SetHoldingItem(draggedItem);
+                return;
+            }
+            
+            var itemInTargetSlot = inventoryItems[index];
+            
+            if (itemInTargetSlot.preset == null)
+            {
+                inventoryItems[index] = draggedItem;
+                
+                draggedItem = new InventoryItem();
+                isDragging = false;
+                if (inventoryCursor != null) 
+                    inventoryCursor.Hide();
+                return;
+            }
+            
+            if (CanStack(draggedItem, itemInTargetSlot))
+            {
+                itemInTargetSlot.quantity += draggedItem.quantity;
+                inventoryItems[index] = itemInTargetSlot;
+                
+                draggedItem = new InventoryItem();
+                isDragging = false;
+                if (inventoryCursor != null)
+                    inventoryCursor.Hide();
+                return;
+            }
+            
+            inventoryItems[index] = draggedItem;
+            draggedItem = itemInTargetSlot;
+            if (inventoryCursor != null) 
+                inventoryCursor.SetHoldingItem(draggedItem);
+        }
+
+        private bool CanStack(InventoryItem itemA, InventoryItem itemB)
+        {
+            if (itemA.preset == null || itemB.preset == null) 
+                return false;
+            return itemA.preset.uid == itemB.preset.uid;
+        }
+        
         [ServerRpc]
         private void RequestChangeItemRPC(int newIndex, ItemPreset preset)
         {
@@ -168,6 +248,7 @@ namespace Code.Gameplay.Player.InventorySystem
             if (IsServerOnlyInitialized || IsOwner)
                 activeSlotId.OnChange -= OnActiveSlotChanged;
             if (!IsOwner) return;
+            inventoryView.SlotPointerDown += OnSlotPointerDown;
             inventoryItems.CollectionChanged -= OnInventoryChanged;
             input.InventoryUIButtonDown -= OnInventoryButtonDown;
             input.ChangeActiveSlotButtonDown -= OnActiveSlotButtonDown;;

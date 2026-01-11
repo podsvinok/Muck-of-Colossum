@@ -27,8 +27,8 @@ namespace Code.UI.Services.Factory
         public WindowBase CreateWindow(WindowId windowId)
         {
             var windowConfig = staticData.ForWindow(windowId);
-            var inventoryActiveSlots = Object.Instantiate(windowConfig.Prefab, uiRoot);
-            return inventoryActiveSlots;
+            var window = Object.Instantiate(windowConfig.Prefab, uiRoot);
+            return window;
         }
 
         public async UniTask CreateUIRoot()

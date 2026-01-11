@@ -5,6 +5,8 @@ namespace Code.UI.Windows
 {
     public class WindowBase: MonoBehaviour
     {
+        [HideInInspector] public bool isOpened;
+        
         private void Awake() => 
             OnAwake();
 
@@ -17,11 +19,18 @@ namespace Code.UI.Windows
         private void OnDestroy() => 
             Cleanup();
 
-        public virtual void Show() => 
+        public virtual void Show()
+        {
             gameObject.SetActive(true);
+            isOpened = true;
+        }
 
-        public virtual void Hide() => 
+        public virtual void Hide()
+        {
             gameObject.SetActive(false);
+            isOpened = false;
+        }
+
         protected virtual void OnAwake(){}
         protected virtual void Initialize(){}
         protected virtual void SubscribeUpdates(){}

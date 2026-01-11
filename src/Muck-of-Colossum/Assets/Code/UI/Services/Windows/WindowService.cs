@@ -16,6 +16,14 @@ namespace Code.UI.Services.Windows
             this.uiFactory = uiFactory;
         }
 
+        public bool IsOpened(WindowId windowId)
+        {
+            if (!windows[windowId].isOpened)
+                return true;
+            
+            return false;
+        }
+        
         public WindowBase Open(WindowId windowId)
         {
             if (!windows.Keys.Contains(windowId))

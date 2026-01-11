@@ -39,5 +39,17 @@ namespace Code.Gameplay.Items
             }
             return itemPresets.TryGetValue(uid, out preset);
         }
+
+        public ItemPreset TryGetItemPresetByName(string name)
+        {
+            foreach (var itemPreset in itemPresets.Values)
+            {
+                if (itemPreset.itemName == name)
+                    return itemPreset;
+            }
+
+            Debug.LogError($"no item with name {name}");
+            return default;
+        }
     }
 }

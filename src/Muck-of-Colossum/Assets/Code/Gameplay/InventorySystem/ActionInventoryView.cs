@@ -24,9 +24,14 @@ namespace Code.Gameplay.InventorySystem
 
         public void SetActiveSlot(int index)
         {
-            if (currentActiveSlot) currentActiveSlot.ToggleActive(false);
+            if (currentActiveSlot) 
+                currentActiveSlot.ToggleActive(false);
+            
             inventoryTiles[index].ToggleActive(true);
             currentActiveSlot = inventoryTiles[index];
         }
+
+        public int GetActiveSlotsCount() => 
+            inventoryTiles.Length;
     }
 }

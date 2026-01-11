@@ -18,8 +18,6 @@ namespace Code.Gameplay.Player.Crafting
         public Action InventoryChanged;
         
         [SerializeField] private PlayerInventory playerInventory;
-
-        private bool isWindowOpened;
         
         private RecipeDatabase recipeDatabase;
         private IWindowService windows;
@@ -58,22 +56,19 @@ namespace Code.Gameplay.Player.Crafting
 
         private void OnCraftingButtonDown()
         {
-            if (!isWindowOpened)
+            if (windows.IsOpened(WindowId.Crafting))
             {
                 windows.CloseAll();
-                windows.Open(WindowId.Crafting);
                 windows.Open(WindowId.Inventory);
-                isWindowOpened = true;
+                windows.Open(WindowId.Crafting);
                 
                 Cursor.visible = true;
                 Cursor.lockState = CursorLockMode.None;
             }
             else
             {
-                windows.Close(WindowId.Crafting);
-                windows.Close(WindowId.Inventory);
+                windows.CloseAll();
                 windows.Open(WindowId.InventoryActiveSlots);
-                isWindowOpened = false;
                 
                 Cursor.visible = false;
                 Cursor.lockState = CursorLockMode.Locked;
@@ -101,16 +96,13 @@ namespace Code.Gameplay.Player.Crafting
             if (!IsOwner) return;
             
             if (playerInventory.HasAllIngredients(recipe.ingredients)) 
-                CraftItemRpc(recipe);
+                CraftItem(recipe);
         }
 
-        public bool CanCraft(CraftingRecipe recipe)
-        {
-            return playerInventory.HasAllIngredients(recipe.ingredients);
-        }
+        public bool CanCraft(CraftingRecipe recipe) => 
+            playerInventory.HasAllIngredients(recipe.ingredients);
 
-        [ServerRpc]
-        private void CraftItemRpc(CraftingRecipe recipe)
+        private void CraftItem(CraftingRecipe recipe)
         {
             if (recipe == null) return;
             

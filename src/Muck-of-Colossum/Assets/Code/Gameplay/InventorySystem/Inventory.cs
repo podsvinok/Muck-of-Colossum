@@ -32,10 +32,6 @@ namespace Code.Gameplay.InventorySystem
             RemoveItem(index, amount);
         }
 
-        public virtual void Interact(int index)
-        {
-        }
-
         public bool HasItems(InventoryItem ingredient)
         {
             int needed = ingredient.quantity;

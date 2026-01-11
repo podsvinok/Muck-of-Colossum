@@ -71,11 +71,14 @@ namespace Code.Infrastructure.States.GameStates
             LoadItemDatabase();
             LoadRecipeDatabase();
             await sceneTask;
+            
             var terrainTask = GenerateTerrain(args.Seed);
             var uiTask = CreateUIRoot();
+            
             await terrainTask;
             await SpawnPlayers(args);
-            InitializeChunks();
+            
+            InitializeViewer();
             await uiTask;
             
             await stateMachine.Enter<GameplayLoopState>();
@@ -124,7 +127,7 @@ namespace Code.Infrastructure.States.GameStates
                 await UniTask.Yield();
         }
 
-        private void InitializeChunks() => 
+        private void InitializeViewer() => 
             terrainGenerator.InitializeViewer(levelData.Player.transform);
 
         public UniTask Exit()

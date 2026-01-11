@@ -27,8 +27,8 @@ namespace Code.Gameplay.Items.Factory
             var itemGameObject = CreateItemWithParent(item.gameObject, parent.transform);
             var networkObject = itemGameObject.GetComponent<NetworkObject>();
             
-            networkManager.ServerManager.Spawn(networkObject);
             networkObject.SetParent(parent);
+            networkManager.ServerManager.Spawn(networkObject);
             
             return networkObject;
         }

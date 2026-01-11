@@ -7,6 +7,8 @@ namespace Code.Gameplay.Player.Crafting
 {
     public class CraftingView : MonoBehaviour
     {
+        [SerializeField] private RecipeCursor recipeCursor;
+        
         private PlayerCrafting crafting;
         private RecipeTile[] recipeTiles;
         private bool isInitialized;
@@ -25,6 +27,12 @@ namespace Code.Gameplay.Player.Crafting
         private void OnInventoryChanged() => 
             UpdateAvailability();
 
+        public void OnTilePointEnter(CraftingRecipe recipe) =>
+            recipeCursor.SetHoverRecipe(recipe);
+
+        public void OnTilePointExit() =>
+            recipeCursor.ClearHoverRecipe();
+        
         public void UpdateAvailability()
         {
             if (!isInitialized) return;
