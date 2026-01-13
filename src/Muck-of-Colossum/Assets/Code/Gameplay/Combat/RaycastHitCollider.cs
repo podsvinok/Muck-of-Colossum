@@ -33,6 +33,8 @@ public class RaycastHitCollider : HitCollider
                     continue;
                 
                 hitTargets.Add(hit.collider);
+                
+                InvokeHit(hit);
             }
             
             previousColliderPoints[i] = actualPoint;

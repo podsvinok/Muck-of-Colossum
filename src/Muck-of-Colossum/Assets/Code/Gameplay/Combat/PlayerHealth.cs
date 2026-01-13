@@ -1,10 +1,10 @@
+﻿
+using System;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
-using System;
 
-
-public class EnemyHealth : NetworkBehaviour, IHealth
+public class PlayerHealth : NetworkBehaviour, IHealth
 {
     private readonly SyncVar<float> currentHealth = new SyncVar<float>(0f);
     private float maxHealth;
@@ -21,6 +21,8 @@ public class EnemyHealth : NetworkBehaviour, IHealth
     
     public void Init(float health)
     {
+        if (!IsServerInitialized) return;
+        
         maxHealth = health;
         currentHealth.Value = health;
     }
@@ -28,14 +30,27 @@ public class EnemyHealth : NetworkBehaviour, IHealth
     [ServerRpc(RequireOwnership = false)]
     public void TakeDamage(float damage, Vector3 hitPoint = default)
     {
+        Debug.Log("I take damage");
         if (IsDead) return;
         
         currentHealth.Value -= damage;
-        OnDamaged?.Invoke(damage);
+        NotifyDamageObservers(damage);
         
         if (IsDead)
         {
-            OnDeath?.Invoke();
+            NotifyDeathObservers();
         }
+    }
+    
+    [ObserversRpc]
+    private void NotifyDamageObservers(float damage)
+    {
+        OnDamaged?.Invoke(damage);
+    }
+
+    [ObserversRpc]
+    private void NotifyDeathObservers()
+    {
+        OnDeath?.Invoke();
     }
 }

@@ -17,15 +17,16 @@ public class Player : NetworkBehaviour
     public CharacterController Controller => characterController;
     public CameraController PlayerCamera => playerCamera;
     public PlayerConfig Config => config;
-    
     public PlayerView View => view;
-    
     public GroundChecker GroundChecker => groundChecker;
     public ClimbChecker ClimbChecker => climbChecker;
+    public IHealth Health => health;
 
     private IInputService inputService;
     private PlayerInput input;
     private PlayerStateMachine stateMachine;
+    private IHealth health;
+
 
     [Inject]
     public void Construct(IInputService inputService)
@@ -39,6 +40,10 @@ public class Player : NetworkBehaviour
         
         input = inputService.Input;
         stateMachine = new PlayerStateMachine(this);
+        
+        health = gameObject.GetComponent<IHealth>();
+        health.Init(health.MaxHealth);
+        
     }
 
     private void Update()

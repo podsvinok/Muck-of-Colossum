@@ -1,5 +1,5 @@
-﻿// Собрано файлов: 151
-// Дата: 28.12.2025 18:50:08
+﻿// Собрано файлов: 153
+// Дата: 13.01.2026 23:00:42
 ================================================================================
 
 // ========== Assets\Code\Random\IRandomService.cs ==========
@@ -1476,8 +1476,42 @@ public class TriangleMeshHelper
 
 --------------------------------------------------------------------------------
 
+// ========== Assets\Code\Gameplay\Combat\EnemyHitCollider.cs ==========
+
+
+using System.Collections.Generic;
+using FishNet.Object;
+using UnityEngine;
+
+public class EnemyHitCollider : RaycastHitCollider
+{
+    private NetworkBehaviour owner;
+    
+    public void InitOwner(NetworkBehaviour ownerEnemy)
+    {
+        owner = ownerEnemy;
+    }
+    
+    public override void CheckHits()
+    {
+        if (owner == null || !owner.IsServerInitialized)
+            return;
+            
+        base.CheckHits();
+    }
+    
+    public List<Collider> GetHitTargets()
+    {
+        return new List<Collider>(hitTargets);
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
 // ========== Assets\Code\Gameplay\Combat\HitCollider.cs ==========
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -1487,8 +1521,9 @@ public abstract class HitCollider : MonoBehaviour
     
     [SerializeField] protected LayerMask targetLayer;
     protected List<Collider> hitTargets = new List<Collider>();
-    
     public List<Collider> HitTargets => hitTargets;
+    
+    public event Action<RaycastHit> OnHit;
 
     public abstract void Init();
     
@@ -1498,6 +1533,73 @@ public abstract class HitCollider : MonoBehaviour
         => hitTargets.Contains(target);
     
     public abstract void CheckHits();
+    
+    protected void InvokeHit(RaycastHit target)
+    {
+        OnHit?.Invoke(target);
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Combat\PlayerHealth.cs ==========
+
+
+using System;
+using FishNet.Object;
+using FishNet.Object.Synchronizing;
+using UnityEngine;
+
+public class PlayerHealth : NetworkBehaviour, IHealth
+{
+    private readonly SyncVar<float> currentHealth = new SyncVar<float>(0f);
+    private float maxHealth;
+    
+    public float CurrentHealth  { 
+        get => currentHealth.Value;
+        set => currentHealth.Value = value > MaxHealth ? MaxHealth : value;
+    }
+    public float MaxHealth {get => maxHealth; set => maxHealth = value; }
+    public bool IsDead => currentHealth.Value <= 0;
+    
+    public event Action OnDeath;
+    public event Action<float> OnDamaged;
+    
+    public void Init(float health)
+    {
+        if (!IsServerInitialized) return;
+        
+        maxHealth = health;
+        currentHealth.Value = health;
+    }
+    
+    [ServerRpc(RequireOwnership = false)]
+    public void TakeDamage(float damage, Vector3 hitPoint = default)
+    {
+        Debug.Log("I take damage");
+        if (IsDead) return;
+        
+        currentHealth.Value -= damage;
+        NotifyDamageObservers(damage);
+        
+        if (IsDead)
+        {
+            NotifyDeathObservers();
+        }
+    }
+    
+    [ObserversRpc]
+    private void NotifyDamageObservers(float damage)
+    {
+        OnDamaged?.Invoke(damage);
+    }
+
+    [ObserversRpc]
+    private void NotifyDeathObservers()
+    {
+        OnDeath?.Invoke();
+    }
 }
 
 
@@ -1540,6 +1642,8 @@ public class RaycastHitCollider : HitCollider
                     continue;
                 
                 hitTargets.Add(hit.collider);
+                
+                InvokeHit(hit);
             }
             
             previousColliderPoints[i] = actualPoint;
@@ -1606,15 +1710,99 @@ public class RaycastHitCollider : HitCollider
 
 --------------------------------------------------------------------------------
 
-// ========== Assets\Code\Gameplay\CompontentsInterfaces\IAttack.cs ==========
+// ========== Assets\Code\Gameplay\CompontentsInterfaces\AttackController.cs ==========
 
 
-public interface IAttack 
+using FishNet.Object;
+using UnityEngine;
+
+public class AttackController : NetworkBehaviour, IAttack
 {
-    void Attack()
+    [SerializeField] HitCollider hitCollider;
+
+    private float baseDamage;
+
+    public void Init(float baseDamage)
+    {
+        this.baseDamage = baseDamage;
+    }
+    
+    public override void OnStartNetwork()
+    {
+        base.OnStartNetwork();
+        hitCollider.OnHit += HandleHit;
+    }
+
+    public override void OnStopNetwork()
+    {
+        base.OnStopNetwork();
+        hitCollider.OnHit -= HandleHit;
+    }
+
+
+    private void HandleHit(RaycastHit hit)
+    {
+        if (!IsOwner && !IsServer) return;
+        
+        GameObject targetObj = hit.collider.gameObject;
+        CmdApplyDamage(targetObj, hit.point);
+    }
+    
+    public void Attack()
     {
         
     }
+
+    public float CalculateDamage()
+    {
+        return baseDamage;
+    }
+    public void ApplyDamage(Vector3 hitPoint, IHealth health, float damage)
+    {
+        health.TakeDamage(damage, hitPoint);
+    }
+    
+    [ServerRpc]
+    private void CmdApplyDamage(GameObject target, Vector3 hitPoint)
+    {
+        Debug.Log("Try Get IHealth");
+        if (target != null && target.TryGetComponent<IHealth>(out var health))
+        {
+            float damage = CalculateDamage();
+            ApplyDamage(hitPoint, health, damage);
+            Debug.Log("Damage Applied");
+        }
+    }
+    
+
+    public void OpenCollider()
+    {
+        hitCollider.IsAttacking = true;
+    }
+
+    public void CloseCollider()
+    {
+        hitCollider.IsAttacking = false;
+        hitCollider.ResetHits();
+    }
+}
+
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\CompontentsInterfaces\IAttack.cs ==========
+
+
+using UnityEngine;
+
+public interface IAttack
+{
+    void Init(float baseDamage);
+    void Attack();
+    float CalculateDamage();
+
+    void ApplyDamage(Vector3 hitPoint, IHealth health, float damage);
+
 }
 
 
@@ -1636,20 +1824,6 @@ public interface IEnemyClimbingDetector
 
 --------------------------------------------------------------------------------
 
-// ========== Assets\Code\Gameplay\CompontentsInterfaces\IEnemyMovement.cs ==========
-
-using UnityEngine;
-
-public interface IEnemyMovement 
-{
-    void MoveTo(Vector3 targetPosition);
-    void Stop();
-    bool IsMoving { get; }
-}
-
-
---------------------------------------------------------------------------------
-
 // ========== Assets\Code\Gameplay\CompontentsInterfaces\IHealth.cs ==========
 
 using UnityEngine;
@@ -1657,11 +1831,20 @@ using System;
 
 public interface IHealth 
 {
-    float CurrentHealth { get; }
-    float MaxHealth { get; }
+    float CurrentHealth
+    {
+        get;
+        set;
+    }
+
+    float MaxHealth { get; set; }
     bool IsDead { get; }
     event Action OnDeath;
     event Action<float> OnDamaged;
+
+
+    void Init(float health);
+    
     void TakeDamage(float damage, Vector3 hitPoint = default);
 }
 
@@ -2895,15 +3078,16 @@ public class Player : NetworkBehaviour
     public CharacterController Controller => characterController;
     public CameraController PlayerCamera => playerCamera;
     public PlayerConfig Config => config;
-    
     public PlayerView View => view;
-    
     public GroundChecker GroundChecker => groundChecker;
     public ClimbChecker ClimbChecker => climbChecker;
+    public IHealth Health => health;
 
     private IInputService inputService;
     private PlayerInput input;
     private PlayerStateMachine stateMachine;
+    private IHealth health;
+
 
     [Inject]
     public void Construct(IInputService inputService)
@@ -2917,6 +3101,10 @@ public class Player : NetworkBehaviour
         
         input = inputService.Input;
         stateMachine = new PlayerStateMachine(this);
+        
+        health = gameObject.GetComponent<IHealth>();
+        health.Init(health.MaxHealth);
+        
     }
 
     private void Update()
@@ -2941,9 +3129,11 @@ public class PlayerConfig : ScriptableObject
     [SerializeField] private RunningStateConfig runningStateConfig;
     [SerializeField] private AirborneStateConfig airborneStateConfig;
     [SerializeField] private ClimbStateConfig climbStateConfig;
+    [SerializeField] private HealthConfig healthConfig;
     public RunningStateConfig RunningStateConfig => runningStateConfig;
     public AirborneStateConfig AirborneStateConfig => airborneStateConfig;
     public ClimbStateConfig ClimbStateConfig => climbStateConfig;
+    public HealthConfig HealthConfig => healthConfig;
 }
 
 
@@ -4243,6 +4433,7 @@ public abstract class Enemy : NetworkBehaviour
     [SerializeField] protected BehaviorGraphAgent behaviorAgent;
     [SerializeField] protected EnemyConfig config;
     [SerializeField] protected EnemyView view;
+    [SerializeField] protected EnemyHitCollider hitCollider;
     
     public BehaviorGraphAgent BehaviorAgent => behaviorAgent;
     public EnemyConfig Config => config;
@@ -4252,20 +4443,31 @@ public abstract class Enemy : NetworkBehaviour
     public IHealth Health { get; protected set; }
     public ITargetDetector TargetDetector { get; protected set; }
 
+    protected IAttack attackController;
+
     public virtual void Init()
     {
         agent = GetComponent<NavMeshAgent>();
         Health = GetComponent<IHealth>();
         TargetDetector = GetComponent<ITargetDetector>();
+        attackController = GetComponent<IAttack>();
         
         if (IsServerInitialized)
         {
             behaviorAgent.enabled = true;
             agent.enabled = true;
+
+            Health.MaxHealth = config.health;
+            attackController.Init(config.attackDamage);
+            hitCollider.Init();
+            hitCollider.InitOwner(this);
             
             behaviorAgent.SetVariableValue("Enemy", this);
             behaviorAgent.SetVariableValue("EnemyView", view);
             behaviorAgent.SetVariableValue("MoveSpeed", config.moveSpeed);
+            
+            InitializeComponents();
+
         }
         else
         {
@@ -4274,7 +4476,6 @@ public abstract class Enemy : NetworkBehaviour
         }
         
         
-        InitializeComponents();
     }
     
     protected abstract void InitializeComponents();
@@ -4371,22 +4572,24 @@ using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
 using System;
-using FishNet.CodeGenerating;
+
 
 public class EnemyHealth : NetworkBehaviour, IHealth
 {
-    [AllowMutableSyncType]
     private readonly SyncVar<float> currentHealth = new SyncVar<float>(0f);
     private float maxHealth;
     
-    public float CurrentHealth => currentHealth.Value;
-    public float MaxHealth => maxHealth;
+    public float CurrentHealth  { 
+        get => currentHealth.Value;
+        set => currentHealth.Value = value > MaxHealth ? MaxHealth : value;
+    }
+    public float MaxHealth {get => maxHealth; set => maxHealth = value; }
     public bool IsDead => currentHealth.Value <= 0;
     
     public event Action OnDeath;
     public event Action<float> OnDamaged;
     
-    public void Initialize(float health)
+    public void Init(float health)
     {
         maxHealth = health;
         currentHealth.Value = health;
@@ -4490,14 +4693,15 @@ public class MeleeGoblinFactory: IEnemyFactory
     public Enemy CreateEnemy(Transform position)
     {
         var prefab = Resources.Load<GameObject>("Characters/Enemies/MeleeGoblinEnemy");
-        var gameObject = Object.Instantiate(prefab, position.position, Quaternion.identity);
+        var gameObject = GameObject.Instantiate(prefab, position.position, Quaternion.identity);
         
         var enemyComponent = gameObject.GetComponent<Enemy>();
-        
 
         var networkObject = gameObject.GetComponent<NetworkObject>();
         networkManager.ServerManager.Spawn(networkObject);
+        
         enemyComponent.Init();
+
         return enemyComponent;
     }
 }
@@ -4576,7 +4780,7 @@ public class BasicEnemy : Enemy
 {
     protected override void InitializeComponents()
     {
-        ((EnemyHealth)Health).Initialize(config.health);
+        ((EnemyHealth)Health).Init(config.health);
     }
 }
 
@@ -6739,44 +6943,6 @@ public partial class DetectPlayerAction : Action
 
 --------------------------------------------------------------------------------
 
-// ========== Assets\Code\Gameplay\Enemies\BehaviorTree\Actions\MoveToTarget.cs ==========
-
-using Unity.Behavior;
-using UnityEngine;
-
-public class MoveToTarget : Action
-{
-    [SerializeField] private Blackboard blackboard;
-    [SerializeField] private float stoppingDistance = 1.5f;
-
-    protected override Status OnStart()
-    {
-        return base.OnStart();
-        
-        
-    }
-
-    // protected override Status OnUpdate()
-    // {
-    //     if (blackboard.currentTarget == null)
-    //         return Status.Failure;
-    //     
-    //     float distance = Vector3.Distance(blackboard.enemy.transform.position, blackboard.currentTarget.position);
-    //     
-    //     if (distance <= stoppingDistance)
-    //     {
-    //         blackboard.enemy.Movement.Stop();
-    //         return Status.Success;
-    //     }
-    //     
-    //     blackboard.enemy.Movement.MoveTo(blackboard.currentTarget.position);
-    //     return Status.Running;
-    // }
-}
-
-
---------------------------------------------------------------------------------
-
 // ========== Assets\Code\Gameplay\Player\StateMachine\States\IPlayerState.cs ==========
 
 
@@ -7509,6 +7675,22 @@ public class ClimbStateConfig
     public LayerMask ClimbableMask => climbableMask;
 }
 
+
+--------------------------------------------------------------------------------
+
+// ========== Assets\Code\Gameplay\Player\StateMachine\States\Configs\HealthConfig.cs ==========
+
+using System;
+using UnityEngine;
+
+[Serializable]
+public class HealthConfig
+{
+    [SerializeField, Range(0, 99999)] private float maxHealth;
+    
+    public float MaxHealth => maxHealth;
+    
+}
 
 --------------------------------------------------------------------------------
 

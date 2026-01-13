@@ -1,8 +1,12 @@
 
-public interface IAttack 
+using UnityEngine;
+
+public interface IAttack
 {
-    void Attack()
-    {
-        
-    }
+    void Init(float baseDamage);
+    void Attack();
+    float CalculateDamage();
+
+    void ApplyDamage(Vector3 hitPoint, IHealth health, float damage);
+
 }
