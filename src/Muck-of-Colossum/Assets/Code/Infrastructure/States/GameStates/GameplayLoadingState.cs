@@ -72,7 +72,7 @@ namespace Code.Infrastructure.States.GameStates
             LoadRecipeDatabase();
             await sceneTask;
             
-            var terrainTask = GenerateTerrain(args.Seed);
+            var terrainTask = GenerateTerrain(args);
             var uiTask = CreateUIRoot();
             
             await terrainTask;
@@ -102,9 +102,9 @@ namespace Code.Infrastructure.States.GameStates
         private async UniTask CreateUIRoot() => 
             await uiFactory.CreateUIRoot();
 
-        private async UniTask GenerateTerrain(int seed)
+        private async UniTask GenerateTerrain(GameplayLoadingStateEnterArgs args)
         {
-            staticData.NoiseSettings.seed = seed;
+            staticData.NoiseSettings.seed = args.Seed;
             await terrainGenerator.GenerateTerrain();
             await terrainGenerator.InitializeChunks();
         }

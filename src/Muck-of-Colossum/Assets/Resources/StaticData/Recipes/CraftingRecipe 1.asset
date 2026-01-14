@@ -17,6 +17,8 @@ MonoBehaviour:
   ingredients:
   - preset: {fileID: 11400000, guid: 597092ef481be794b88cce0e44c4b703, type: 2}
     quantity: 3
+  - preset: {fileID: 11400000, guid: 229d0f291f30af0458e23332b7f43f54, type: 2}
+    quantity: 2
   result:
     preset: {fileID: 11400000, guid: 229d0f291f30af0458e23332b7f43f54, type: 2}
-    quantity: 6
+    quantity: 5

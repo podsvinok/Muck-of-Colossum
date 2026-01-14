@@ -8,6 +8,7 @@ namespace Code.Infrastructure.Installers
     { 
         [SerializeField] private Transform startPoint;
         [SerializeField] private Transform terrainParent;
+        [SerializeField] private ResourceNetworkService resourceNetworkService;
         
         private ILevelDataProvider levelData;
 
@@ -21,6 +22,10 @@ namespace Code.Infrastructure.Installers
         {
             levelData.StartPoint = startPoint.position;
             levelData.TerrainParent = terrainParent;
+
+            Container
+                .BindInterfacesAndSelfTo<ResourceNetworkService>()
+                .FromInstance(resourceNetworkService);
         }
     }
 }

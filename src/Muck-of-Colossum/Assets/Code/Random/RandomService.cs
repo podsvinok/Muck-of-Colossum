@@ -9,5 +9,8 @@ namespace Code.Random
 
         public float GetRandomFloatInRange(float minValue, float maxValue) => 
             UnityEngine.Random.Range(minValue, maxValue);
+
+        public int GetRandomIntInRange(int minValue, int maxValue) =>
+            UnityEngine.Random.Range(minValue, maxValue);
     }
 }

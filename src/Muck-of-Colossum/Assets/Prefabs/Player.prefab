@@ -895,7 +895,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _componentIndexCache: 1
   _addedNetworkObject: {fileID: 2095437073064168544}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 2095437073064168544}
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -1620,8 +1620,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _componentIndexCache: 2
   _addedNetworkObject: {fileID: 2095437073064168544}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 2095437073064168544}
   checkDistance: 2
+  checkLayer:
+    serializedVersion: 2
+    m_Bits: 0
   climbLayer:
     serializedVersion: 2
     m_Bits: 512
@@ -2662,7 +2665,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _componentIndexCache: 4
   _addedNetworkObject: {fileID: 2095437073064168544}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 2095437073064168544}
+  animator: {fileID: 0}
 --- !u!1 &4736616587958593108
 GameObject:
   m_ObjectHideFlags: 0
@@ -4542,7 +4546,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _componentIndexCache: 3
   _addedNetworkObject: {fileID: 2095437073064168544}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 2095437073064168544}
   currentCamera: {fileID: 0}
   followTarget: {fileID: 0}
 --- !u!1 &8277417902386397046
@@ -4653,12 +4657,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _componentIndexCache: 0
   _addedNetworkObject: {fileID: 2095437073064168544}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 2095437073064168544}
   config: {fileID: 0}
   view: {fileID: 5240118686535596785}
   playerCamera: {fileID: 0}
   groundChecker: {fileID: 7590301404860936211}
   climbChecker: {fileID: 1062316950762872900}
+  characterController: {fileID: 0}
 --- !u!114 &2095437073064168544
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4677,7 +4682,12 @@ MonoBehaviour:
   <ComponentIndex>k__BackingField: 0
   <PredictedSpawn>k__BackingField: {fileID: 0}
   <PredictedOwner>k__BackingField: {fileID: 0}
-  NetworkBehaviours: []
+  NetworkBehaviours:
+  - {fileID: 6322635264675085840}
+  - {fileID: 7590301404860936211}
+  - {fileID: 1062316950762872900}
+  - {fileID: 6653811627689430392}
+  - {fileID: 5240118686535596785}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -4702,15 +4712,15 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 65535
+  <PrefabId>k__BackingField: 0
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 2092870565765373345
   <SceneId>k__BackingField: 0
   SerializedTransformProperties:
-    Position: {x: 0, y: 0, z: 0}
-    Rotation: {x: 0, y: 0, z: 0, w: 0}
-    Scale: {x: 0, y: 0, z: 0}
-    IsValid: 0
+    Position: {x: 14.11, y: 0, z: 2.4}
+    Rotation: {x: 0, y: 0, z: 0, w: 1}
+    Scale: {x: 1, y: 1, z: 1}
+    IsValid: 1
 --- !u!1 &8530764939278488170
 GameObject:
   m_ObjectHideFlags: 0

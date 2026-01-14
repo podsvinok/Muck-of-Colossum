@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Code.Gameplay.Levels;
+using Code.Gameplay.ResourceSystem.Factory;
 using Code.Gameplay.TerrainGeneration.Structures;
 using Code.Infrastructure.StaticData;
 using Cysharp.Threading.Tasks;
@@ -20,13 +21,14 @@ namespace Code.Gameplay.TerrainGeneration.Generators
         private Transform viewer;
         private TerrainChunk[] terrainChunks;
         
-        private IStaticDataService staticData;
-        private ILevelDataProvider levelData;
-        private HeightMapGenerator heightMapGenerator;
-        private MeshGenerator meshGenerator;
-        private ColliderGenerator colliderGenerator;
-        private NavMeshGenerator navMeshGenerator;
-        private CharacterController characterController;
+        private readonly IStaticDataService staticData;
+        private readonly ILevelDataProvider levelData;
+        private readonly HeightMapGenerator heightMapGenerator;
+        private readonly MeshGenerator meshGenerator;
+        private readonly ColliderGenerator colliderGenerator;
+        private readonly NavMeshGenerator navMeshGenerator;
+        private readonly ResourceGenerator resourceGenerator;
+        private readonly IResourceFactory resourceFactory;
 
         public TerrainGenerator(
             HeightMapGenerator heightMapGenerator,
@@ -34,7 +36,9 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             ColliderGenerator colliderGenerator,
             IStaticDataService staticData,
             ILevelDataProvider levelData,
-            NavMeshGenerator navMeshGenerator)
+            NavMeshGenerator navMeshGenerator,
+            ResourceGenerator resourceGenerator, 
+            IResourceFactory resourceFactory)
         {
             this.heightMapGenerator = heightMapGenerator;
             this.meshGenerator = meshGenerator;
@@ -42,6 +46,8 @@ namespace Code.Gameplay.TerrainGeneration.Generators
             this.staticData = staticData;
             this.levelData = levelData;
             this.navMeshGenerator = navMeshGenerator;
+            this.resourceGenerator = resourceGenerator;
+            this.resourceFactory = resourceFactory;
         }
 
         public async UniTask RegenerateTerrain()
@@ -76,10 +82,12 @@ namespace Code.Gameplay.TerrainGeneration.Generators
                 
                 terrainChunks[y + width * x] = new TerrainChunk(
                     staticData, 
+                    resourceFactory,
                     heightMapGenerator,
                     meshGenerator,
+                    resourceGenerator,
                     currentChunkCoord,
-                    levelData.TerrainParent, 
+                    levelData.TerrainParent,
                     bottomFalloff, 
                     topFalloff,
                     leftFalloff, 
@@ -99,12 +107,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
         {
             UpdateChunks(levelData.StartPoint);
             
-            var chunksToBakeMesh = new List<TerrainChunk>();
-            
-            foreach (var chunk in terrainChunks) 
-                chunksToBakeMesh.Add(chunk);
-            
-            await colliderGenerator.GenerateCollider(chunksToBakeMesh);
+            await colliderGenerator.GenerateCollider(terrainChunks);
             navMeshGenerator.GenerateNavMesh(levelData.TerrainParent);
         }
 

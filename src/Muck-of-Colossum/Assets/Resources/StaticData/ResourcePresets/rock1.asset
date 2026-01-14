@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3bf047e2bbe4edcab567740fb17a57a, type: 3}
+  m_Name: rock1
+  m_EditorClassIdentifier: 
+  resourceName: rock
+  prefab: {fileID: 4338733020114745497, guid: 40f74c39767b1c949bf6f5a1a367b117, type: 3}
+  drop:
+  - item: {fileID: 11400000, guid: 597092ef481be794b88cce0e44c4b703, type: 2}
+    minAmount: 3
+    maxAmount: 10
+    dropChance: 0.9

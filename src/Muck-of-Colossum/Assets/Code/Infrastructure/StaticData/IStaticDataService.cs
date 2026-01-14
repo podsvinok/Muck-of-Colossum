@@ -12,6 +12,7 @@ namespace Code.Infrastructure.StaticData
         public TextureSettings TextureSettings { get; set; }
         public NoiseSettings NoiseSettings { get; set; }
         public NavMeshSettings NavMeshSettings { get; set; }
+        public ResourceSettings ResourceSettings { get; set; }
         
         public UniTask LoadAllAsync();
         public WindowConfig ForWindow(WindowId windowId);

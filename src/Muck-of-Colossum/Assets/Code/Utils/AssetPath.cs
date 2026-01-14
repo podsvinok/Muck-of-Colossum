@@ -13,6 +13,7 @@
         public const string TextureSettings = "StaticData/TerrainSettings/Texture Settings";
         public const string NoiseSettings = "StaticData/TerrainSettings/Noise Settings";
         public const string NavMeshSettings = "StaticData/TerrainSettings/NavMesh Settings";
+        public const string ResourceSettings = "StaticData/TerrainSettings/Resource Settings";
         public const string CraftingRecipes = "StaticData/Recipes";
         public const string RecipeTile = "UI/Crafting/RecipeTile";
     }

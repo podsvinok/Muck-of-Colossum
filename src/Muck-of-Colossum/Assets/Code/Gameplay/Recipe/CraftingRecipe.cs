@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Code.Gameplay.Recipe
 {
     [UseGlobalCustomSerializer]
-    [CreateAssetMenu(fileName = "CraftingRecipe", menuName = "ScriptableObjects/CraftingRecipe")]
+    [CreateAssetMenu(fileName = "CraftingRecipe", menuName = "StaticData/CraftingRecipe")]
     public class CraftingRecipe : ScriptableObject
     {
         [ReadOnly] public string uid;

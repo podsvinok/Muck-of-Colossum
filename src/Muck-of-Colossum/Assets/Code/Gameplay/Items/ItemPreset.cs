@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Code.Gameplay.Items
 {
-    [CreateAssetMenu(fileName = "ItemPreset", menuName = "ScriptableObjects/ItemAsset")]
+    [CreateAssetMenu(fileName = "ItemPreset", menuName = "StaticData/ItemAsset")]
     [UseGlobalCustomSerializer]
     public class ItemPreset : ScriptableObject
     {

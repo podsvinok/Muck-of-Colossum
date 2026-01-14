@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ee219d0125e4ad59d70a46382bff1ac, type: 3}
+  m_Name: TreeNoise
+  m_EditorClassIdentifier: 
+  autoUpdate: 0
+  scale: 75
+  octaves: 3
+  persistance: 0.16
+  lacunarity: 2
+  seed: 67
+  offset: {x: 228, y: 12}

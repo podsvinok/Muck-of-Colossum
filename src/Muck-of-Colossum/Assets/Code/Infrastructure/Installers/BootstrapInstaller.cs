@@ -3,6 +3,7 @@ using Code.Gameplay.Items.Factory;
 using Code.Gameplay.Levels;
 using Code.Gameplay.Player.Factory;
 using Code.Gameplay.Recipe;
+using Code.Gameplay.ResourceSystem.Factory;
 using Code.Gameplay.TerrainGeneration.Generators;
 using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.Extensions;
@@ -41,7 +42,6 @@ namespace Code.Infrastructure.Installers
             BindStateFactory();
             BindGameFactories();
             BindUIFactory();
-            BindItemFactory();
             
             BindStates();
             BindGameStateMachine();
@@ -50,6 +50,14 @@ namespace Code.Infrastructure.Installers
             BindTerrainGenerators();
             
             BindDatabases();
+            BindResourcePool();
+        }
+
+        private void BindResourcePool()
+        {
+            Container
+                .BindInterfacesAndSelfTo<ResourcePool>()
+                .AsSingle();
         }
 
         private void BindRandomService()
@@ -73,14 +81,6 @@ namespace Code.Infrastructure.Installers
             Container
                 .Bind<IUIFactory>()
                 .To<UIFactory>()
-                .AsSingle();
-        }
-
-        private void BindItemFactory()
-        {
-            Container
-                .Bind<IItemFactory>()
-                .To<ItemFactory>()
                 .AsSingle();
         }
 
@@ -123,6 +123,10 @@ namespace Code.Infrastructure.Installers
 
             Container
                 .BindInterfacesAndSelfTo<NavMeshGenerator>()
+                .AsSingle();
+
+            Container
+                .BindInterfacesAndSelfTo<ResourceGenerator>()
                 .AsSingle();
         }
 
@@ -243,6 +247,16 @@ namespace Code.Infrastructure.Installers
             Container
                 .Bind<IPlayerFactory>()
                 .To<PlayerFactory>()
+                .AsSingle();
+            
+            Container
+                .Bind<IResourceFactory>()
+                .To<ResourceFactory>()
+                .AsSingle();
+            
+            Container
+                .Bind<IItemFactory>()
+                .To<ItemFactory>()
                 .AsSingle();
         }
 

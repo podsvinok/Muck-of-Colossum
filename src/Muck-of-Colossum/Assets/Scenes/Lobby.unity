@@ -501,7 +501,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6845497616576538126, guid: 873fd04ee12dd404f93e6250c858e755, type: 3}
       propertyPath: <SceneId>k__BackingField
-      value: 4001283254
+      value: 3728666550
       objectReference: {fileID: 0}
     - target: {fileID: 7427935160783180922, guid: 873fd04ee12dd404f93e6250c858e755, type: 3}
       propertyPath: m_LocalPosition.x

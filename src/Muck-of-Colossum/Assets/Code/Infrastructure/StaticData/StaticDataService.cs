@@ -17,6 +17,7 @@ namespace Code.Infrastructure.StaticData
         public TextureSettings TextureSettings { get; set; }
         public NoiseSettings NoiseSettings { get; set; }
         public NavMeshSettings NavMeshSettings { get; set; }
+        public ResourceSettings ResourceSettings { get; set; }
 
         private readonly IAssetProvider assetProvider;
         private Dictionary<WindowId, WindowConfig> windowConfigs;
@@ -25,6 +26,7 @@ namespace Code.Infrastructure.StaticData
         {
             this.assetProvider = assetProvider;
         }
+
 
         public async UniTask LoadAllAsync()
         {
@@ -42,12 +44,8 @@ namespace Code.Infrastructure.StaticData
                 LoadMeshSettings(),
                 LoadTextureSettings(),
                 LoadNoiseSettings(),
-                LoadNavMeshSettings());
-        }
-
-        private async UniTask LoadNavMeshSettings()
-        {
-            NavMeshSettings = await assetProvider.LoadAsync<NavMeshSettings>(AssetPath.NavMeshSettings);
+                LoadNavMeshSettings(),
+                LoadBiomeSettings());
         }
 
         private async UniTask LoadWindowConfigs()
@@ -59,6 +57,12 @@ namespace Code.Infrastructure.StaticData
                 .Configs
                 .ToDictionary(x => x.WindowId, x => x);
         }
+
+        private async UniTask LoadNavMeshSettings() => 
+            NavMeshSettings = await assetProvider.LoadAsync<NavMeshSettings>(AssetPath.NavMeshSettings);
+        
+        private async UniTask LoadBiomeSettings() => 
+            ResourceSettings = await assetProvider.LoadAsync<ResourceSettings>(AssetPath.ResourceSettings);
 
         private async UniTask LoadHeightMapSettings() => 
             HeightMapSettings = await assetProvider.LoadAsync<HeightMapSettings>(AssetPath.HeightMapSettings);

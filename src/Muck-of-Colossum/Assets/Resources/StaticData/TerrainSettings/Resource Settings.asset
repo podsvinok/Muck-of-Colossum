@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bf49b075d114e6fb7f7ce3254a5f41b, type: 3}
+  m_Name: Resource Settings
+  m_EditorClassIdentifier: 
+  autoUpdate: 1
+  resourceGroups:
+  - groupName: Trees
+    prefabs:
+    - resource: {fileID: 11400000, guid: c5b3382954b913048a813e04a95cc7c7, type: 2}
+      weight: 0.5
+    - resource: {fileID: 11400000, guid: 9cd7c315060940d46857a61379674797, type: 2}
+      weight: 0.8
+    - resource: {fileID: 11400000, guid: 9cf595f1625799e4c94fc250fd80d79c, type: 2}
+      weight: 0.33
+    noiseSettings: {fileID: 11400000, guid: c7443c7693ce61b479a0fa6dd7fd20f2, type: 2}
+    spawnThreshold: 0.6
+    density: 7
+    minHeight: 0.15
+    maxHeight: 0.8
+    randomRotationRange: {x: 5, y: 360, z: 5}
+    scaleRange: {x: 1, y: 2}
+  - groupName: Rocks
+    prefabs:
+    - resource: {fileID: 11400000, guid: bbb91258fdb3578498ee287fe6db8801, type: 2}
+      weight: 0.33
+    noiseSettings: {fileID: 11400000, guid: d36acb329516f9a4b8ffdc97e9d3823d, type: 2}
+    spawnThreshold: 0.7
+    density: 5
+    minHeight: 0.4
+    maxHeight: 1
+    randomRotationRange: {x: 5, y: 360, z: 5}
+    scaleRange: {x: 1, y: 2}

@@ -13,10 +13,12 @@ namespace Code.Gameplay.Items.Factory
             this.networkManager = networkManager;
         }
 
-        public NetworkObject SpawnItem(Item item, Vector3 at)
+        public NetworkObject SpawnItem(Item item, Vector3 at, int amount)
         {
             var itemGameObject = CreateItem(item.gameObject, at);
             var networkObject = itemGameObject.GetComponent<NetworkObject>();
+            var itemComponent = itemGameObject.GetComponent<Item>();
+            item.Amount = amount;
             networkManager.ServerManager.Spawn(networkObject);
             
             return networkObject;

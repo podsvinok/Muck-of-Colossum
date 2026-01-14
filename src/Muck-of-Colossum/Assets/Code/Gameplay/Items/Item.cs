@@ -7,5 +7,6 @@ namespace Code.Gameplay.Items
     {
         [SerializeField] private ItemPreset preset;
         public ItemPreset Preset => preset;
+        public int Amount;
     }
 }

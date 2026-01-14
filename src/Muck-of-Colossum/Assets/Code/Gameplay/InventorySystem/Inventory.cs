@@ -27,7 +27,7 @@ namespace Code.Gameplay.InventorySystem
 
             amount = Mathf.Min(item.quantity, amount);
             for (int i = 0; i < amount; i++)
-                SpawnItem(item.preset);
+                SpawnItem(item.preset, amount);
             
             RemoveItem(index, amount);
         }
@@ -122,7 +122,7 @@ namespace Code.Gameplay.InventorySystem
         }
         
         [ServerRpc(RequireOwnership = false)]
-        private void SpawnItem(ItemPreset item) => 
-            itemFactory.SpawnItem(item.prefab, itemSpawnPoint.position);
+        private void SpawnItem(ItemPreset item, int amount) => 
+            itemFactory.SpawnItem(item.prefab, itemSpawnPoint.position, amount);
     }
 }

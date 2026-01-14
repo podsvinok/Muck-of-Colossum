@@ -22,4 +22,30 @@ namespace Code.Gameplay.TerrainGeneration.StaticData
             persistance = Mathf.Clamp01(persistance);
         }
     }
+
+    public struct NoiseSettingsStruct
+    {
+        public NoiseSettingsStruct(
+            float scale,
+            int octaves,
+            float persistance,
+            float lacunarity,
+            int seed,
+            Vector2 offset)
+        {
+            this.scale = scale;
+            this.octaves = octaves;
+            this.persistance = persistance;
+            this.lacunarity = lacunarity;
+            this.seed = seed;
+            this.offset = offset;
+        }
+        
+        public float scale;
+        public int octaves;
+        public float persistance;
+        public float lacunarity;
+        public int seed;
+        public Vector2 offset;
+    }
 }

@@ -2,7 +2,8 @@
 {
     public interface IRandomService
     {
-        public int GetRandomSeed();
+        int GetRandomSeed();
         float GetRandomFloatInRange(float minValue, float maxValue);
+        int GetRandomIntInRange(int minValue, int maxValue);
     }
 }
