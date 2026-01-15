@@ -62,8 +62,6 @@ namespace Code.Gameplay.Player.InventorySystem
             InitializeActionInventoryView();
 
             SetInventoryItems();
-            TryAddItem(database.TryGetItemPresetByName("1488"), 10);
-            TryAddItem(database.TryGetItemPresetByName("NoWorkMuckWolk"), 10);
             RedrawInventoryViews();
             OnActiveSlotButtonDown(1);
             
@@ -101,9 +99,7 @@ namespace Code.Gameplay.Player.InventorySystem
             input.ChangeActiveSlotButtonDown += OnActiveSlotButtonDown;
             input.ChangeActiveSlotScroll += OnActiveSlotScroll;
         }
-
-       
-
+        
         private void RedrawInventoryViews()
         {
             inventoryView.RedrawEverything(inventoryItems.ToArray());

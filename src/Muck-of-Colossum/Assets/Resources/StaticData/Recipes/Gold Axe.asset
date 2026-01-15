@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ade4e171535d42e882642e3ee2e83745, type: 3}
+  m_Name: Gold Axe
+  m_EditorClassIdentifier: 
+  uid: 636b2594ec4c57746934ca6320fba7c0
+  recipeName: Gold Axe
+  ingredients:
+  - preset: {fileID: 11400000, guid: 50192fb2096cbcf44a6abb1e82c9229b, type: 2}
+    quantity: 20
+  - preset: {fileID: 11400000, guid: 19a0bbcd117d47f4793014b624f0980d, type: 2}
+    quantity: 10
+  result:
+    preset: {fileID: 11400000, guid: 8e564986aa425f8439dd98fc42d71cd5, type: 2}
+    quantity: 1

@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ee219d0125e4ad59d70a46382bff1ac, type: 3}
   m_Name: RockNoise
   m_EditorClassIdentifier: 
-  autoUpdate: 0
-  scale: 75
-  octaves: 3
-  persistance: 0.16
-  lacunarity: 1.5
-  seed: 228322
-  offset: {x: 15, y: 0}
+  autoUpdate: 1
+  scale: 80
+  octaves: 4
+  persistance: 1
+  lacunarity: 1.6
+  seed: 1
+  offset: {x: 0, y: 0}

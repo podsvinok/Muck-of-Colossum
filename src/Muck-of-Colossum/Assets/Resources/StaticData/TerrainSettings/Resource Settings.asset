@@ -14,29 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoUpdate: 1
   resourceGroups:
-  - groupName: Trees
-    prefabs:
-    - resource: {fileID: 11400000, guid: c5b3382954b913048a813e04a95cc7c7, type: 2}
-      weight: 0.5
-    - resource: {fileID: 11400000, guid: 9cd7c315060940d46857a61379674797, type: 2}
-      weight: 0.8
-    - resource: {fileID: 11400000, guid: 9cf595f1625799e4c94fc250fd80d79c, type: 2}
-      weight: 0.33
-    noiseSettings: {fileID: 11400000, guid: c7443c7693ce61b479a0fa6dd7fd20f2, type: 2}
-    spawnThreshold: 0.6
-    density: 7
-    minHeight: 0.15
-    maxHeight: 0.8
-    randomRotationRange: {x: 5, y: 360, z: 5}
-    scaleRange: {x: 1, y: 2}
-  - groupName: Rocks
-    prefabs:
-    - resource: {fileID: 11400000, guid: bbb91258fdb3578498ee287fe6db8801, type: 2}
-      weight: 0.33
-    noiseSettings: {fileID: 11400000, guid: d36acb329516f9a4b8ffdc97e9d3823d, type: 2}
-    spawnThreshold: 0.7
-    density: 5
-    minHeight: 0.4
-    maxHeight: 1
-    randomRotationRange: {x: 5, y: 360, z: 5}
-    scaleRange: {x: 1, y: 2}
+  - {fileID: 11400000, guid: 8691ab1520d97794b8014646758be3a8, type: 2}
+  - {fileID: 11400000, guid: 686e942d033c2b34b9d5812e0e9d7113, type: 2}
+  - {fileID: 11400000, guid: d0fcde1a218eee94991c60dc3f573b71, type: 2}
+  - {fileID: 11400000, guid: dad73b6b06af4ec469c8235b10c0770c, type: 2}
+  - {fileID: 11400000, guid: f4cd67146090cf549be385ec940f64f7, type: 2}
+  - {fileID: 11400000, guid: 30657ee188b8ace41b6e65ccb2545989, type: 2}
+  - {fileID: 11400000, guid: 73cd8f4cdea2bef4980d2f305b5149ae, type: 2}
+  - {fileID: 11400000, guid: b53202302b97db84ab5bf107191fe625, type: 2}
+  - {fileID: 11400000, guid: 7f4ff3173ab78684a8f1424ec690a15c, type: 2}
+  - {fileID: 11400000, guid: 5d213aa73a99ad04ea0f0d7611c0da32, type: 2}
+  - {fileID: 11400000, guid: 7af2a12b2237091459b85348e128a44b, type: 2}

@@ -16,6 +16,7 @@ namespace Code.Gameplay.TerrainGeneration.Debug
         public NoiseSettings noiseSetting;
         public TextureSettings textureSettings;
         public HeightMapSettings heightMapSettings;
+        public ResourceSettings resourceSettings;
 
         private float lastDrawTime;
         private bool hasPendingChanges;
@@ -36,6 +37,7 @@ namespace Code.Gameplay.TerrainGeneration.Debug
             noiseSetting.OnValuesUpdated += MarkAutoChanged;
             textureSettings.OnValuesUpdated += MarkAutoChanged;
             heightMapSettings.OnValuesUpdated += MarkAutoChanged;
+            resourceSettings.OnValuesUpdated += MarkAutoChanged;
         }
 
         private void MarkAutoChanged()

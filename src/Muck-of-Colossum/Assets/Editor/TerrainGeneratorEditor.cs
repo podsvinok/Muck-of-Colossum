@@ -9,6 +9,7 @@ public class TerrainGeneratorEditor : Editor
     private bool showNoise;
     private bool showTexture;
     private bool showHeight;
+    private bool showResource;
 
     public override void OnInspectorGUI()
     {
@@ -22,6 +23,7 @@ public class TerrainGeneratorEditor : Editor
         DrawSOSection("Noise Settings", t.noiseSetting, ref showNoise);
         DrawSOSection("Texture Settings", t.textureSettings, ref showTexture);
         DrawSOSection("Height Map Settings", t.heightMapSettings, ref showHeight);
+        DrawSOSection("Resource Settings", t.resourceSettings, ref showResource);
 
         EditorGUILayout.Space();
 

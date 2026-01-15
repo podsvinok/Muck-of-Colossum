@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3bf047e2bbe4edcab567740fb17a57a, type: 3}
+  m_Name: Tree_Aspen
+  m_EditorClassIdentifier: 
+  resourceName: Aspen
+  prefab: {fileID: 485913182867112131, guid: 6898ffd8ac1bf574f94ec5c9672075b7, type: 3}
+  drop:
+  - item: {fileID: 11400000, guid: e5b096f3d8a725642a20bb893606f32d, type: 2}
+    minAmount: 7
+    maxAmount: 10
+    dropChance: 1

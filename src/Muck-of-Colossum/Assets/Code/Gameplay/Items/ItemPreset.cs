@@ -13,6 +13,8 @@ namespace Code.Gameplay.Items
         public Item prefab;
         public Item visualPrefab;
         public Sprite icon;
+        public bool isStackable;
+        public int tier;
         
 #if UNITY_EDITOR
         private void OnValidate()

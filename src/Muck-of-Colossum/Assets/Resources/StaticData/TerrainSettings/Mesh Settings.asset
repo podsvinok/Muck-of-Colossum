@@ -15,7 +15,7 @@ MonoBehaviour:
   autoUpdate: 1
   meshScale: 1
   useFlatShading: 0
-  chunkSizeIndex: 8
+  chunkSizeIndex: 4
   flatshadedChunkSizeIndex: 0
   terrainSizeX: 3
   terrainSizeY: 3
