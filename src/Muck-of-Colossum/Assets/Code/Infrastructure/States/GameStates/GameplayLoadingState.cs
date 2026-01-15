@@ -67,21 +67,33 @@ namespace Code.Infrastructure.States.GameStates
         {
             loadingCurtain.Show();
             
+            SetLoadingCurtain(0.05f, "Loading Scene...");
             var sceneTask = LoadScene(args);
             LoadItemDatabase();
             LoadRecipeDatabase();
             await sceneTask;
-            
+
+            SetLoadingCurtain(0.2f, "Generating Terrain...");
             var terrainTask = GenerateTerrain(args);
             var uiTask = CreateUIRoot();
-            
             await terrainTask;
+            
+            SetLoadingCurtain(0.5f, "Spawning Players...");
             await SpawnPlayers(args);
             
+            SetLoadingCurtain(0.75f, "Setting Terrain...");
             InitializeViewer();
             await uiTask;
             
+            SetLoadingCurtain(1, "Successfully Downloaded!");
+            await UniTask.WaitForSeconds(0.2f);
             await stateMachine.Enter<GameplayLoopState>();
+        }
+
+        private void SetLoadingCurtain(float progress, string loadingStatus)
+        {
+            loadingCurtain.SetProgressBar(progress);
+            loadingCurtain.SetLoadingStatus(loadingStatus);
         }
 
         private async UniTask LoadScene(GameplayLoadingStateEnterArgs args)

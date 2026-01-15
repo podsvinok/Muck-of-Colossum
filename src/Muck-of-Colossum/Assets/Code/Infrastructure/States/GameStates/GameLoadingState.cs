@@ -23,7 +23,6 @@ namespace Code.Infrastructure.States.GameStates
 
         public async UniTask Enter()
         {
-            loadingCurtain.Show();
             await staticData.LoadAllAsync();
             await stateMachine.Enter<MainMenuLoadingState>();
         }

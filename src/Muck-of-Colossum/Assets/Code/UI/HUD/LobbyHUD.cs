@@ -1,42 +1,52 @@
 ﻿using System.Text.RegularExpressions;
+using Code.Infrastructure.States.GameStates;
+using Code.Infrastructure.States.StateMachine;
 using Code.Network;
 using Code.Network.Lobby;
+using Cysharp.Threading.Tasks;
 using FishNet.Managing;
+using FishNet.Transporting;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Serialization;
 using Zenject;
 
 namespace Code.UI.HUD
 {
     public class LobbyHUD : MonoBehaviour
     {
-        [Header("Connection Buttons")]
         [SerializeField] private Button startHostButton;
         [SerializeField] private Button startClientButton;
         [SerializeField] private Button startGameButton;
+        [SerializeField] private Button readyButton;
+        [SerializeField] private Button leaveLobbyButton;
+        [SerializeField] private Button returnToMenuButton;
         
-        [Header("Lobby UI")]
         [SerializeField] private GameObject connectionPanel;
         [SerializeField] private GameObject lobbyPanel;
-        [SerializeField] private Button readyButton;
-        [SerializeField] private TextMeshProUGUI readyButtonText;
-        [SerializeField] private Transform playerListContainer;
-        [SerializeField] private GameObject playerListItemPrefab;
+        [SerializeField] private GameObject playerListContainer;
+        
+        [SerializeField] private LobbyPlayerItem playerListItemPrefab;
+        
+        [SerializeField] private Transform playerList;
         [SerializeField] private TMP_InputField serverIP;
         
         private NetworkManager networkManager;
         private LobbyService lobbyService;
+        private GameStateMachine stateMachine;
         
         private bool isReady;
 
         [Inject]
         public void Construct(
             NetworkManager networkManager,
-            LobbyService lobbyService)
+            LobbyService lobbyService,
+            GameStateMachine stateMachine)
         {
             this.networkManager = networkManager;
             this.lobbyService = lobbyService;
+            this.stateMachine = stateMachine;
         }
 
         private void Awake()
@@ -45,11 +55,29 @@ namespace Code.UI.HUD
             startClientButton.onClick.AddListener(OnStartAsClientButtonClick);
             startGameButton.onClick.AddListener(OnStartGameButtonClick);
             readyButton.onClick.AddListener(OnReadyButtonClick);
+            leaveLobbyButton.onClick.AddListener(OnLeaveLobbyButton);
+            returnToMenuButton.onClick.AddListener(OnReturnToMenuButton);
             
             lobbyService.OnLobbyPlayerChanged += OnPlayerListChanged;
+            networkManager.ClientManager.OnClientConnectionState += OnServerStopped;
             
             ShowConnectionPanel();
         }
+
+
+        private void OnServerStopped(ClientConnectionStateArgs args)
+        {
+            if (args.ConnectionState != LocalConnectionState.Stopped) return;
+            
+            isReady = false;
+            ShowConnectionPanel();
+        }
+
+        private async void OnReturnToMenuButton() => 
+            await ReturnToMainMenu();
+
+        private void OnLeaveLobbyButton() => 
+            LeaveLobby();
 
         private void OnStartAsClientButtonClick() => 
             StartAsClient();
@@ -69,7 +97,6 @@ namespace Code.UI.HUD
         private void ToggleReady()
         {
             isReady = !isReady;
-            
             lobbyService.SetPlayerReady(networkManager.ClientManager.Connection, isReady);
             
             UpdateReadyButton();
@@ -77,39 +104,40 @@ namespace Code.UI.HUD
 
         private void ShowConnectionPanel()
         {
-            lobbyPanel.SetActive(false);
             connectionPanel.SetActive(true);
+            
+            lobbyPanel.SetActive(false);
+            playerListContainer.SetActive(false);
         }
 
-        private void ShowLobbyPanel()
+        private void ShowLobbyPanel(bool isHost)
         {
-            connectionPanel.SetActive(false);
             lobbyPanel.SetActive(true);
+            playerListContainer.SetActive(true);
+            startGameButton.gameObject.SetActive(isHost);
+            
+            connectionPanel.SetActive(false);
             
             RefreshPlayerList();
+            UpdateReadyButton();
         }
 
-        private void UpdateReadyButton()
-        {
-            if (isReady)
-            {
-                readyButtonText.text = "Ready";
-                readyButton.GetComponent<Image>().color = Color.green;
-            }
-            else
-            {
-                readyButtonText.text = "Not Ready";
-                readyButton.GetComponent<Image>().color = Color.white;
-            }
-        }
+        private void UpdateReadyButton() => 
+            readyButton.GetComponent<Image>().color = isReady ? Color.green : Color.white;
 
         private void StartAsHost()
         {
             networkManager.ServerManager.StartConnection();
             networkManager.ClientManager.StartConnection();
             
-            ShowLobbyPanel();
+            ShowLobbyPanel(true);
         }
+
+        private void LeaveLobby() => 
+            lobbyService.LeaveLobby();
+
+        private async UniTask ReturnToMainMenu() => 
+            await stateMachine.Enter<MainMenuLoadingState>();
 
         private void StartAsClient()
         { 
@@ -117,22 +145,18 @@ namespace Code.UI.HUD
                 networkManager.TransportManager.Transport.SetClientAddress(serverIP.text);
             networkManager.ClientManager.StartConnection();
             
-            ShowLobbyPanel();
+            ShowLobbyPanel(false);
         }
 
         private void RefreshPlayerList()
         {
-            foreach (Transform child in playerListContainer)
+            foreach (Transform child in playerList)
                 Destroy(child.gameObject);
 
             foreach (var player in lobbyService.GetPlayers())
             {
-                var item = Instantiate(playerListItemPrefab, playerListContainer);
-                var itemText = item.GetComponentInChildren<TextMeshProUGUI>();
-                
-                string readyStatus = player.Value.IsReady ? "[READY]" : "[NOT READY]";
-                itemText.text = $"{player.Value.PlayerName} {readyStatus}";
-                itemText.color = player.Value.IsReady ? Color.green : Color.white;
+                var item = Instantiate(playerListItemPrefab.gameObject, playerList);
+                item.GetComponent<LobbyPlayerItem>().Initialize(player.Value);
             }
         }
 
@@ -142,8 +166,11 @@ namespace Code.UI.HUD
             startClientButton.onClick.RemoveListener(OnStartAsClientButtonClick);
             startGameButton.onClick.RemoveListener(OnStartGameButtonClick);
             readyButton.onClick.RemoveListener(OnReadyButtonClick);
+            leaveLobbyButton.onClick.RemoveListener(OnLeaveLobbyButton);
+            returnToMenuButton.onClick.RemoveListener(OnReturnToMenuButton);
             
             lobbyService.OnLobbyPlayerChanged -= OnPlayerListChanged;
+            networkManager.ClientManager.OnClientConnectionState -= OnServerStopped;
         }
     }
 }

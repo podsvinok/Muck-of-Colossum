@@ -11,13 +11,22 @@ namespace Code.UI.LoadingCurtain
         public LoadingCurtainProxy(LoadingCurtain.Factory factory) => 
             this.factory = factory;
 
-        public async UniTask InitializeAsync() => 
+        public async UniTask InitializeAsync()
+        {
             impl = await factory.Create(AssetPath.LoadingCurtain);
+            Hide();
+        }
 
         public void Show() => 
             impl.Show();
 
         public void Hide() => 
             impl.Hide();
+
+        public void SetProgressBar(float progress) => 
+            impl.SetProgressBar(progress);
+
+        public void SetLoadingStatus(string newText) => 
+            impl.SetLoadingStatus(newText);
     }
 }

@@ -12,15 +12,12 @@ namespace Code.Gameplay.Recipe
         [HideInInspector] public CraftingRecipe recipe;
         
         [SerializeField] private Image icon;
-        [SerializeField] private Image background;
-        [SerializeField] private Color availableColor;
+        [SerializeField] private Image selectedFrame;
+        [SerializeField] private Image availableVignette;
         [SerializeField] private Color unavailableColor;
-        [SerializeField] private Color availableHoverColor;
-        [SerializeField] private Color unavailableHoverColor;
         [SerializeField] private TMP_Text quantityText;
         
         private CraftingView view;
-        private bool isAvailable;
 
         public void Initialize(CraftingRecipe recipe, CraftingView view)
         {
@@ -37,24 +34,21 @@ namespace Code.Gameplay.Recipe
             icon.color = Color.white;
         }
 
-        public void UpdateAvailability(bool isAvailable)
-        {
-            this.isAvailable = isAvailable;
-            background.color = isAvailable ? availableColor : unavailableColor;
-        }
+        public void UpdateAvailability(bool isAvailable) => 
+            availableVignette.color = isAvailable ? Color.clear :  unavailableColor;
 
         public void OnPointerDown(PointerEventData eventData) => 
             view.Craft(recipe);
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            background.color = isAvailable ? availableHoverColor : unavailableHoverColor;
+            selectedFrame.color = Color.white;
             view.OnTilePointEnter(recipe);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            background.color = isAvailable ? availableColor : unavailableColor;
+            selectedFrame.color = Color.clear;
             view.OnTilePointExit();
         }
     }

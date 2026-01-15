@@ -7,16 +7,11 @@ namespace Code.Gameplay.InventorySystem
     public class ActionInventoryTile : MonoBehaviour
     {
         [SerializeField] private Image icon;
-        [SerializeField] private Image backgroundImage;
+        [SerializeField] private Image selectedFrame;
         [SerializeField] private TMP_Text quantityText;
-        [SerializeField] private Color activeColor;
         
         private ActionInventoryView inventoryView;
-        private Color originalColor;
         private int index;
-
-        private void Awake() => 
-            originalColor = backgroundImage.color;
 
         public void Initialize(ActionInventoryView inventoryView, int index)
         {
@@ -25,7 +20,7 @@ namespace Code.Gameplay.InventorySystem
         }
 
         public void ToggleActive(bool toggle) => 
-            backgroundImage.color = toggle ? activeColor : originalColor;
+            selectedFrame.color = toggle ? Color.white : Color.clear;
 
         public void SetItem(InventoryItem item)
         {
@@ -35,9 +30,9 @@ namespace Code.Gameplay.InventorySystem
                 return;
             }
 
+            icon.color =  Color.white;
             icon.sprite = item.preset.icon;
             quantityText.text = item.quantity.ToString();
-            icon.color =  Color.white;
         }
         
         private void ResetTile()

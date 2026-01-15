@@ -73,6 +73,9 @@ namespace Code.Gameplay.TerrainGeneration.Structures
                     spawnedResources.Add(obj);
                 }
             }
+
+            foreach (var resource in spawnedResources) 
+                resource.Initialize(this);
         }
 
         private void SetBounds(IStaticDataService staticData, Vector2 position) => 
@@ -151,5 +154,8 @@ namespace Code.Gameplay.TerrainGeneration.Structures
             meshCollider.cookingOptions = MeshColliderCookingOptions.None;
             meshCollider.sharedMesh = lodMeshes[0];
         }
+
+        public void DeleteResource(Resource resource) => 
+            spawnedResources.Remove(resource);
     }
 }

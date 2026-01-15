@@ -36,7 +36,7 @@ namespace Code.Gameplay.Player.Factory
 
         public async UniTask<GameObject> SpawnPlayerAtRandomPoint(NetworkConnection connection)
         {
-            Vector3 spawnPosition = GetRandomSpawnPosition();
+            Vector3 spawnPosition = await GetRandomSpawnPosition();
             return await SpawnPlayer(connection, spawnPosition);
         }
 
@@ -64,16 +64,17 @@ namespace Code.Gameplay.Player.Factory
             return newPlayer;
         }
 
-        private Vector3 GetRandomSpawnPosition()
+        private async UniTask<Vector3> GetRandomSpawnPosition()
         {
             var rayStart = new Vector3(
                 random.GetRandomFloatInRange(-staticData.MeshSettings.meshWorldSize / 2, staticData.MeshSettings.meshWorldSize / 2),
                 staticData.HeightMapSettings.heightMultiplier * 1.1f,
                 random.GetRandomFloatInRange(-staticData.MeshSettings.meshWorldSize / 2, staticData.MeshSettings.meshWorldSize / 2));
 
-            if (!Physics.Raycast(rayStart, Vector3.down, out var hit, staticData.HeightMapSettings.heightMultiplier * 1.1f))
-                Debug.LogError($"there's no spot under {rayStart}");
-
+            RaycastHit hit;
+            while (!Physics.Raycast(rayStart, Vector3.down, out hit, staticData.HeightMapSettings.heightMultiplier * 1.1f, 1 << LayerMask.NameToLayer(Layers.Ground)))
+                UniTask.Yield();
+                
             return new Vector3(hit.point.x, hit.point.y + 2, hit.point.z);
         }
 

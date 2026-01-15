@@ -11,18 +11,16 @@ namespace Code.Gameplay.InventorySystem
     {
         [SerializeField] private Image icon;
         [SerializeField] private Image background;
+        [SerializeField] private Image selectedFrame;
         [SerializeField] private TMP_Text quantityText;
-        [SerializeField] private Color hoverColor;
         
         private InventoryView inventoryView;
-        private Color normalColor;
         private int index;
 
         public void Initialize(InventoryView inventoryView, int index)
         {
             this.inventoryView = inventoryView;
             this.index = index;
-            normalColor = background.color;
         }
         
         private void OnEnable()
@@ -53,14 +51,14 @@ namespace Code.Gameplay.InventorySystem
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            background.color = hoverColor;
+            selectedFrame.color = Color.white;
             inventoryView.OnTilePointEnter(index);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
+            selectedFrame.color = Color.clear;
             inventoryView.OnTilePointExit(index);
-            background.color = normalColor;
         }
 
         public void OnPointerDown(PointerEventData eventData)

@@ -9,6 +9,7 @@ namespace Code.UI.HUD
     public class MainMenuHUD : MonoBehaviour
     {
         [SerializeField] private Button EnterLobbyButton;
+        [SerializeField] private Button ExitButton;
         
         private IGameStateMachine stateMachine;
 
@@ -18,13 +19,22 @@ namespace Code.UI.HUD
             this.stateMachine = stateMachine;
         }
 
-        private void Awake() => 
+        private void Awake()
+        {
             EnterLobbyButton.onClick.AddListener(EnterLobbyLoadingState);
+            ExitButton.onClick.AddListener(EnterExitGameState);
+        }
 
-        private void OnDestroy() => 
-            EnterLobbyButton.onClick.RemoveListener(EnterLobbyLoadingState);
+        private void OnDestroy()
+        {
+            EnterLobbyButton.onClick.AddListener(EnterLobbyLoadingState);
+            ExitButton.onClick.RemoveListener(EnterExitGameState);
+        }
 
         private void EnterLobbyLoadingState() => 
             stateMachine.Enter<LobbyLoadingState>();
+        
+        private void EnterExitGameState() => 
+            stateMachine.Enter<ExitGameState>();
     }
 }

@@ -27,8 +27,6 @@ namespace Code.Infrastructure.States.GameStates
             await sceneLoader.LoadSceneAsync(Scenes.MainMenuScene);
             
             await stateMachine.Enter<MainMenuState>();
-            
-            loadingCurtain.Hide();
         }
 
         public UniTask Exit() => 

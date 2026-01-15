@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using Cysharp.Threading.Tasks;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Zenject;
 
 namespace Code.UI.LoadingCurtain
@@ -8,6 +10,8 @@ namespace Code.UI.LoadingCurtain
     public class LoadingCurtain : MonoBehaviour, ILoadingCurtain
     {
         [SerializeField] private CanvasGroup curtain;
+        [SerializeField] private Image progressBar;
+        [SerializeField] private TMP_Text text;
         
         private const float FadeInWaitingSeconds = 0.03f;
 
@@ -24,6 +28,12 @@ namespace Code.UI.LoadingCurtain
             fadeInWaitForSeconds = new WaitForSeconds(FadeInWaitingSeconds);
             StartCoroutine(DoFadeIn());
         }
+
+        public void SetProgressBar(float progress) => 
+            progressBar.fillAmount = progress;
+
+        public void SetLoadingStatus(string newText) => 
+            text.text = newText;
 
         private IEnumerator DoFadeIn()
         {

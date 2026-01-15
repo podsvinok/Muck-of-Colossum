@@ -24,13 +24,8 @@ namespace Code.Infrastructure.States.GameStates
 
         public async UniTask Enter()
         {
-            loadingCurtain.Show();
-            
             await sceneLoader.LoadSceneAsync(Scenes.LobbyScene);
-            
             await stateMachine.Enter<LobbyState>();
-            
-            loadingCurtain.Hide();
         }
 
         public UniTask Exit() => 

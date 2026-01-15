@@ -10,26 +10,22 @@ namespace Code.Gameplay.Recipe
     {
         [SerializeField] private Image icon;
         [SerializeField] private Image background;
+        [SerializeField] private Image frame;
         [SerializeField] private TMP_Text quantityText;
-        private Color bgColor;
         private int index;
-
-        private void Awake()
-        {
-            bgColor = background.color;
-            ResetTile();
-        }
-
+        
         public void SetItem(InventoryItem item)
         {
+            frame.color = Color.white;
             icon.color = Color.white;
+            background.color = Color.white;
             icon.sprite = item.preset.icon;
-            background.color = bgColor;
             quantityText.text = item.quantity.ToString();
         }
 
         public void ResetTile()
         {
+            frame.color = Color.clear;
             background.color = Color.clear;
             icon.color = Color.clear;
             icon.sprite = null;

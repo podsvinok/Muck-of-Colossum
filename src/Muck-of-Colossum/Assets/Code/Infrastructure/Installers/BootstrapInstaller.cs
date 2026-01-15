@@ -14,6 +14,7 @@ using Code.Infrastructure.States.GameStates;
 using Code.Infrastructure.States.StateMachine;
 using Code.Infrastructure.StaticData;
 using Code.Random;
+using Code.UI.HUD;
 using Code.UI.LoadingCurtain;
 using Code.UI.Services.Factory;
 using Code.UI.Services.Windows;
@@ -225,6 +226,10 @@ namespace Code.Infrastructure.Installers
             
             Container
                 .BindInterfacesAndSelfTo<GameplayLoopState>()
+                .AsSingle();
+            
+            Container
+                .BindInterfacesAndSelfTo<ExitGameState>()
                 .AsSingle();
         }
 

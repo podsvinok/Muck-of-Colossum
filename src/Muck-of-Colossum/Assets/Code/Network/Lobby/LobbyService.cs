@@ -8,6 +8,7 @@ using FishNet.Connection;
 using FishNet.Managing;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using FishNet.Transporting;
 using Zenject;
 
 namespace Code.Network.Lobby
@@ -16,7 +17,7 @@ namespace Code.Network.Lobby
     {
         public event Action OnLobbyPlayerChanged;
         
-        private readonly SyncDictionary<NetworkConnection, LobbyPlayer> players = new();
+        private readonly SyncDictionary<int, LobbyPlayer> players = new();
         
         private NetworkManager networkManager;
         private IGameStateMachine stateMachine;
@@ -33,29 +34,73 @@ namespace Code.Network.Lobby
             this.random = random;
         }
 
-        public override void OnStartServer() => 
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
             networkManager.SceneManager.OnClientLoadedStartScenes += OnClientLoadedStartScenes;
+            networkManager.ServerManager.OnRemoteConnectionState += OnRemoteConnectionState;
+        }
 
-        public override void OnStartClient() => 
+        public override void OnStopServer()
+        {
+            base.OnStopServer();
+            if (networkManager != null)
+            {
+                networkManager.SceneManager.OnClientLoadedStartScenes -= OnClientLoadedStartScenes;
+                networkManager.ServerManager.OnRemoteConnectionState -= OnRemoteConnectionState;
+            }
+        }
+
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
             players.OnChange += LobbyPlayerChange;
+        }
 
-        private void LobbyPlayerChange(SyncDictionaryOperation op, NetworkConnection key, LobbyPlayer value, bool asServer) => 
-            OnLobbyPlayerChanged?.Invoke();
+        public override void OnStopClient()
+        {
+            base.OnStopClient();
+            players.OnChange -= LobbyPlayerChange;
+        }
+        
+        private void OnRemoteConnectionState(NetworkConnection conn, RemoteConnectionStateArgs args)
+        {
+            if (args.ConnectionState == RemoteConnectionState.Stopped)
+            {
+                if (players.ContainsKey(conn.ClientId)) 
+                    players.Remove(conn.ClientId);
+            }
+        }
+
+        private void OnClientLoadedStartScenes(NetworkConnection connection, bool asServer)
+        {
+            if (!asServer) return;
+            
+            players.Add(connection.ClientId, new LobbyPlayer
+            {
+                Connection = connection,
+                IsReady = false,
+                PlayerName = $"Player {connection.ClientId}",
+                IsServer = connection.IsLocalClient
+            });
+        }
 
         [ServerRpc(RequireOwnership = false)]
         public void SetPlayerReady(NetworkConnection sender, bool isReady)
         {
-            if (players.ContainsKey(sender))    
+            if (players.ContainsKey(sender.ClientId))    
             {
-                var player = players[sender];
+                var player = players[sender.ClientId];
                 player.IsReady = isReady;
-                players[sender] = player;
+                players[sender.ClientId] = player;
             }
         }
 
         [Server]
         public void CheckAllReady()
         {
+            if (players.Count == 0) return;
+
             bool allReady = players.Values.All(p => p.IsReady);
 
             if (allReady)
@@ -65,18 +110,15 @@ namespace Code.Network.Lobby
             }
         }
 
-        private void OnClientLoadedStartScenes(NetworkConnection connection, bool asServer)
+        private void LobbyPlayerChange(SyncDictionaryOperation op, int key, LobbyPlayer value, bool asServer) => 
+            OnLobbyPlayerChanged?.Invoke();
+
+        public void LeaveLobby()
         {
-            if (!asServer)
-                return;
-            
-            players.Add(connection, new LobbyPlayer
-            {
-                Connection = connection,
-                IsReady = false,
-                PlayerName = $"Player {connection.ClientId}",
-                IsServer = IsServerInitialized
-            });
+            if (IsServerInitialized)
+                networkManager.ServerManager.StopConnection(false);
+            else
+                networkManager.ClientManager.StopConnection();
         }
 
         [ObserversRpc]
@@ -93,9 +135,6 @@ namespace Code.Network.Lobby
             stateMachine.Enter<GameplayLoadingState, GameplayLoadingStateEnterArgs>(args);
         }
 
-        public IReadOnlyDictionary<NetworkConnection, LobbyPlayer> GetPlayers() => players;
-        
-        private void OnDisable() => 
-            networkManager.SceneManager.OnClientLoadedStartScenes -= OnClientLoadedStartScenes;
+        public IReadOnlyDictionary<int, LobbyPlayer> GetPlayers() => players;
     }
 }
