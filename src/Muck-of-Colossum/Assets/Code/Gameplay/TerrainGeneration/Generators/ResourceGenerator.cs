@@ -51,7 +51,7 @@ namespace Code.Gameplay.TerrainGeneration.Generators
                     SampleCentre = new float2(coord.x * meshSettings.meshWorldSize / meshSettings.meshScale,
                                               coord.y * meshSettings.meshWorldSize / meshSettings.meshScale),
                     
-                    Seed = staticData.NoiseSettings.seed + g,
+                    Seed = group.noiseSettings.seed,
                     Scale = group.noiseSettings.scale,
                     Octaves = group.noiseSettings.octaves,
                     Persistence = group.noiseSettings.persistance,
@@ -71,7 +71,9 @@ namespace Code.Gameplay.TerrainGeneration.Generators
                     RotationRange = group.randomRotationRange,
                     ScaleRange = group.scaleRange,
                     
-                    OccupancyRadius = Mathf.Max(1, group.density / 2) 
+                    OccupancyRadius = Mathf.Max(1, group.density / 2 + 5),
+                    
+                    DigInGround = group.digInGround
                 };
 
                 job.Schedule().Complete();

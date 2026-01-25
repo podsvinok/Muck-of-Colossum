@@ -7,5 +7,6 @@ namespace Code.Gameplay.Items.Factory
     {
         public NetworkObject SpawnItem(Item item, Vector3 at, int amount);
         public NetworkObject SpawnItemWithParent(Item item, NetworkObject parent);
+        public NetworkObject SpawnItemWithParent(Item item, NetworkObject parent, Vector3 rotation);
     }
 }

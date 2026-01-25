@@ -6,6 +6,6 @@ namespace Code.Gameplay.Levels
     {
         public Vector3 StartPoint { get; set; }
         public Transform TerrainParent { get; set; }
-        public GameObject Player { get; set; }
+        public GameObject LocalPlayer { get; set; }
     }
 }

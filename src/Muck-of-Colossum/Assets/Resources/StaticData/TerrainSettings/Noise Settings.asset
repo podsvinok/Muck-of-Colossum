@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Noise Settings
   m_EditorClassIdentifier: 
   autoUpdate: 1
-  scale: 80
-  octaves: 8
+  scale: 120
+  octaves: 4
   persistance: 0.5
   lacunarity: 1.7
-  seed: 1403545773
+  seed: -400014100
   offset: {x: 0, y: 0}

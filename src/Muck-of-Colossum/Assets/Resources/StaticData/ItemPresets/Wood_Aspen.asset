@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: e5b096f3d8a725642a20bb893606f32d
   itemName: Aspen Wood
-  prefab: {fileID: 0}
-  visualPrefab: {fileID: 0}
-  icon: {fileID: 0}
-  isStackable: 0
+  prefab: {fileID: 6192314350404643354, guid: 5eea3aade2133484194bf0e1744b2f78, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: 8331fa89752aab14993ac25650af25c0, type: 3}
+  icon: {fileID: 21300000, guid: 864cf170a47ff4649bfe13741be21881, type: 3}
+  isStackable: 1
   tier: 3
+  type: 0

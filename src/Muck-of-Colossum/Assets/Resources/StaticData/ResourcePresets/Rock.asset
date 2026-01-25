@@ -19,3 +19,9 @@ MonoBehaviour:
     minAmount: 7
     maxAmount: 10
     dropChance: 1
+  - item: {fileID: 11400000, guid: e89228026f6faad48b3c994c5e6a4a24, type: 2}
+    minAmount: 7
+    maxAmount: 10
+    dropChance: 1
+  rank: 0
+  equipmentType: 2

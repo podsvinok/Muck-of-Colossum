@@ -3,6 +3,7 @@ using Code.Gameplay.ResourceSystem;
 using FishNet.Object;
 using Code.Gameplay.ResourceSystem.Factory;
 using Code.Random;
+using UnityEngine;
 using Zenject;
 
 public class ResourceNetworkService : NetworkBehaviour
@@ -49,7 +50,9 @@ public class ResourceNetworkService : NetworkBehaviour
             if (randomService.GetRandomFloatInRange(0, 0.99f) < drop.dropChance)
             {
                 var amount = randomService.GetRandomIntInRange(drop.minAmount, drop.maxAmount);
-                itemFactory.SpawnItem(drop.item.prefab, resource.transform.position, amount);
+                var position = resource.transform.position;
+                var newPosition = new Vector3(position.x, position.y + 2, position.z);
+                itemFactory.SpawnItem(drop.item.prefab, newPosition, amount);
             }
         }
     }

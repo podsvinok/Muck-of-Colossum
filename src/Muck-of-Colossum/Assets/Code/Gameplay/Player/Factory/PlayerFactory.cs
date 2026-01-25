@@ -72,9 +72,9 @@ namespace Code.Gameplay.Player.Factory
                 random.GetRandomFloatInRange(-staticData.MeshSettings.meshWorldSize / 2, staticData.MeshSettings.meshWorldSize / 2));
 
             RaycastHit hit;
-            //while (!Physics.Raycast(rayStart, Vector3.down, out hit, staticData.HeightMapSettings.heightMultiplier * 1.1f, 1 << LayerMask.NameToLayer(Layers.Ground)))
-                //UniTask.Yield();
-            Physics.Raycast(rayStart, Vector3.down, out hit, staticData.HeightMapSettings.heightMultiplier * 1.1f, 1 << LayerMask.NameToLayer(Layers.Ground));
+            while (!Physics.Raycast(rayStart, Vector3.down, out hit, staticData.HeightMapSettings.heightMultiplier * 1.1f, 1 << LayerMask.NameToLayer(Layers.Ground)))
+                await UniTask.Yield();
+            //Physics.Raycast(rayStart, Vector3.down, out hit, staticData.HeightMapSettings.heightMultiplier * 1.1f, 1 << LayerMask.NameToLayer(Layers.Ground));
             return new Vector3(hit.point.x, hit.point.y + 2, hit.point.z);
         }
 

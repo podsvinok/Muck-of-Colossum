@@ -17,9 +17,10 @@ MonoBehaviour:
   - resource: {fileID: 11400000, guid: a47f01e51824b3b4d8cf8f4f0d3e115e, type: 2}
     weight: 1
   noiseSettings: {fileID: 11400000, guid: ab8292885ac6bdd4fab1d3008b5bbb77, type: 2}
-  spawnThreshold: 0.6
-  density: 5
+  spawnThreshold: 0.75
+  density: 4
   minHeight: 0.2
   maxHeight: 1
   randomRotationRange: {x: 5, y: 360, z: 5}
-  scaleRange: {x: 2.2, y: 2.5}
+  scaleRange: {x: 1, y: 1.2}
+  digInGround: 0.5

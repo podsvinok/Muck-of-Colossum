@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: 19a0bbcd117d47f4793014b624f0980d
   itemName: Birch Wood
-  prefab: {fileID: 0}
-  visualPrefab: {fileID: 0}
-  icon: {fileID: 0}
-  isStackable: 0
+  prefab: {fileID: 6192314350404643354, guid: e53436fdea80fdd48881d4ce37b43726, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: 969f39dd77d45eb4683fc6302eb725f4, type: 3}
+  icon: {fileID: 21300000, guid: 3ef3e0e554eb8a24ca3c1dc2ccc974d8, type: 3}
+  isStackable: 1
   tier: 2
+  type: 0

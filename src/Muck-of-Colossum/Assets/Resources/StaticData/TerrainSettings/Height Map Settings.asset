@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoUpdate: 1
   noiseSettings: {fileID: 11400000, guid: b8388fdd110fa6847aaeb4c70987d1f5, type: 2}
-  heightMultiplier: 15
+  heightMultiplier: 20
   heightCurve:
     serializedVersion: 2
     m_Curve:

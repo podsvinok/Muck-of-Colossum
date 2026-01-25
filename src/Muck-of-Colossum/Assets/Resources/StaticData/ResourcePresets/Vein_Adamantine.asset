@@ -19,3 +19,5 @@ MonoBehaviour:
     minAmount: 7
     maxAmount: 10
     dropChance: 1
+  rank: 4
+  equipmentType: 2

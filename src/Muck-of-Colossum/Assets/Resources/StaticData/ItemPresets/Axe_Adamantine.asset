@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: b68a97ea8b23914488c692c8ed399a8e
   itemName: Adamantine Axe
-  prefab: {fileID: 0}
-  visualPrefab: {fileID: 0}
-  icon: {fileID: 0}
+  prefab: {fileID: 6192314350404643354, guid: 3811e0a3f7914a84fb21debb75751a23, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: 5554aec8a39ab6840afaeee6be63c6ae, type: 3}
+  icon: {fileID: 21300000, guid: e02424c9309e509468ba754ed1c51bdb, type: 3}
   isStackable: 0
   tier: 4
+  type: 1

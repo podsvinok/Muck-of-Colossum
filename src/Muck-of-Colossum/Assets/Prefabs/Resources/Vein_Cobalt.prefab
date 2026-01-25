@@ -12,7 +12,8 @@ GameObject:
   - component: {fileID: 6802259712201044054}
   - component: {fileID: 5330331171325900822}
   - component: {fileID: 8052704811682487026}
-  m_Layer: 0
+  - component: {fileID: 4898898757235740654}
+  m_Layer: 12
   m_Name: SM_Item_Rock_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -29,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 3, y: 3, z: 3}
+  m_LocalScale: {x: 14, y: 14, z: 14}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5502551753823266273}
@@ -109,6 +110,22 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: 5090dd36d2e2d694cacf71568ce65983, type: 3}
+--- !u!208 &4898898757235740654
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3725000225021568751}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.10300001, y: 0.106000006, z: 0.11800001}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0.105000004, z: 0.0050000004}
+  m_TimeToStationary: 0.5
 --- !u!1001 &1009785175481323083
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -125,6 +142,10 @@ PrefabInstance:
       propertyPath: resourcePreset
       value: 
       objectReference: {fileID: 11400000, guid: a2fce25dfe5da1b44b37d387bf0de34c, type: 2}
+    - target: {fileID: 3682114070957681267, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 4782690788932037546, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -168,6 +189,18 @@ PrefabInstance:
     - target: {fileID: 6585240851231725411, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
       propertyPath: m_Name
       value: Vein_Cobalt
+      objectReference: {fileID: 0}
+    - target: {fileID: 6585240851231725411, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7566973401954090780, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132332340325043410, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

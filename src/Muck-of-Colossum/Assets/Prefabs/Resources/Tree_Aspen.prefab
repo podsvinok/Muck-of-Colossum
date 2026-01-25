@@ -11,7 +11,9 @@ GameObject:
   - component: {fileID: 585676313734640853}
   - component: {fileID: 6110403520172900070}
   - component: {fileID: 2013906267844984675}
-  m_Layer: 0
+  - component: {fileID: 1674710327412375135}
+  - component: {fileID: 8996366923012339081}
+  m_Layer: 12
   m_Name: SM_Generic_Tree_03
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -28,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2.6, y: 2.6, z: 2.6}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5502551753823266273}
@@ -86,6 +88,44 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!208 &1674710327412375135
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8536413336452702933}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.25, y: 1.625, z: 0.25}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: -0.05, y: 1.5, z: 0.02}
+  m_TimeToStationary: 0.5
+--- !u!64 &8996366923012339081
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8536413336452702933}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: 325d2c4e62ea6244c89c8ff9c2fc5112, type: 3}
 --- !u!1001 &1009785175481323083
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -102,6 +142,30 @@ PrefabInstance:
       propertyPath: resourcePreset
       value: 
       objectReference: {fileID: 11400000, guid: 685bde83637a1df4c97a4bddc895f86e, type: 2}
+    - target: {fileID: 3572266118632545331, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3572266118632545331, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 3572266118632545331, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 3572266118632545331, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 3572266118632545331, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3682114070957681267, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 4782690788932037546, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -145,6 +209,22 @@ PrefabInstance:
     - target: {fileID: 6585240851231725411, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
       propertyPath: m_Name
       value: Tree_Aspen
+      objectReference: {fileID: 0}
+    - target: {fileID: 6585240851231725411, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7566973401954090780, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7566973401954090780, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132332340325043410, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

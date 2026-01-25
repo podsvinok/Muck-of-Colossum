@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: e2b7a4caca2eb0340bc6f249f53573fb
   itemName: Oak Wood
-  prefab: {fileID: 0}
-  visualPrefab: {fileID: 0}
-  icon: {fileID: 0}
-  isStackable: 0
+  prefab: {fileID: 6192314350404643354, guid: 9ae102020390ecd4b896d2fb0a9b861c, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: 7598b3962cc00804c87f6a75c44ea5db, type: 3}
+  icon: {fileID: 21300000, guid: 58d43111019edc746a4b95a5936d6eed, type: 3}
+  isStackable: 1
   tier: 1
+  type: 0

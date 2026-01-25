@@ -11,8 +11,9 @@ GameObject:
   - component: {fileID: 3826133317934931334}
   - component: {fileID: 6871213452602537270}
   - component: {fileID: 2781174506038033986}
-  - component: {fileID: 6825956769053318816}
-  m_Layer: 0
+  - component: {fileID: 7981335670844897163}
+  - component: {fileID: 4366717718450740285}
+  m_Layer: 12
   m_Name: SM_Item_Rock_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -29,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 3, y: 3, z: 3}
+  m_LocalScale: {x: 15, y: 15, z: 15}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5502551753823266273}
@@ -87,7 +88,23 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &6825956769053318816
+--- !u!208 &7981335670844897163
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5796753506365808241}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.10300001, y: 0.106000006, z: 0.11800001}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0.105000004, z: 0.0050000004}
+  m_TimeToStationary: 0.5
+--- !u!64 &4366717718450740285
 MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -125,6 +142,14 @@ PrefabInstance:
       propertyPath: resourcePreset
       value: 
       objectReference: {fileID: 11400000, guid: be566b06e319dad458ef3c733d58630b, type: 2}
+    - target: {fileID: 3572266118632545331, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3682114070957681267, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 4782690788932037546, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -168,6 +193,22 @@ PrefabInstance:
     - target: {fileID: 6585240851231725411, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
       propertyPath: m_Name
       value: Vein_Adamantine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6585240851231725411, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7566973401954090780, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7566973401954090780, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132332340325043410, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

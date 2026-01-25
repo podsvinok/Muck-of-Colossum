@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: ed23d1fd96e02734e9f7dc6484f06efc
   itemName: Adamantine Ore
-  prefab: {fileID: 0}
-  visualPrefab: {fileID: 0}
-  icon: {fileID: 0}
-  isStackable: 0
+  prefab: {fileID: 6192314350404643354, guid: 554b2a3a5a8f00a4c9461fb966f3f59e, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: a3862c76e9dadf24fb17364a21432830, type: 3}
+  icon: {fileID: 21300000, guid: 7c7f992b732bfe1469c4629e139c529c, type: 3}
+  isStackable: 1
   tier: 4
+  type: 0

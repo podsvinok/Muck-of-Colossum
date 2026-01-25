@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: 5d2d3e872effd0048aebc3aa8657e6a0
   itemName: Cobalt Axe
-  prefab: {fileID: 0}
-  visualPrefab: {fileID: 0}
-  icon: {fileID: 0}
+  prefab: {fileID: 6192314350404643354, guid: 3b4c1c600c4eb894bb42378cc9b6606d, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: e210f322700b8624a98be23e1a4d6953, type: 3}
+  icon: {fileID: 21300000, guid: 535b00c7dc7a1a045a8ba647a629c923, type: 3}
   isStackable: 0
   tier: 3
+  type: 1

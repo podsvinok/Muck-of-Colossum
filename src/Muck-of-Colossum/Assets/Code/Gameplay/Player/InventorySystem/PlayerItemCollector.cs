@@ -28,7 +28,7 @@ namespace Code.Gameplay.Player.InventorySystem
         public override void OnStartClient()
         {
             if (!IsOwner) return;
-            playerCamera = levelData.Player.GetComponentInChildren<Camera>();
+            playerCamera = levelData.LocalPlayer.GetComponentInChildren<Camera>();
             input.CollectItemButtonDown += OnCollectItemButtonDown;
         }
 
@@ -40,7 +40,7 @@ namespace Code.Gameplay.Player.InventorySystem
             {
                 var item = hit.transform.GetComponentInParent<Item>();
                 
-                if (inventory.TryAddItem(item.Preset, 1))
+                if (inventory.TryAddItem(item.Preset, item.Amount))
                     Despawn(item);
             }
         }

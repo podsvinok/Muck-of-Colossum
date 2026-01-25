@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: AdamantineNoise
   m_EditorClassIdentifier: 
   autoUpdate: 1
-  scale: 80
-  octaves: 3
-  persistance: 0.206
-  lacunarity: 1.5
+  scale: 40
+  octaves: 1
+  persistance: 1
+  lacunarity: 2
   seed: 10
-  offset: {x: 0, y: 0}
+  offset: {x: 50, y: 0}

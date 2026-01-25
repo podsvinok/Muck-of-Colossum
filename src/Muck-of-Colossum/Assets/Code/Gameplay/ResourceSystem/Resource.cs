@@ -11,8 +11,10 @@ namespace Code.Gameplay.ResourceSystem
         public ResourcePreset resourcePreset;
         [ReadOnly] public int id;
         [SerializeField] private MeshRenderer meshRenderer;
+        [SerializeField] private ResourceHud hud;
         private ResourceNetworkService resourceNetworkService;
         private TerrainChunk chunk;
+        private int hp = 100;
             
         [Inject]
         public void Construct(ResourceNetworkService resourceNetworkService)
@@ -39,12 +41,15 @@ namespace Code.Gameplay.ResourceSystem
         
         public void GetHitNetwork()
         {
-            Debug.Log($"got hit {id}");
+            hp -= 10;
+            hud.EnableCanvas();
+            hud.SetHp(hp / 100f);
+            if (hp <= 0)
+                BeDestroyed();
         }
 
         public void BeDestroyedNetwork()
         {
-            Debug.Log($"destroy {id}");
             chunk.DeleteResource(this);
             Destroy(gameObject);
         }

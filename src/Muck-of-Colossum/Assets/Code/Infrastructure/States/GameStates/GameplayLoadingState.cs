@@ -135,12 +135,12 @@ namespace Code.Infrastructure.States.GameStates
                     await playerFactory.SpawnPlayerAtRandomPoint(lobbyPlayer.Connection);
             }
 
-            while (levelData.Player == null)
+            while (levelData.LocalPlayer == null)
                 await UniTask.Yield();
         }
 
         private void InitializeViewer() => 
-            terrainGenerator.InitializeViewer(levelData.Player.transform);
+            terrainGenerator.InitializeViewer(levelData.LocalPlayer.transform);
 
         public UniTask Exit()
         {

@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: 80cdfad19d466b246b78b34cbbe35e34
   itemName: Obsidian Ore
-  prefab: {fileID: 0}
-  visualPrefab: {fileID: 0}
-  icon: {fileID: 0}
-  isStackable: 0
+  prefab: {fileID: 6192314350404643354, guid: 03160255ecd20964684854948d782329, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: f014a54e847ab0a4b97d75cbe11fcc53, type: 3}
+  icon: {fileID: 21300000, guid: 2ead4e34b4a78964f87ab0d29d5cb7bc, type: 3}
+  isStackable: 1
   tier: 5
+  type: 0

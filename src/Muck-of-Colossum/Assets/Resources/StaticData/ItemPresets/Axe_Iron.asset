@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: d685961a83e8cc74f838cf0d9bb769cb
   itemName: Iron Axe
-  prefab: {fileID: 0}
-  visualPrefab: {fileID: 0}
-  icon: {fileID: 0}
+  prefab: {fileID: 6192314350404643354, guid: 7818ca87c48e3e943867a1ca3b35afc6, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: 8cc7f40468f7d164b8ffa0bf942a90dc, type: 3}
+  icon: {fileID: 21300000, guid: 92e88d4e2ea92ba4f9669aebefda5aa6, type: 3}
   isStackable: 0
   tier: 1
+  type: 1

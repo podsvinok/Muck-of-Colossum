@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: BirchNoise
   m_EditorClassIdentifier: 
   autoUpdate: 1
-  scale: 80
-  octaves: 2
-  persistance: 0.5115565
-  lacunarity: 1.69
+  scale: 40
+  octaves: 1
+  persistance: 1
+  lacunarity: 2
   seed: 8
   offset: {x: 0, y: 0}

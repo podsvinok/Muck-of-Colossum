@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: 61b0ffd4b3de3fe448fa8e1502a191ef
   itemName: Cobalt  Ore
-  prefab: {fileID: 0}
-  visualPrefab: {fileID: 0}
-  icon: {fileID: 0}
-  isStackable: 0
+  prefab: {fileID: 6192314350404643354, guid: cde4ff5bb96ccef4ba34e4151e0d423b, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: 17f8423eef6dc81418202eba9556ea2b, type: 3}
+  icon: {fileID: 21300000, guid: 9b35f902cb7c70a40925f63399201f02, type: 3}
+  isStackable: 1
   tier: 3
+  type: 0

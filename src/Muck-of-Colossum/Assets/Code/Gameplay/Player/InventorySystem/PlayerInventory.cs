@@ -56,12 +56,17 @@ namespace Code.Gameplay.Player.InventorySystem
             Initialize();
         }
 
+        public InventoryItem GetActiveSlotItem() =>
+            inventoryItems[activeSlotId.Value];
+
         private void Initialize()
         {
             InitializeInventoryView();
             InitializeActionInventoryView();
 
             SetInventoryItems();
+            TryAddItem(database.TryGetItemPresetByName("Heavy Rock"), 1);
+            TryAddItem(database.TryGetItemPresetByName("Sharp Rock"), 1);
             RedrawInventoryViews();
             OnActiveSlotButtonDown(1);
             
@@ -217,6 +222,8 @@ namespace Code.Gameplay.Player.InventorySystem
 
         private bool CanStack(InventoryItem itemA, InventoryItem itemB)
         {
+            if (!itemA.preset.isStackable)
+                return false;
             if (itemA.preset == null || itemB.preset == null) 
                 return false;
             return itemA.preset.uid == itemB.preset.uid;
@@ -235,7 +242,7 @@ namespace Code.Gameplay.Player.InventorySystem
 
             if (preset != null) 
                 holdingItem = itemFactory
-                    .SpawnItemWithParent(preset.visualPrefab, itemHolder)
+                    .SpawnItemWithParent(preset.visualPrefab, itemHolder, new Vector3(330, 270, 85))
                     .gameObject;
         }
 

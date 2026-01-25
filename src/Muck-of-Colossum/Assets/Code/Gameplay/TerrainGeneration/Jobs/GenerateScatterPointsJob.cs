@@ -42,6 +42,8 @@ namespace Code.Gameplay.TerrainGeneration.Jobs
         
         public int OccupancyRadius;
 
+        public float DigInGround;
+
         public void Execute()
         {
             var random = new Unity.Mathematics.Random((uint)(Seed + 1234));
@@ -83,7 +85,7 @@ namespace Code.Gameplay.TerrainGeneration.Jobs
 
                     SpawnPoints.Add(new SpawnPointData
                     {
-                        Position = new float3(vertexPosition2D.x, finalHeight, vertexPosition2D.y),
+                        Position = new float3(vertexPosition2D.x, finalHeight-DigInGround, vertexPosition2D.y),
                         Rotation = rotation,
                         Scale = scale,
                         PrefabIndex = prefabIndex
@@ -118,11 +120,14 @@ namespace Code.Gameplay.TerrainGeneration.Jobs
             float frequency = 1;
             float noiseHeight = 0;
             float maxHeight = 0;
-
+            
+            float seedOffsetX = Seed * 1258.12f; 
+            float seedOffsetY = Seed * 5791.34f;
+            
             for (int i = 0; i < Octaves; i++)
             {
-                float sampleX = (x + SampleCentre.x + Offset.x) / Scale * frequency;
-                float sampleY = (y + SampleCentre.y + Offset.y) / Scale * frequency;
+                float sampleX = (x + SampleCentre.x + Offset.x + seedOffsetX) / Scale * frequency;
+                float sampleY = (y + SampleCentre.y + Offset.y + seedOffsetY) / Scale * frequency;
                 
                 float perlinValue = noise.cnoise(new float2(sampleX, sampleY)); 
                 

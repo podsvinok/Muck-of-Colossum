@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac4ecdc674334bd7986a3d7700a7d93b, type: 3}
+  m_Name: Rock_Sharp
+  m_EditorClassIdentifier: 
+  uid: e89228026f6faad48b3c994c5e6a4a24
+  itemName: Sharp Rock
+  prefab: {fileID: 6192314350404643354, guid: 537e25f442e7bf24ea45daf8918159cd, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: ef672502b88de0f4aac76536da4a7b51, type: 3}
+  icon: {fileID: 21300000, guid: df86b03663308c142b2c62e56fb35547, type: 3}
+  isStackable: 1
+  tier: 0
+  type: 1

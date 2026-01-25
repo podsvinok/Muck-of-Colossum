@@ -17,8 +17,8 @@ MonoBehaviour:
   useFlatShading: 0
   chunkSizeIndex: 4
   flatshadedChunkSizeIndex: 0
-  terrainSizeX: 3
-  terrainSizeY: 3
+  terrainSizeX: 5
+  terrainSizeY: 5
   colliderLODIndex: 0
   detailLevels:
   - lod: 0

@@ -12,6 +12,8 @@ namespace Code.Gameplay.ResourceSystem
         public string resourceName;
         public Resource prefab;
         public Drop[] drop;
+        public int rank;
+        public ItemType equipmentType;
     }
 
     [Serializable]

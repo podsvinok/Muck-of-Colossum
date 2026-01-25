@@ -15,6 +15,7 @@ namespace Code.Gameplay.Items
         public Sprite icon;
         public bool isStackable;
         public int tier;
+        public ItemType type;
         
 #if UNITY_EDITOR
         private void OnValidate()
@@ -32,5 +33,12 @@ namespace Code.Gameplay.Items
                 uid = assetGuid;
         }
 #endif
+    }
+
+    public enum ItemType
+    {
+        Default,
+        Axe,
+        Pickaxe
     }
 }

@@ -21,7 +21,7 @@ namespace Code.Gameplay.Player
             if (!IsOwner)
                 return;
             
-            levelData.Player = gameObject;
+            levelData.LocalPlayer = gameObject;
         }
     }
 }

@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: 6e05e715e1c6e564d8869d43051aba06
   itemName: Cobalt Pickaxe
-  prefab: {fileID: 0}
-  visualPrefab: {fileID: 0}
-  icon: {fileID: 0}
+  prefab: {fileID: 6192314350404643354, guid: af312b17ef4a15c46b5faa068e7309e7, type: 3}
+  visualPrefab: {fileID: 6192314350404643354, guid: e047581d2d411ee48a54565fc67b5214, type: 3}
+  icon: {fileID: 21300000, guid: ade72ad374a589640a3dead5a4b36657, type: 3}
   isStackable: 0
   tier: 3
+  type: 2

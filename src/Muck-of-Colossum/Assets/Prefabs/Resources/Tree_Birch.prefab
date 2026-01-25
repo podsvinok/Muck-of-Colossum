@@ -11,7 +11,9 @@ GameObject:
   - component: {fileID: 7487352655561973494}
   - component: {fileID: 542300622721879406}
   - component: {fileID: 3377633055827367581}
-  m_Layer: 0
+  - component: {fileID: 5711102514613239298}
+  - component: {fileID: 3358473251066070340}
+  m_Layer: 12
   m_Name: SM_Generic_Tree_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -28,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2.3, y: 2.3, z: 2.3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5502551753823266273}
@@ -86,6 +88,44 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!208 &5711102514613239298
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4541539430121837183}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.25, y: 1.625, z: 0.25}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0.05, y: 1.5, z: 0.1}
+  m_TimeToStationary: 0.5
+--- !u!64 &3358473251066070340
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4541539430121837183}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: c521d506e92f0cc4c8038cd4bd9c6ce1, type: 3}
 --- !u!1001 &1009785175481323083
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -102,6 +142,10 @@ PrefabInstance:
       propertyPath: resourcePreset
       value: 
       objectReference: {fileID: 11400000, guid: 977093f871756904281624914c975059, type: 2}
+    - target: {fileID: 3682114070957681267, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 4782690788932037546, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -145,6 +189,22 @@ PrefabInstance:
     - target: {fileID: 6585240851231725411, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
       propertyPath: m_Name
       value: Tree_Birch
+      objectReference: {fileID: 0}
+    - target: {fileID: 6585240851231725411, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7566973401954090780, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7566973401954090780, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132332340325043410, guid: a96804ce741bdd2419f8a09b01b753e6, type: 3}
+      propertyPath: m_Layer
+      value: 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
